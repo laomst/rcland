@@ -1,7 +1,8 @@
 import { ConfigProvider, App as AntdApp, Layout, Button, Space, Modal, Form, Input, Switch, Divider, Checkbox, Tooltip, Typography } from 'antd'
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { EyeOutlined, ThunderboltOutlined, SettingOutlined, FolderOpenOutlined, KeyOutlined } from '@ant-design/icons'
 import { TempKeyModal } from './components/TempKeyModal'
+import { ModuleNav } from './components/ModuleNav'
 import CCConfigPage from './modules/cc-launch/pages/CCConfigPage'
 import { SHELL_LABELS, SHELL_OS_SUPPORT, SHELL_DEFAULTS, ALL_SHELL_TYPES, type ShellType, type ShellProfileConfig } from '@shared/shell'
 import type { AppSettings } from '@shared/types'
@@ -9,7 +10,7 @@ import { useAppStore } from '@renderer/stores/useAppStore'
 import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 
-const { Content, Footer } = Layout
+const { Content, Footer, Sider } = Layout
 
 /** Shells available on current OS (renderer runs on same OS) */
 function getOsSupportedShells(): ShellType[] {
@@ -108,7 +109,7 @@ function AppLayout(): React.ReactElement {
     setPreviewShell(shell)
     setPreviewContent('加载中...')
     try {
-      const content = await window.electronAPI.generateConfig(shell)
+      const content = await window.electronAPI.generateAllConfig(shell)
       setPreviewContent(content)
     } catch (err) {
       setPreviewContent(`生成失败: ${err instanceof Error ? err.message : String(err)}`)
@@ -120,7 +121,6 @@ function AppLayout(): React.ReactElement {
       message.warning('请先在设置中启用至少一个 Shell')
       return
     }
-    // 先刷新密钥状态，然后获取最新值
     await refreshKeyExists()
     const hasKey = useAppStore.getState().keyExists
     if (!hasKey) {
@@ -128,7 +128,7 @@ function AppLayout(): React.ReactElement {
       return
     }
     try {
-      const result = await window.electronAPI.applyConfig(enabledShells)
+      const result = await window.electronAPI.applyAllConfig(enabledShells)
       const shellNames = result.appliedShells.map((s) => SHELL_LABELS[s]).join('、')
       if (result.count > 0) {
         message.success(`已应用配置到: ${shellNames}`)
@@ -250,12 +250,24 @@ function AppLayout(): React.ReactElement {
   }
 
   return (
+    <>
     <Layout style={{ height: '100vh' }}>
+      <Sider width={160} theme="dark" style={{ overflow: 'auto' }}>
+        <div style={{ padding: '16px 0 8px', textAlign: 'center', color: '#fff', fontWeight: 600, fontSize: 16 }}>
+          CCland
+        </div>
+        <ModuleNav />
+      </Sider>
       <Layout>
         <Content className="content-area">
           <Routes>
-            <Route path="/" element={<CCConfigPage />} />
-            <Route path="/cc-config" element={<CCConfigPage />} />
+            <Route path="/" element={<Navigate to="/env" replace />} />
+            <Route path="/env" element={<div>环境变量 (TODO)</div>} />
+            <Route path="/path" element={<div>PATH (TODO)</div>} />
+            <Route path="/functions" element={<div>函数 (TODO)</div>} />
+            <Route path="/aliases" element={<div>别名 (TODO)</div>} />
+            <Route path="/prompt" element={<div>提示符 (TODO)</div>} />
+            <Route path="/ccland" element={<CCConfigPage />} />
           </Routes>
         </Content>
         <Footer className="action-bar">
@@ -284,6 +296,7 @@ function AppLayout(): React.ReactElement {
           </div>
         </Footer>
       </Layout>
+    </Layout>
 
       {/* Preview Modal */}
       <Modal
@@ -563,7 +576,7 @@ function AppLayout(): React.ReactElement {
           </div>
         )}
       </Modal>
-    </Layout>
+    </>
   )
 }
 

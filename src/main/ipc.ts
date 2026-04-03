@@ -2,8 +2,13 @@ import { ipcMain, BrowserWindow } from 'electron'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import * as configService from './services/config'
 import * as cryptoService from './services/crypto'
+import * as shellConfigService from './services/shell-config'
+import * as backupService from './services/backup'
+import * as conflictChecker from './services/conflict-checker'
 import { detectShell } from './services/shell-detector'
 import { getGenerator } from './services/generators'
+import { generateFullConfig } from './services/generators/orchestrator'
+import { createGenerateContext } from './services/generators/context'
 import type { CCLaunchData, Provider } from '../shared/types'
 import type { ShellType } from '../shared/shell'
 
@@ -355,4 +360,108 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('dialog:save', (_e, options: Electron.SaveDialogOptions) =>
     configService.showSaveDialog(BrowserWindow.getFocusedWindow(), options)
   )
+
+  // ---- Shell Config ----
+  ipcMain.handle('shell-config:load', () => shellConfigService.loadShellConfig())
+  ipcMain.handle('shell-config:save', (_e, json: string) => shellConfigService.saveShellConfig(json))
+
+  // ---- Conflict Check ----
+  ipcMain.handle('shell-config:checkConflicts', (_e, json: string) => {
+    const config: import('../shared/shell-types').ShellConfigData = JSON.parse(json)
+    return conflictChecker.checkConflicts(config)
+  })
+
+  // ---- Backup ----
+  ipcMain.handle('backup:create', (_e, shellType: ShellType, outputPath: string) =>
+    backupService.createBackup(shellType, outputPath)
+  )
+  ipcMain.handle('backup:list', (_e, shellType: ShellType) =>
+    backupService.listBackups(shellType)
+  )
+  ipcMain.handle('backup:restore', (_e, shellType: ShellType, backupId: string, outputPath: string) =>
+    backupService.restoreBackup(shellType, backupId, outputPath)
+  )
+  ipcMain.handle('backup:prune', (_e, shellType: ShellType, keepCount: number) =>
+    backupService.pruneBackups(shellType, keepCount)
+  )
+
+  // ---- Unified Generate (shell config + CC config merged) ----
+  ipcMain.handle('shell:generateAll', (_e, shellType: ShellType) => {
+    const settings = configService.loadSettings()
+    const key = cryptoService.loadKey(settings.keyFilePath)
+    if (!key) throw new Error('Key file not found')
+    // Load CC data
+    const ccDataJson = configService.loadData()
+    const ccData: CCLaunchData = ccDataJson ? JSON.parse(ccDataJson) : { version: 5, providers: [], configs: [], selector: { enabled: false, funcName: 'cc', promptTitle: '' } }
+    // Load Shell config
+    const shellConfigJson = shellConfigService.loadShellConfig()
+    const shellConfig: import('../shared/shell-types').ShellConfigData = JSON.parse(shellConfigJson)
+    // Build decrypted tokens
+    const { map: decryptedTokens, decryptFailed } = buildDecryptedMap(ccData, key)
+    if (decryptFailed) throw new Error('DECRYPT_FAILED')
+    // Also decrypt encrypted shell variables (in-memory only)
+    const decryptedShellConfig = JSON.parse(JSON.stringify(shellConfig)) as import('../shared/shell-types').ShellConfigData
+    for (const v of decryptedShellConfig.variables) {
+      if (v.encrypted && cryptoService.isEncrypted(v.value)) {
+        try {
+          v.value = cryptoService.decrypt(v.value, key)
+          v.encrypted = false // Mark as decrypted for generation
+        } catch {
+          // Leave as-is if decryption fails
+        }
+      }
+    }
+    const ctx = createGenerateContext(shellType, key)
+    return generateFullConfig(shellType, decryptedShellConfig, ccData, decryptedTokens, ctx)
+  })
+
+  ipcMain.handle('shell:applyAll', async (_e, shellTypes: ShellType[]) => {
+    const settings = configService.loadSettings()
+    const key = cryptoService.loadKey(settings.keyFilePath)
+    if (!key) throw new Error('Key file not found')
+    const ccDataJson = configService.loadData()
+    const ccData: CCLaunchData = ccDataJson ? JSON.parse(ccDataJson) : { version: 5, providers: [], configs: [], selector: { enabled: false, funcName: 'cc', promptTitle: '' } }
+    const shellConfigJson = shellConfigService.loadShellConfig()
+    const shellConfig: import('../shared/shell-types').ShellConfigData = JSON.parse(shellConfigJson)
+    const { map: decryptedTokens, decryptFailed } = buildDecryptedMap(ccData, key)
+    if (decryptFailed) throw new Error('DECRYPT_FAILED')
+    // Decrypt encrypted shell variables (in-memory only)
+    const decryptedShellConfig = JSON.parse(JSON.stringify(shellConfig)) as import('../shared/shell-types').ShellConfigData
+    for (const v of decryptedShellConfig.variables) {
+      if (v.encrypted && cryptoService.isEncrypted(v.value)) {
+        try { v.value = cryptoService.decrypt(v.value, key); v.encrypted = false } catch { /* skip */ }
+      }
+    }
+    const appliedShells: string[] = []
+    for (const shellType of shellTypes) {
+      const profile = settings.shellProfiles[shellType]
+      if (!profile) continue
+      // Backup current output file
+      backupService.createBackup(shellType, profile.outputPath)
+      // Generate
+      const ctx = createGenerateContext(shellType, key)
+      const generated = generateFullConfig(shellType, decryptedShellConfig, ccData, decryptedTokens, ctx)
+      // Write output
+      const outputPath = profile.outputPath.replace(/^~/, process.env.HOME || '~')
+      writeFileSync(outputPath, generated, 'utf-8')
+      // Source into profile
+      if (profile.autoSource) {
+        const profilePath = profile.profilePath.replace(/^~/, process.env.HOME || '~')
+        if (existsSync(profilePath)) {
+          const content = readFileSync(profilePath, 'utf-8')
+          const beginMarker = '# >>> CCland >>>'
+          const endMarker = '# <<< CCland <<<'
+          const hasBlock = content.includes(beginMarker)
+          if (!hasBlock) {
+            const sourceLine = `${beginMarker}\nsource ${outputPath}\n${endMarker}`
+            writeFileSync(profilePath, content.trimEnd() + '\n\n' + sourceLine + '\n', 'utf-8')
+          }
+        }
+      }
+      // Prune old backups
+      backupService.pruneBackups(shellType, 10)
+      appliedShells.push(shellType)
+    }
+    return { appliedShells, count: appliedShells.length }
+  })
 }

@@ -30,6 +30,21 @@ export interface ElectronAPI {
   applyConfig: (shellTypes: ShellType[]) => Promise<{ appliedShells: ShellType[]; count: number }>
   tryApplyWithKey: (shellTypes: ShellType[], tempKey: string) => Promise<{ success: boolean; appliedShells?: ShellType[]; count?: number; error?: string }>
 
+  // Shell Config
+  loadShellConfig: () => Promise<string>
+  saveShellConfig: (json: string) => Promise<void>
+  checkConflicts: (json: string) => Promise<{ warnings: any[]; errors: any[] }>
+
+  // Backup
+  createBackup: (shellType: ShellType, outputPath: string) => Promise<string | null>
+  listBackups: (shellType: ShellType) => Promise<any[]>
+  restoreBackup: (shellType: ShellType, backupId: string, outputPath: string) => Promise<void>
+  pruneBackups: (shellType: ShellType, keepCount: number) => Promise<void>
+
+  // Unified Generate
+  generateAllConfig: (shellType: ShellType) => Promise<string>
+  applyAllConfig: (shellTypes: ShellType[]) => Promise<{ appliedShells: ShellType[]; count: number }>
+
   // File dialog
   showOpenDialog: (options: { title: string; defaultPath?: string; properties?: string[] }) => Promise<string | null>
   showSaveDialog: (options: { title: string; defaultPath?: string }) => Promise<string | null>
@@ -57,6 +72,15 @@ const api: ElectronAPI = {
   generateConfig: (shellType) => ipcRenderer.invoke('shell:generate', shellType),
   applyConfig: (shellTypes) => ipcRenderer.invoke('shell:apply', shellTypes),
   tryApplyWithKey: (shellTypes, tempKey) => ipcRenderer.invoke('shell:tryApplyWithKey', shellTypes, tempKey),
+  loadShellConfig: () => ipcRenderer.invoke('shell-config:load'),
+  saveShellConfig: (json) => ipcRenderer.invoke('shell-config:save', json),
+  checkConflicts: (json) => ipcRenderer.invoke('shell-config:checkConflicts', json),
+  createBackup: (shellType, outputPath) => ipcRenderer.invoke('backup:create', shellType, outputPath),
+  listBackups: (shellType) => ipcRenderer.invoke('backup:list', shellType),
+  restoreBackup: (shellType, backupId, outputPath) => ipcRenderer.invoke('backup:restore', shellType, backupId, outputPath),
+  pruneBackups: (shellType, keepCount) => ipcRenderer.invoke('backup:prune', shellType, keepCount),
+  generateAllConfig: (shellType) => ipcRenderer.invoke('shell:generateAll', shellType),
+  applyAllConfig: (shellTypes) => ipcRenderer.invoke('shell:applyAll', shellTypes),
   showOpenDialog: (options) => ipcRenderer.invoke('dialog:open', options),
   showSaveDialog: (options) => ipcRenderer.invoke('dialog:save', options),
   on: (channel, callback) => {
