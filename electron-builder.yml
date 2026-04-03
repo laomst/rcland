@@ -1,0 +1,27 @@
+appId: com.ccland.app
+productName: CCland
+directories:
+  buildResources: build
+files:
+  - out/**/*
+  - "!out/renderer/**/*"
+extraResources:
+  - from: out/renderer
+    to: renderer
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.icns
+  target:
+    - zip
+  identity: null
+  hardenedRuntime: true
+  gatekeeperAssess: false
+win:
+  icon: build/icon.ico
+  target:
+    - nsis
+linux:
+  icon: build/icon.png
+  target:
+    - AppImage
+    - deb
