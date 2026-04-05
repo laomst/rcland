@@ -12,7 +12,7 @@ function createWindow(): void {
     minWidth: 900,
     minHeight: 600,
     show: false,
-    title: 'CCland',
+    title: 'RCLand',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -43,7 +43,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   if (platform() === 'win32') {
-    app.setAppUserModelId('com.ccland.app')
+    app.setAppUserModelId('com.rcland.app')
   }
 
   // Register all IPC handlers before creating window

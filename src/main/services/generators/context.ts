@@ -1,4 +1,4 @@
-import type { ShellType } from '../../../shared/shell'
+import type { ShellType } from '@shared/shell'
 import type { GenerateContext } from './section-types'
 import * as cryptoService from '../crypto'
 
@@ -6,20 +6,21 @@ import { isEncrypted } from '../crypto'
 
 /**
  * Escape a value for use inside double quotes in bash/zsh.
- * Handles: \ " ` $ !
+ * Handles: \ " ` !
+ * Note: $ is NOT escaped to allow variable references like $JAVA_HOME
  */
 export function escapeForBashLike(value: string): string {
   return value
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
     .replace(/`/g, '\\`')
-    .replace(/\$/g, '\\$')
     .replace(/!/g, '\\!')
 }
 
 /**
  * Escape a value for use inside single quotes in PowerShell.
  * Single quotes in PowerShell only need '' to represent a literal '.
+ * Note: $ is NOT escaped to allow variable references like $env:JAVA_HOME
  */
 export function escapeForPowerShell(value: string): string {
   return value.replace(/'/g, "''")

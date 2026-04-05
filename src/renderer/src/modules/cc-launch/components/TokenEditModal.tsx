@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Input, Modal, message } from 'antd'
-import { useAppStore } from '@renderer/stores/useAppStore'
+import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 
 export function TokenEditModal({
   open,
@@ -11,9 +11,9 @@ export function TokenEditModal({
   onConfirm: (encrypted: string) => void
   onCancel: () => void
 }): React.ReactElement {
-  const encryptToken = useAppStore((s) => s.encryptToken)
-  const keyExists = useAppStore((s) => s.keyExists)
-  const openKeyModal = useAppStore((s) => s.openKeyModal)
+  const encryptToken = useSettingsStore((s) => s.encryptToken)
+  const keyExists = useSettingsStore((s) => s.keyExists)
+  const openKeyModal = useSettingsStore((s) => s.openKeyModal)
   const [plainText, setPlainText] = useState('')
 
   const handleOk = async () => {

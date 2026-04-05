@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Space, Switch, Typography, Button, Tooltip, App, message } from 'antd'
-import { EditOutlined, DeleteOutlined, LockOutlined, HolderOutlined, CopyOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined, LockOutlined, CopyOutlined } from '@ant-design/icons'
 import type { Provider } from '@shared/types'
 import { useAppStore } from '@renderer/stores/useAppStore'
 import { ProviderFormModal, withDefaults } from './ProviderFormModal'
+import { ItemRow } from '@renderer/components/ItemRow'
 
 const { Text } = Typography
 
@@ -41,96 +42,72 @@ export function ProviderCard({
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        {/* Index - outside card */}
-        {index !== undefined && (
-          <Text type="secondary" style={{ width: 24, textAlign: 'right', flexShrink: 0, fontSize: 12 }}>
-            {index}.
-          </Text>
-        )}
+      <ItemRow
+        index={index}
+        isDragging={isDragging}
+        enabled={provider.enabled}
+        borderColor={provider.enabled ? accent : '#d9d9d9'}
+        background={provider.enabled ? '#fff' : '#f5f5f5'}
+        dragHandleProps={dragHandleProps}
+        actions={<>
+          {/* Endpoints */}
+          <Space size={2}>
+            {(provider.endpoints ?? []).map((ep, i) => (
+              <Text key={ep.id} type="secondary" style={{ fontSize: 11, lineHeight: '20px' }}>
+                {i > 0 ? ' / ' : ''}{ep.label || ep.url}
+              </Text>
+            ))}
+          </Space>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          flex: 1,
-          background: provider.enabled ? '#fff' : '#f5f5f5',
-          border: `1.5px solid ${provider.enabled ? accent : '#d9d9d9'}40`,
-          borderRadius: 6,
-          padding: '8px 12px',
-          opacity: isDragging ? 0.5 : provider.enabled ? 1 : 0.6
-        }}>
-          {/* Drag Handle */}
-          {dragHandleProps && (
-            <div
-              {...dragHandleProps}
-              style={{ cursor: 'grab', color: '#999', display: 'flex', alignItems: 'center' }}
-            >
-              <HolderOutlined />
-            </div>
+          {/* Key count */}
+          {keyCount > 0 && (
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              <LockOutlined style={{ marginRight: 2 }} />
+              {keyCount} 个密钥
+            </Text>
           )}
 
-          {/* Color dot */}
-          <div style={{
-            width: 12, height: 12, borderRadius: '50%',
-            background: provider.enabled ? accent : '#d9d9d9',
-            display: 'inline-block', flexShrink: 0
-          }} />
+          <Text type="secondary" style={{ fontSize: 12 }}>({relatedConfigs.length} 个配置)</Text>
+          <Tooltip title="复制">
+            <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy} />
+          </Tooltip>
+          <Tooltip title="编辑">
+            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
+          </Tooltip>
+          <Tooltip title="删除">
+            <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => {
+              const count = relatedConfigs.length
+              modal.confirm({
+                title: '确认删除',
+                content: count > 0
+                  ? `供应商 "${provider.name}" 下有 ${count} 个配置，删除后关联配置也将被移除，确定？`
+                  : `确定删除供应商 "${provider.name}" 吗？`,
+                okText: '删除',
+                okType: 'danger',
+                cancelText: '取消',
+                onOk: () => useAppStore.getState().removeProvider(provider.id)
+              })
+            }} />
+          </Tooltip>
+          <Switch
+            size="small"
+            checked={provider.enabled}
+            onChange={(checked) => updateProvider(provider.id, { enabled: checked })}
+          />
+        </>}
+      >
+        {/* Color dot */}
+        <div style={{
+          width: 12, height: 12, borderRadius: '50%',
+          background: provider.enabled ? accent : '#d9d9d9',
+          display: 'inline-block', flexShrink: 0
+        }} />
 
-          {/* Name */}
-          <Text strong style={{ fontSize: 14 }}>{provider.name}</Text>
+        {/* Name */}
+        <Text strong style={{ fontSize: 14 }}>{provider.name}</Text>
 
-          {!provider.enabled && <Text type="secondary" style={{ fontSize: 12 }}>(已停用)</Text>}
-
-          {/* Right side info */}
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Endpoints */}
-            <Space size={2}>
-              {(provider.endpoints ?? []).map((ep, i) => (
-                <Text key={ep.id} type="secondary" style={{ fontSize: 11, lineHeight: '20px' }}>
-                  {i > 0 ? ' / ' : ''}{ep.label || ep.url}
-                </Text>
-              ))}
-            </Space>
-
-            {/* Key count */}
-            {keyCount > 0 && (
-              <Text type="secondary" style={{ fontSize: 11 }}>
-                <LockOutlined style={{ marginRight: 2 }} />
-                {keyCount} 个密钥
-              </Text>
-            )}
-
-            <Text type="secondary" style={{ fontSize: 12 }}>({relatedConfigs.length} 个配置)</Text>
-            <Tooltip title="复制">
-              <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy} />
-            </Tooltip>
-            <Tooltip title="编辑">
-              <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
-            </Tooltip>
-            <Tooltip title="删除">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => {
-                const count = relatedConfigs.length
-                modal.confirm({
-                  title: '确认删除',
-                  content: count > 0
-                    ? `供应商 "${provider.name}" 下有 ${count} 个配置，删除后关联配置也将被移除，确定？`
-                    : `确定删除供应商 "${provider.name}" 吗？`,
-                  okText: '删除',
-                  okType: 'danger',
-                  cancelText: '取消',
-                  onOk: () => useAppStore.getState().removeProvider(provider.id)
-                })
-              }} />
-            </Tooltip>
-            <Switch
-              size="small"
-              checked={provider.enabled}
-              onChange={(checked) => updateProvider(provider.id, { enabled: checked })}
-            />
-          </div>
-        </div>
-      </div>
+        {!provider.enabled && <Text type="secondary" style={{ fontSize: 12 }}>(已停用)</Text>}
+      </ItemRow>
 
       <ProviderFormModal
         open={editOpen}

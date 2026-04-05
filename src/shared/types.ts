@@ -88,6 +88,8 @@ export interface Provider {
   color?: string
   /** Default template for new configs */
   template?: ProviderTemplate
+  /** Only stored locally, not synced */
+  localOnly?: boolean
 }
 
 export interface ProviderTemplate {
@@ -110,8 +112,22 @@ export interface ConfigSet {
   enabled: boolean
   /** Fixed Claude env vars, each with value + enabled */
   envVars: EnvVarsMap
-  /** @deprecated Use name instead - kept for backward compatibility during migration */
-  description?: string
+  /** Only stored locally, not synced */
+  localOnly?: boolean
+}
+
+// ============================================================
+// Local CC Config (stored in Electron userData, not synced)
+// ============================================================
+
+export interface LocalCCLaunchData {
+  version: 1
+  providers: Provider[]
+  configs: ConfigSet[]
+}
+
+export function createEmptyLocalCCLaunchData(): LocalCCLaunchData {
+  return { version: 1, providers: [], configs: [] }
 }
 
 /** Get key token by providerId and keyId */
@@ -155,96 +171,4 @@ export function getEndpointUrl(provider: Provider, endpointId?: string): string 
     ? provider.endpoints.find((e) => e.id === endpointId)
     : null
   return ep?.url ?? provider.endpoints[0].url
-}
-
-// ============================================================
-// Legacy v4 types (for migration only)
-// ============================================================
-
-export interface ProviderV4 {
-  id: string
-  name: string
-  enabled: boolean
-  endpoints: ProviderEndpoint[]
-  color?: string
-  template?: ProviderTemplate
-}
-
-export interface ConfigSetV4 {
-  id: string
-  providerId: string
-  endpointId: string
-  funcName: string
-  description: string
-  enabled: boolean
-  token: string
-  tokenComment: string
-  envVars: EnvVarsMap
-}
-
-export interface CCLaunchDataV4 {
-  version: 4
-  providers: ProviderV4[]
-  configs: ConfigSetV4[]
-  selector: CCLaunchData['selector']
-}
-
-// ============================================================
-// Legacy v3 types (for migration only)
-// ============================================================
-
-export interface ProviderV3 {
-  id: string
-  name: string
-  enabled: boolean
-  baseUrl: string
-  color?: string
-  template?: ProviderTemplate
-}
-
-export interface ConfigSetV3 {
-  id: string
-  providerId: string
-  funcName: string
-  description: string
-  enabled: boolean
-  token: string
-  tokenComment: string
-  envVars: EnvVarsMap
-}
-
-export interface CCLaunchDataV3 {
-  version: 3
-  providers: ProviderV3[]
-  configs: ConfigSetV3[]
-  selector: CCLaunchData['selector']
-}
-
-// ============================================================
-// Legacy v2 types (for migration only)
-// ============================================================
-
-export interface ProviderV2 {
-  id: string
-  name: string
-  enabled: boolean
-  baseUrl: string
-  color?: string
-  configs: ConfigSetV2[]
-}
-
-export interface ConfigSetV2 {
-  id: string
-  funcName: string
-  description: string
-  enabled: boolean
-  token: string
-  tokenComment: string
-  envVars: EnvVarsMap
-}
-
-export interface CCLaunchDataV2 {
-  version: 2
-  providers: ProviderV2[]
-  selector: CCLaunchData['selector']
 }

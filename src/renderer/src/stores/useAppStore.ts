@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import type { Provider, ConfigSet, AppSettings, CCLaunchData, ProviderKey } from '@shared/types'
-import { CLAUDE_ENV_VAR_KEYS, createEmptyKey } from '@shared/types'
+import type { Provider, ConfigSet, CCLaunchData, ProviderKey } from '@shared/types'
+import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
+import { createTopLevelCrud } from './crud-helpers'
 
 const DEFAULT_SELECTOR = { enabled: false, funcName: 'cc', promptTitle: '选择启动器' }
 
@@ -10,22 +11,9 @@ interface AppState {
   configs: ConfigSet[]
   selector: CCLaunchData['selector']
   dataLoaded: boolean
+  loading: boolean
   loadData: () => Promise<void>
   saveData: () => Promise<void>
-
-  // Settings
-  settings: AppSettings | null
-  loadSettings: () => Promise<void>
-  updateSettings: (patch: Partial<AppSettings>) => Promise<void>
-
-  // Crypto
-  keyExists: boolean
-  keyModalOpen: boolean
-  keyModalMode: 'init' | 'replace'
-  refreshKeyExists: () => Promise<void>
-  openKeyModal: (mode: 'init' | 'replace') => void
-  closeKeyModal: () => void
-  encryptToken: (plaintext: string) => Promise<string>
 
   // Provider CRUD
   addProvider: (provider: Provider) => void
@@ -47,20 +35,27 @@ interface AppState {
   reorderConfigs: (activeId: string, overId: string) => void
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set, get) => {
+  const providerCrud = createTopLevelCrud<Provider>('providers', get, set)
+  const configCrud = createTopLevelCrud<ConfigSet>('configs', get, set)
+
+  return {
   // ---- Data ----
   providers: [],
   configs: [],
   selector: DEFAULT_SELECTOR,
   dataLoaded: false,
+  loading: false,
 
   loadData: async () => {
+    if (get().loading || get().dataLoaded) return // 避免重复加载
+    set({ loading: true })
     const json = await window.electronAPI.loadData()
     if (json) {
       const data: CCLaunchData = JSON.parse(json)
-      set({ providers: data.providers, configs: data.configs, selector: data.selector ?? DEFAULT_SELECTOR, dataLoaded: true })
+      set({ providers: data.providers, configs: data.configs, selector: data.selector ?? DEFAULT_SELECTOR, dataLoaded: true, loading: false })
     } else {
-      set({ providers: [], configs: [], selector: DEFAULT_SELECTOR, dataLoaded: true })
+      set({ providers: [], configs: [], selector: DEFAULT_SELECTOR, dataLoaded: true, loading: false })
     }
   },
 
@@ -70,70 +65,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     await window.electronAPI.saveData(JSON.stringify(data))
   },
 
-  // ---- Settings ----
-  settings: null,
-
-  loadSettings: async () => {
-    const json = await window.electronAPI.loadSettings()
-    if (json) {
-      set({ settings: JSON.parse(json) })
-    }
-  },
-
-  updateSettings: async (patch) => {
-    const { settings } = get()
-    if (!settings) return
-    const updated = { ...settings, ...patch }
-    await window.electronAPI.saveSettings(JSON.stringify(updated))
-    set({ settings: updated })
-  },
-
-  // ---- Crypto ----
-  keyExists: false,
-  keyModalOpen: false,
-  keyModalMode: 'init' as const,
-
-  refreshKeyExists: async () => {
-    try {
-      const exists = await window.electronAPI.keyExists()
-      set({ keyExists: exists })
-    } catch { /* ignore */ }
-  },
-
-  openKeyModal: (mode) => {
-    set({ keyModalOpen: true, keyModalMode: mode })
-  },
-
-  closeKeyModal: () => {
-    set({ keyModalOpen: false })
-  },
-
-  encryptToken: async (plaintext) => {
-    return window.electronAPI.encrypt(plaintext)
-  },
-
   // ---- Provider CRUD ----
-  addProvider: (provider) => {
-    set((s) => ({ providers: [...s.providers, provider] }))
-    get().saveData()
-  },
-
-  addProviderAfter: (afterId, provider) => {
-    set((s) => {
-      const idx = s.providers.findIndex((p) => p.id === afterId)
-      const newProviders = [...s.providers]
-      newProviders.splice(idx + 1, 0, provider)
-      return { providers: newProviders }
-    })
-    get().saveData()
-  },
-
-  updateProvider: (id, patch) => {
-    set((s) => ({
-      providers: s.providers.map((p) => (p.id === id ? { ...p, ...patch } : p))
-    }))
-    get().saveData()
-  },
+  addProvider: providerCrud.add,
+  addProviderAfter: providerCrud.addAfter,
+  updateProvider: providerCrud.update,
 
   removeProvider: (id) => {
     set((s) => ({
@@ -143,19 +78,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().saveData()
   },
 
-  reorderProviders: (activeId, overId) => {
-    if (activeId === overId) return
-    set((s) => {
-      const oldIndex = s.providers.findIndex((p) => p.id === activeId)
-      const newIndex = s.providers.findIndex((p) => p.id === overId)
-      if (oldIndex === -1 || newIndex === -1) return s
-      const newProviders = [...s.providers]
-      const [removed] = newProviders.splice(oldIndex, 1)
-      newProviders.splice(newIndex, 0, removed)
-      return { providers: newProviders }
-    })
-    get().saveData()
-  },
+  reorderProviders: providerCrud.reorder,
 
   // ---- Key CRUD ----
   addKey: (providerId, key) => {
@@ -190,47 +113,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   // ---- Config CRUD ----
-  addConfig: (config) => {
-    set((s) => ({ configs: [...s.configs, config] }))
-    get().saveData()
-  },
-
-  addConfigAfter: (afterId, config) => {
-    set((s) => {
-      const idx = s.configs.findIndex((c) => c.id === afterId)
-      const next = [...s.configs]
-      next.splice(idx + 1, 0, config)
-      return { configs: next }
-    })
-    get().saveData()
-  },
-
-  updateConfig: (configId, patch) => {
-    set((s) => ({
-      configs: s.configs.map((c) => (c.id === configId ? { ...c, ...patch } : c))
-    }))
-    get().saveData()
-  },
-
-  removeConfig: (configId) => {
-    set((s) => ({ configs: s.configs.filter((c) => c.id !== configId) }))
-    get().saveData()
-  },
-
-  reorderConfigs: (activeId, overId) => {
-    if (activeId === overId) return
-    set((s) => {
-      const oldIndex = s.configs.findIndex((c) => c.id === activeId)
-      const newIndex = s.configs.findIndex((c) => c.id === overId)
-      if (oldIndex === -1 || newIndex === -1) return s
-      const newConfigs = [...s.configs]
-      const [removed] = newConfigs.splice(oldIndex, 1)
-      newConfigs.splice(newIndex, 0, removed)
-      return { configs: newConfigs }
-    })
-    get().saveData()
+  addConfig: configCrud.add,
+  addConfigAfter: configCrud.addAfter,
+  updateConfig: configCrud.update,
+  removeConfig: configCrud.remove,
+  reorderConfigs: configCrud.reorder
   }
-}))
+})
 
 /** Helper: create empty config with all env vars disabled */
 export function createEmptyConfig(providerId: string, endpointId: string, keyId: string): ConfigSet {

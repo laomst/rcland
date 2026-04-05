@@ -24,6 +24,8 @@ export interface ShellVariable {
   enabled: boolean
   order: number
   shells?: ShellType[]
+  /** 仅本机配置，不同步到其他设备 */
+  localOnly?: boolean
 }
 
 /** PATH entry */
@@ -34,21 +36,35 @@ export interface PathEntry {
   enabled: boolean
   order: number
   shells?: ShellType[]
+  /** 仅本机配置，不同步到其他设备 */
+  localOnly?: boolean
 }
 
 /** Shell function with per-shell bodies */
 export interface ShellFunction {
   id: string
+  /** 内部标识名称（显示用） */
   name: string
   category: string
   description?: string
+  /** 每种 shell 的完整函数代码 */
   body: {
+    zsh?: string
+    bash?: string
+    powershell?: string
+  }
+  /** 从代码中提取的函数名（每种 shell 可能不同） */
+  funcNames?: {
     zsh?: string
     bash?: string
     powershell?: string
   }
   enabled: boolean
   order: number
+  /** 内置函数标记，不可删除/编辑 */
+  builtIn?: boolean
+  /** 仅本机配置，不同步到其他设备 */
+  localOnly?: boolean
 }
 
 /** Command alias */
@@ -60,6 +76,8 @@ export interface ShellAlias {
   enabled: boolean
   order: number
   shells?: ShellType[]
+  /** 仅本机配置，不同步到其他设备 */
+  localOnly?: boolean
 }
 
 /** Prompt configuration */
@@ -83,6 +101,19 @@ export interface OutputConfig {
       autoSource: boolean
     }
   }
+}
+
+// ============================================================
+// Local-Only Shell Config (存储在 Electron userData 目录)
+// ============================================================
+
+/** 本机配置数据，与同步配置分开存储 */
+export interface LocalShellConfigData {
+  version: 1
+  variables: ShellVariable[]
+  pathEntries: PathEntry[]
+  functions: ShellFunction[]
+  aliases: ShellAlias[]
 }
 
 // ============================================================
@@ -117,61 +148,4 @@ export interface BackupEntry {
   filePath: string
   originalPath: string
   sizeBytes: number
-}
-
-// ============================================================
-// Factory Helpers
-// ============================================================
-
-export function createEmptyShellConfig(): ShellConfigData {
-  return {
-    version: 1,
-    variables: [],
-    pathEntries: [],
-    functions: [],
-    aliases: [],
-    prompt: { type: 'simple' },
-    output: { profiles: {} }
-  }
-}
-
-export function createEmptyVariable(): ShellVariable {
-  return {
-    id: crypto.randomUUID(),
-    key: '',
-    value: '',
-    encrypted: false,
-    enabled: true,
-    order: 0
-  }
-}
-
-export function createEmptyPathEntry(): PathEntry {
-  return {
-    id: crypto.randomUUID(),
-    path: '',
-    enabled: true,
-    order: 0
-  }
-}
-
-export function createEmptyFunction(): ShellFunction {
-  return {
-    id: crypto.randomUUID(),
-    name: '',
-    category: 'custom',
-    body: {},
-    enabled: true,
-    order: 0
-  }
-}
-
-export function createEmptyAlias(): ShellAlias {
-  return {
-    id: crypto.randomUUID(),
-    alias: '',
-    command: '',
-    enabled: true,
-    order: 0
-  }
 }

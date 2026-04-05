@@ -1,6 +1,6 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
-import type { ShellAlias } from '../../../../../shared/shell-types'
-import type { ShellType } from '../../../../../shared/shell'
+import type { ShellAlias } from '@shared/shell-types'
+import type { ShellType } from '@shared/shell'
 
 export class AliasesPowerShellGenerator implements SectionGenerator<ShellAlias[]> {
   readonly sectionName = 'aliases'
@@ -12,9 +12,8 @@ export class AliasesPowerShellGenerator implements SectionGenerator<ShellAlias[]
     )
     if (items.length === 0) return ''
 
-    const lines: string[] = ['# === 别名 ===']
+    const lines: string[] = []
     for (const a of items) {
-      if (a.description) lines.push(`# ${a.description}`)
       // PowerShell Set-Alias only works for simple command→command mappings
       // For commands with arguments, use a function wrapper
       if (a.command.includes(' ')) {

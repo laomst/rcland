@@ -1,6 +1,4 @@
-import type { ShellType } from '../../../shared/shell'
-
-import type { ShellConfigData } from '../../../shared/shell-types'
+import type { ShellType } from '@shared/shell'
 
 /** Context passed to all section generators */
 export interface GenerateContext {

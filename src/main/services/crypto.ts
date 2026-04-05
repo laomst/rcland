@@ -1,5 +1,5 @@
 import { randomBytes, createCipheriv, createDecipheriv, pbkdf2Sync } from 'crypto'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, copyFileSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { dirname } from 'path'
 
 const ALGORITHM = 'aes-256-gcm'

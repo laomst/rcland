@@ -1,4 +1,4 @@
-import type { ShellConfigData, ConflictCheckResult, ConflictWarning, ConflictError } from '../../shared/shell-types'
+import type { ShellConfigData, ConflictCheckResult, ConflictWarning, ConflictError } from '@shared/shell-types'
 
 /** Common system commands that should warn when aliased */
 const SYSTEM_COMMANDS = new Set([

@@ -5,7 +5,6 @@ import {
   NodeIndexOutlined,
   FunctionOutlined,
   FileTextOutlined,
-  BgColorsOutlined,
   ApiOutlined
 } from '@ant-design/icons'
 
@@ -14,9 +13,8 @@ const menuItems = [
   { key: '/path', label: 'PATH', icon: <NodeIndexOutlined /> },
   { key: '/functions', label: '函数', icon: <FunctionOutlined /> },
   { key: '/aliases', label: '别名', icon: <FileTextOutlined /> },
-  { key: '/prompt', label: '提示符', icon: <BgColorsOutlined /> },
   { type: 'divider' as const },
-  { key: '/ccland', label: 'CCland', icon: <ApiOutlined /> }
+  { key: '/ccland', label: 'CCLand', icon: <ApiOutlined /> }
 ]
 export function ModuleNav(): React.ReactElement {
   const navigate = useNavigate()

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Tabs } from 'antd'
+import { Tabs, Spin } from 'antd'
 import { ShopOutlined, SettingOutlined } from '@ant-design/icons'
 import { useAppStore } from '@renderer/stores/useAppStore'
 import { ProviderTab } from '../components/ProviderTab'
@@ -7,10 +7,22 @@ import { ConfigTab } from '../components/ConfigTab'
 
 export default function CCConfigPage(): React.ReactElement {
   const loadData = useAppStore((s) => s.loadData)
+  const dataLoaded = useAppStore((s) => s.dataLoaded)
+  const loading = useAppStore((s) => s.loading)
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    if (!dataLoaded && !loading) {
+      loadData()
+    }
+  }, [dataLoaded, loading, loadData])
+
+  if (loading || !dataLoaded) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <Spin />
+      </div>
+    )
+  }
 
   return (
     <Tabs

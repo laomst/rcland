@@ -88,20 +88,21 @@ export function ConfigTab(): React.ReactElement {
     name: string
     funcName: string
     envVars: typeof configs[number]['envVars']
+    localOnly?: boolean
   }) => {
     const config = createEmptyConfig(values.providerId, values.endpointId, values.keyId)
     addConfig({
       ...config,
       name: values.name.trim(),
       funcName: values.funcName.trim(),
-      envVars: values.envVars
+      envVars: values.envVars,
+      localOnly: values.localOnly
     })
     setAddOpen(false)
   }
 
   const handleAddKey = () => {
-    // TODO: Open provider edit modal to add key
-    // For now, user needs to go to provider tab first
+    // User needs to go to provider tab first to add keys
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -111,42 +112,65 @@ export function ConfigTab(): React.ReactElement {
     }
   }
 
+  // Split into synced and local groups
+  const syncedConfigs = configs.filter((c) => !c.localOnly)
+  const localConfigs = configs.filter((c) => c.localOnly)
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div>
-          <Text strong style={{ fontSize: 15 }}>配置列表</Text>
-          <Text type="secondary" style={{ marginLeft: 8 }}>({configs.length} 个)</Text>
-        </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setAddOpen(true)}
-          disabled={providers.length === 0}
-        >
-          添加配置
-        </Button>
-      </div>
-
       {providers.length === 0
         ? <Empty description="请先在「供应商管理」中添加供应商" />
         : configs.length === 0
-          ? <Empty description="暂无配置，点击右上角添加" />
-          : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={configs.map((c) => c.id)}
-                strategy={verticalListSortingStrategy}
+          ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+              <Empty description="暂无配置" />
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setAddOpen(true)}
               >
-                {configs.map((c, idx) => (
-                  <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
-                ))}
-              </SortableContext>
-            </DndContext>
+                添加配置
+              </Button>
+            </div>
+          )
+          : (
+            <>
+              {/* 同步配置 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <Text strong style={{ fontSize: 14 }}>同步配置 ({syncedConfigs.length})</Text>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  size="small"
+                  onClick={() => setAddOpen(true)}
+                >
+                  添加
+                </Button>
+              </div>
+              {syncedConfigs.length > 0 && (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                    {syncedConfigs.map((c, idx) => (
+                      <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+
+              {/* 本机配置 */}
+              <Text strong style={{ fontSize: 14, display: 'block', marginTop: 16, marginBottom: 8 }}>
+                本机配置 ({localConfigs.length})
+              </Text>
+              {localConfigs.length > 0 && (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                    {localConfigs.map((c, idx) => (
+                      <SortableConfigCard key={c.id} config={c} providers={providers} index={syncedConfigs.length + idx + 1} />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+            </>
           )
       }
 
@@ -160,7 +184,8 @@ export function ConfigTab(): React.ReactElement {
           keyId: firstKeyId,
           name: '',
           funcName: '',
-          envVars: firstTemplateEnvVars
+          envVars: firstTemplateEnvVars,
+          localOnly: false
         }}
         okText="添加"
         onCancel={() => setAddOpen(false)}

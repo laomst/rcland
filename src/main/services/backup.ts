@@ -1,8 +1,8 @@
 import { join } from 'path'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, unlinkSync, copyFileSync } from 'fs'
+import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync, copyFileSync } from 'fs'
 import { loadSettings } from './config'
-import type { ShellType } from '../../shared/shell'
-import type { BackupEntry } from '../../shared/shell-types'
+import type { ShellType } from '@shared/shell'
+import type { BackupEntry } from '@shared/shell-types'
 
 function getBackupDir(shellType: ShellType): string {
   const settings = loadSettings()

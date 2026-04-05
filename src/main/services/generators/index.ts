@@ -1,4 +1,4 @@
-import type { ShellType } from '../../../shared/shell'
+import type { ShellType } from '@shared/shell'
 import type { ShellGenerator } from './base'
 import { ZshGenerator } from './zsh'
 import { BashGenerator } from './bash'

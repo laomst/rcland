@@ -1,14 +1,14 @@
 import { BaseShellGenerator, type DecryptedValues } from './base'
-import type { CCLaunchData, ConfigSet, Provider } from '../../../shared/types'
-import { getEndpointUrl } from '../../../shared/types'
-import { CLAUDE_ENV_VAR_KEYS } from '../../../shared/types'
-import type { ShellType } from '../../../shared/shell'
+import type { CCLaunchData, ConfigSet, Provider } from '@shared/types'
+import { getEndpointUrl } from '@shared/types'
+import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
+import type { ShellType } from '@shared/shell'
 
 export class PowerShellGenerator extends BaseShellGenerator {
   readonly shellType: ShellType = 'powershell'
   readonly sourceMarkers = {
-    begin: '# >>> CCland >>>',
-    end:   '# <<< CCland <<<'
+    begin: '# >>> RCLand >>>',
+    end:   '# <<< RCLand <<<'
   }
 
   generate(data: CCLaunchData, values: DecryptedValues): string {
@@ -31,7 +31,7 @@ export class PowerShellGenerator extends BaseShellGenerator {
     }
 
     if (data.selector.enabled) {
-      const entries = enabledConfigs.map((c) => ({ funcName: c.funcName, label: c.name || c.description || c.funcName }))
+      const entries = enabledConfigs.map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
       if (entries.length > 0) {
         lines.push(this.separator('Selector'))
         lines.push('')
@@ -74,12 +74,12 @@ export class PowerShellGenerator extends BaseShellGenerator {
     values: DecryptedValues
   ): void {
     lines.push('')
-    if (config.description) lines.push(`# ${config.description}`)
+    if (config.name) lines.push(`# ${config.name}`)
 
     const tokenVal = values.get(`token:${config.id}`)
     if (!tokenVal) {
       lines.push(`function ${config.funcName} {`)
-      lines.push(`    Write-Error "配置项 ${config.funcName} 未设置 Token，请在 CCland 中配置"`)
+      lines.push(`    Write-Error "配置项 ${config.funcName} 未设置 Token，请在 RCLand 中配置"`)
       lines.push('}')
       return
     }

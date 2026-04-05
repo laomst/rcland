@@ -1,0 +1,401 @@
+import type {
+  ShellConfigData,
+  ShellVariable,
+  PathEntry,
+  ShellFunction,
+  ShellAlias,
+  LocalShellConfigData
+} from './shell-types'
+
+// ============================================================
+// Factory Helpers
+// ============================================================
+
+/** Generate a UUID v4 (compatible with both Node.js and browser environments) */
+function generateUUID(): string {
+  // Try native crypto.randomUUID first (available in Node.js 16.7+ and modern browsers)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  // Fallback: manual UUID v4 generation
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+export function createEmptyShellConfig(): ShellConfigData {
+  return {
+    version: 1,
+    variables: [],
+    pathEntries: [],
+    functions: [],
+    aliases: [],
+    prompt: { type: 'simple' },
+    output: { profiles: {} }
+  }
+}
+
+export function createEmptyLocalShellConfig(): LocalShellConfigData {
+  return { version: 1, variables: [], pathEntries: [], functions: [], aliases: [] }
+}
+
+export function createEmptyVariable(): ShellVariable {
+  return {
+    id: generateUUID(),
+    key: '',
+    value: '',
+    encrypted: false,
+    enabled: true,
+    order: 0
+  }
+}
+
+export function createEmptyPathEntry(): PathEntry {
+  return {
+    id: generateUUID(),
+    path: '',
+    enabled: true,
+    order: 0
+  }
+}
+
+export function createEmptyFunction(): ShellFunction {
+  return {
+    id: generateUUID(),
+    name: '',
+    category: 'custom',
+    body: {},
+    enabled: true,
+    order: 0
+  }
+}
+
+export function createEmptyAlias(): ShellAlias {
+  return {
+    id: generateUUID(),
+    alias: '',
+    command: '',
+    enabled: true,
+    order: 0
+  }
+}
+
+// ============================================================
+// Built-in Functions (不可删除，只能停用)
+// ============================================================
+
+export const BUILTIN_FUNCTIONS: ShellFunction[] = [
+  {
+    id: 'builtin:pathls',
+    name: 'pathls',
+    category: 'builtin',
+    description: '显示 PATH 列表，-i/--info 显示 RCLand 管理的路径和完整 PATH',
+    body: {
+      zsh: `pathls() {
+  local show_info=false
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -i|--info) show_info=true; shift ;;
+      *) echo "Usage: pathls [-i|--info]" >&2; return 1 ;;
+    esac
+  done
+  if [[ "$show_info" == true ]]; then
+    echo "\\033[1;34m=== _RCLAND_MANAGED_PATH ===\\033[0m"
+    if [[ -n "$_RCLAND_MANAGED_PATH" ]]; then echo "\${(j:\\n:)\${(@s/:/)_RCLAND_MANAGED_PATH}}"; else echo "(empty)"; fi
+    echo "\\n\\033[1;34m=== PATH ===\\033[0m"
+    echo "\${(j:\\n:)\${(@s/:/)PATH}}"
+  else
+    echo "\${(j:\\n:)\${(@s/:/)PATH}}"
+  fi
+}`,
+      bash: `pathls() {
+  local show_info=false
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -i|--info) show_info=true; shift ;;
+      *) echo "Usage: pathls [-i|--info]" >&2; return 1 ;;
+    esac
+  done
+  if [[ "$show_info" == true ]]; then
+    echo -e "\\033[1;34m=== _RCLAND_MANAGED_PATH ===\\033[0m"
+    if [[ -n "$_RCLAND_MANAGED_PATH" ]]; then echo "$_RCLAND_MANAGED_PATH" | tr ':' '\\n'; else echo "(empty)"; fi
+    echo -e "\\n\\033[1;34m=== PATH ===\\033[0m"
+    echo "$PATH" | tr ':' '\\n'
+  else
+    echo "$PATH" | tr ':' '\\n'
+  fi
+}`,
+      powershell: `function pathls {
+  param([switch]$Info)
+  if ($Info) {
+    Write-Host "=== _RCLAND_MANAGED_PATH ===" -ForegroundColor Blue
+    if ($env:_RCLAND_MANAGED_PATH) { $env:_RCLAND_MANAGED_PATH -split ';' | ForEach-Object { Write-Host $_ } } else { Write-Host "(empty)" }
+    Write-Host ""; Write-Host "=== PATH ===" -ForegroundColor Blue
+    $env:PATH -split ';' | ForEach-Object { Write-Host $_ }
+  } else {
+    $env:PATH -split ';' | ForEach-Object { Write-Host $_ }
+  }
+}`
+    },
+    funcNames: { zsh: 'pathls', bash: 'pathls', powershell: 'pathls' },
+    enabled: true,
+    order: -2,
+    builtIn: true
+  },
+  {
+    id: 'builtin:check-env-exists',
+    name: 'check-env-exists',
+    category: 'builtin',
+    description: '检测环境变量是否存在值',
+    body: {
+      zsh: `check-env-exists() {
+  local missing=()
+  for name in "$@"; do
+    if [[ -z "\${(P)name}" ]]; then missing+=("$name"); fi
+  done
+  if [[ \${#missing[@]} -eq 0 ]]; then return 0; fi
+  for name in "\${missing[@]}"; do
+    printf '\\033[1;31m环境变量未设置: %s\\033[0m\\n' "$name"
+  done
+  return 1
+}`,
+      bash: `check-env-exists() {
+  local missing=()
+  for name in "$@"; do
+    if [[ -z "\${!name}" ]]; then missing+=("$name"); fi
+  done
+  if [[ \${#missing[@]} -eq 0 ]]; then return 0; fi
+  for name in "\${missing[@]}"; do
+    printf '\\033[1;31m环境变量未设置: %s\\033[0m\\n' "$name"
+  done
+  return 1
+}`,
+      powershell: `function check-env-exists {
+  param([string[]]$Names)
+  $missing = @()
+  foreach ($name in $Names) {
+    if (-not [System.Environment]::GetEnvironmentVariable($name)) { $missing += $name }
+  }
+  if ($missing.Count -eq 0) { return 0 }
+  foreach ($name in $missing) { Write-Host "环境变量未设置: $name" -ForegroundColor Red }
+  return 1
+}`
+    },
+    funcNames: { zsh: 'check-env-exists', bash: 'check-env-exists', powershell: 'check-env-exists' },
+    enabled: true,
+    order: -1,
+    builtIn: true
+  },
+  {
+    id: 'builtin:prompt-select',
+    name: 'prompt-select',
+    category: 'builtin',
+    description: '通用交互式选择菜单',
+    body: {
+      zsh: `prompt-select() {
+  local title=\$1; shift
+  local options=("\$@" "quit:退出")
+  local _sm_old_xtrace=\$([[ \$- == *x* ]] && echo "on" || echo "off")
+  local _sm_old_ps4=\$PS4
+  set +xv; PS4=''; unsetopt XTRACE VERBOSE 2>/dev/null
+  local _sm_old_stty=\$(stty -g 2>/dev/null); stty -echo 2>/dev/null
+  local keys=() descs=()
+  for opt in "\${options[@]}"; do keys+=("\${opt%%:*}"); descs+=("\${opt#*:}"); done
+  local selected=0 num_options=\${#options[@]} _num_buf="" _menu_lines=\$((num_options + 4)) _menu_drawn=""
+  _sm_cleanup() {
+    [[ -n "\$_menu_drawn" ]] && printf '\\033[%dA\\033[J' "\$_menu_lines"
+    tput cnorm 2>/dev/null; stty "\$_sm_old_stty" 2>/dev/null
+    unfunction _sm_draw _sm_cleanup 2>/dev/null; trap - INT
+  }
+  trap '_sm_cleanup; [[ "\$_sm_old_xtrace" == "on" ]] && set -x && setopt XTRACE VERBOSE 2>/dev/null; PS4=\$_sm_old_ps4; return 130' INT
+  tput civis 2>/dev/null
+  _sm_draw() {
+    [[ -n "\$_menu_drawn" ]] && printf '\\033[%dA' "\$_menu_lines"
+    _menu_drawn=1
+    printf '\\033[K\\n\\033[1;36m  === %s ===\\033[0m\\033[K\\n' "\$title"
+    if [[ -n "\$_num_buf" ]]; then
+      if (( _num_buf >= 1 && _num_buf <= num_options )); then
+        printf '\\033[38;2;160;205;255m  [跳转到: \\033[1;33m%s\\033[0;38;2;160;205;255m | 回车跳转 | 退格修改 | Esc清空]\\033[0m\\033[K\\n' "\$_num_buf"
+      else
+        printf '\\033[38;2;160;205;255m  [跳转到: \\033[1;31m%s (无效，范围 1-%d)\\033[0;38;2;160;205;255m | 退格修改 | Esc清空]\\033[0m\\033[K\\n' "\$_num_buf" "\$num_options"
+      fi
+    else
+      printf '\\033[38;2;160;205;255m  [↑↓ 选择 | 数字快选 | 回车确认 | Esc退出]\\033[0m\\033[K\\n'
+    fi
+    printf '\\033[K\\n'
+    for i in {1..\$num_options}; do
+      if [[ \$i -eq \$((selected + 1)) ]]; then
+        printf '\\033[1;34m> %d. %s\\033[0m\\033[K\\n' "\$i" "\${descs[\$i]}"
+      else
+        printf '\\033[90m  %d. %s\\033[0m\\033[K\\n' "\$i" "\${descs[\$i]}"
+      fi
+    done
+  }
+  _sm_draw
+  local input seq selected_key
+  while true; do
+    input=''; read -sk 1 input 2>/dev/null
+    case \$input in
+      \$'\\x1b')
+        seq=''; read -sk 2 -t 0.001 seq 2>/dev/null
+        if [[ -n "\$_num_buf" ]]; then
+          if [[ -z "\$seq" ]]; then _num_buf=""; _sm_draw; fi
+        else
+          case \$seq in
+            '[A') ((selected--)); ((selected < 0)) && selected=\$((num_options - 1)); _sm_draw ;;
+            '[B') ((selected++)); ((selected >= num_options)) && selected=0; _sm_draw ;;
+            '') selected_key="quit"; break ;;
+          esac
+        fi ;;
+      ''|\$'\\x0d'|\$'\\x0a')
+        if [[ -n "\$_num_buf" ]]; then
+          if (( _num_buf >= 1 && _num_buf <= num_options )); then selected=\$((_num_buf - 1)); fi
+          _num_buf=""; _sm_draw
+        else
+          selected_key="\${keys[\$((selected + 1))]}"; break
+        fi ;;
+      \$'\\x7f'|\$'\\x08') if [[ -n "\$_num_buf" ]]; then _num_buf="\${_num_buf%?}"; _sm_draw; fi ;;
+      [0-9]) _num_buf="\${_num_buf}\${input}"; _sm_draw ;;
+      *) continue ;;
+    esac
+  done
+  _sm_cleanup
+  [[ "\$_sm_old_xtrace" == "on" ]] && set -x && setopt XTRACE VERBOSE 2>/dev/null; PS4=\$_sm_old_ps4
+  [[ "\$selected_key" == "quit" ]] && { printf '\\033[1;31m已取消选择\\033[0m\\n'; return 1; }
+  printf '\\033[1;32m已选择 => %s\\033[0m\\n' "\${descs[\$((selected + 1))]}"
+  REPLY=\$selected_key
+}`,
+      bash: `prompt-select() {
+  local title="\$1"; shift
+  local options=("\$@" "quit:退出")
+  local _sm_old_stty; _sm_old_stty=\$(stty -g 2>/dev/null); stty -echo 2>/dev/null
+  local keys=() descs=()
+  for opt in "\${options[@]}"; do keys+=("\${opt%%:*}"); descs+=("\${opt#*:}"); done
+  local selected=0 num_options=\${#options[@]} _num_buf="" _menu_lines=\$((num_options + 4)) _menu_drawn=""
+  _sm_cleanup() {
+    [[ -n "\$_menu_drawn" ]] && printf '\\033[%dA\\033[J' "\$_menu_lines"
+    tput cnorm 2>/dev/null; stty "\$_sm_old_stty" 2>/dev/null; trap - INT
+  }
+  trap '_sm_cleanup; return 130' INT
+  tput civis 2>/dev/null
+  _sm_draw() {
+    [[ -n "\$_menu_drawn" ]] && printf '\\033[%dA' "\$_menu_lines"
+    _menu_drawn=1
+    printf '\\033[K\\n\\033[1;36m  === %s ===\\033[0m\\033[K\\n' "\$title"
+    if [[ -n "\$_num_buf" ]]; then
+      if (( _num_buf >= 1 && _num_buf <= num_options )); then
+        printf '\\033[38;2;160;205;255m  [跳转到: \\033[1;33m%s\\033[0;38;2;160;205;255m | 回车跳转 | 退格修改 | Esc清空]\\033[0m\\033[K\\n' "\$_num_buf"
+      else
+        printf '\\033[38;2;160;205;255m  [跳转到: \\033[1;31m%s (无效，范围 1-%d)\\033[0;38;2;160;205;255m | 退格修改 | Esc清空]\\033[0m\\033[K\\n' "\$_num_buf" "\$num_options"
+      fi
+    else
+      printf '\\033[38;2;160;205;255m  [↑↓ 选择 | 数字快选 | 回车确认 | Esc退出]\\033[0m\\033[K\\n'
+    fi
+    printf '\\033[K\\n'; local i
+    for (( i=0; i<num_options; i++ )); do
+      if [[ \$i -eq \$selected ]]; then
+        printf '\\033[1;34m> %d. %s\\033[0m\\033[K\\n' "\$((i+1))" "\${descs[\$i]}"
+      else
+        printf '\\033[90m  %d. %s\\033[0m\\033[K\\n' "\$((i+1))" "\${descs[\$i]}"
+      fi
+    done
+  }
+  _sm_draw
+  local input seq selected_key
+  while true; do
+    input=''; IFS= read -rsn 1 input 2>/dev/null
+    case "\$input" in
+      \$'\\x1b')
+        seq=''; IFS= read -rsn 2 -t 0.01 seq 2>/dev/null
+        if [[ -n "\$_num_buf" ]]; then
+          if [[ -z "\$seq" ]]; then _num_buf=""; _sm_draw; fi
+        else
+          case "\$seq" in
+            '[A') ((selected--)); ((selected < 0)) && selected=\$((num_options - 1)); _sm_draw ;;
+            '[B') ((selected++)); ((selected >= num_options)) && selected=0; _sm_draw ;;
+            '') selected_key="quit"; break ;;
+          esac
+        fi ;;
+      ''|\$'\\x0d'|\$'\\x0a')
+        if [[ -n "\$_num_buf" ]]; then
+          if (( _num_buf >= 1 && _num_buf <= num_options )); then selected=\$((_num_buf - 1)); fi
+          _num_buf=""; _sm_draw
+        else
+          selected_key="\${keys[\$selected]}"; break
+        fi ;;
+      \$'\\x7f'|\$'\\x08') if [[ -n "\$_num_buf" ]]; then _num_buf="\${_num_buf%?}"; _sm_draw; fi ;;
+      [0-9]) _num_buf="\${_num_buf}\${input}"; _sm_draw ;;
+      *) continue ;;
+    esac
+  done
+  _sm_cleanup
+  [[ "\$selected_key" == "quit" ]] && { printf '\\033[1;31m已取消选择\\033[0m\\n'; return 1; }
+  printf '\\033[1;32m已选择 => %s\\033[0m\\n' "\${descs[\$selected]}"
+  REPLY="\$selected_key"
+}`,
+      powershell: `function prompt-select {
+  param(
+    [Parameter(Mandatory)][string]\$Title,
+    [Parameter(ValueFromRemainingArguments)][string[]]\$Options
+  )
+  \$Options = @(\$Options) + @("quit:退出")
+  \$keys = @(); \$descs = @()
+  foreach (\$opt in \$Options) {
+    \$parts = \$opt -split ':', 2
+    \$keys += \$parts[0]; \$descs += \$parts[1]
+  }
+  \$selected = 0; \$numOptions = \$Options.Count; \$numBuf = ""
+  [Console]::CursorVisible = \$false
+  \$menuDrawn = \$false
+  function Draw-Menu{
+    if(\$script:menuDrawn){[Console]::SetCursorPosition(0,[Console]::CursorTop-(\$numOptions+3))}
+    \$script:menuDrawn=\$true
+    Write-Host ""
+    Write-Host "  === \$Title ===" -ForegroundColor Cyan
+    if(\$script:numBuf -ne ""){
+      if([int]\$script:numBuf -ge 1 -and [int]\$script:numBuf -le \$numOptions){
+        Write-Host "  [跳转到: \$(\$script:numBuf) | 回车跳转 | 退格修改 | Esc清空]" -ForegroundColor DarkCyan
+      }else{
+        Write-Host "  [跳转到: \$(\$script:numBuf) (无效，范围 1-\$numOptions) | 退格修改 | Esc清空]" -ForegroundColor DarkCyan
+      }
+    }else{Write-Host "  [↑↓ 选择 | 数字快选 | 回车确认 | Esc退出]" -ForegroundColor DarkCyan}
+    for(\$i=0;\$i -lt \$numOptions;\$i++){
+      if(\$i -eq \$script:selected){Write-Host "> \$(\$i+1). \$(\$descs[\$i])" -ForegroundColor Blue}
+      else{Write-Host "  \$(\$i+1). \$(\$descs[\$i])" -ForegroundColor DarkGray}
+    }
+  }
+  try{
+    Draw-Menu
+    while(\$true){
+      \$key = [Console]::ReadKey(\$true)
+      switch(\$key.Key){
+        'UpArrow'{if(\$numBuf -eq ""){\$script:selected=(\$script:selected-1+\$numOptions)%\$numOptions;Draw-Menu}}
+        'DownArrow'{if(\$numBuf -eq ""){\$script:selected=(\$script:selected+1)%\$numOptions;Draw-Menu}}
+        'Enter'{
+          if(\$numBuf -ne ""){
+            \$n=[int]\$numBuf
+            if(\$n -ge 1 -and \$n -le \$numOptions){\$script:selected=\$n-1}
+            \$script:numBuf="";Draw-Menu
+          }else{\$selectedKey=\$keys[\$script:selected];break}
+        }
+        'Escape'{if(\$numBuf -ne ""){\$script:numBuf="";Draw-Menu}else{\$selectedKey="quit";break}}
+        'Backspace'{if(\$numBuf.Length -gt 0){\$script:numBuf=\$numBuf.Substring(0,\$numBuf.Length-1);Draw-Menu}}
+        default{\$ch=\$key.KeyChar;if(\$ch -match '[0-9]'){\$script:numBuf+=\$ch;Draw-Menu}}
+      }
+      if(\$null -ne \$selectedKey){break}
+    }
+  }finally{[Console]::CursorVisible=\$true}
+  if(\$selectedKey -eq "quit"){Write-Host "已取消选择" -ForegroundColor Red;return \$false}
+  Write-Host "已选择 => \$(\$descs[\$script:selected])" -ForegroundColor Green
+  \$global:REPLY = \$selectedKey
+  return \$true
+}`
+    },
+    funcNames: { zsh: 'prompt-select', bash: 'prompt-select', powershell: 'prompt-select' },
+    enabled: true,
+    order: -1,
+    builtIn: true
+  }
+]

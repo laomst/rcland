@@ -1,5 +1,5 @@
-import type { CCLaunchData } from '../../../shared/types'
-import type { ShellType } from '../../../shared/shell'
+import type { CCLaunchData } from '@shared/types'
+import type { ShellType } from '@shared/shell'
 
 export interface DecryptedValues {
   get: (key: string) => string
@@ -20,7 +20,7 @@ export abstract class BaseShellGenerator implements ShellGenerator {
 
   protected header(): string {
     return [
-      '# 由 CCland 自动生成，请勿手动编辑',
+      '# 由 RCLand 自动生成，请勿手动编辑',
       `# 生成时间: ${new Date().toLocaleString('zh-CN')}`,
       ''
     ].join('\n')

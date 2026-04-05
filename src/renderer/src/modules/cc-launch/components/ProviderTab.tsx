@@ -106,15 +106,8 @@ export function ProviderTab(): React.ReactElement {
       {providers.length === 0
         ? <Empty description="暂无供应商，点击右上角添加" />
         : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={providers.map((p) => p.id)}
-              strategy={verticalListSortingStrategy}
-            >
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={providers.map((p) => p.id)} strategy={verticalListSortingStrategy}>
               {providers.map((p, idx) => (
                 <SortableProviderCard key={p.id} provider={p} index={idx + 1} />
               ))}

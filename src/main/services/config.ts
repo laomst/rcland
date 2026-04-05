@@ -1,10 +1,10 @@
 import { app, dialog } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import type { AppSettings, CCLaunchDataV2, CCLaunchDataV3, CCLaunchDataV4 } from '../../shared/types'
-import { migrateV2ToV3, migrateV3ToV4, migrateV4ToV5 } from '../../shared/migration'
-import { SHELL_DEFAULTS } from '../../shared/shell'
+import type { AppSettings, CCLaunchData, Provider, ConfigSet, LocalCCLaunchData } from '@shared/types'
+import type { ShellType } from '@shared/shell'
 import { platform } from 'os'
+import { loadLocalCCConfig, saveLocalCCConfig } from './local-cc-config'
 
 const SETTINGS_FILENAME = 'settings.json'
 const DATA_FILENAME = 'rcland.config.claudecode.json'
@@ -28,17 +28,12 @@ function getDefaultSettings(): AppSettings {
     win32: 'powershell',
     linux: 'bash'
   }
-  const defaultShell = osShells[platform()] ?? 'zsh'
+  const defaultShell = (osShells[platform()] ?? 'zsh') as ShellType
   return {
-    configDir: join(home, '.ccland'),
-    keyFilePath: join(home, '.ccland', 'keyfile.key'),
+    configDir: join(home, '.rcland'),
+    keyFilePath: join(home, '.rcland', 'keyfile.key'),
     shellProfiles: {
-      [defaultShell]: {
-        enabled: true,
-        profilePath: SHELL_DEFAULTS[defaultShell].profilePath,
-        outputPath: join(home, `cctokenrc${SHELL_DEFAULTS[defaultShell].outputFileExt}`),
-        autoSource: true
-      }
+      [defaultShell]: { enabled: true }
     }
   }
 }
@@ -80,42 +75,84 @@ export function setConfigDir(dir: string): void {
 export function loadData(): string | null {
   const settings = loadSettings()
   const p = join(settings.configDir, DATA_FILENAME)
-  if (!existsSync(p)) return null
 
-  const raw = readFileSync(p, 'utf-8')
-  const parsed = JSON.parse(raw)
+  // Load synced data
+  let syncedData: CCLaunchData | null = null
+  if (existsSync(p)) {
+    const raw = readFileSync(p, 'utf-8')
+    const parsed = JSON.parse(raw)
 
-  // Auto-migrate v2 → v3 (which also migrates to v5)
-  if (parsed.version === 2) {
-    const migrated = migrateV2ToV3(parsed as CCLaunchDataV2)
-    const migratedJson = JSON.stringify(migrated, null, 2)
-    writeFileSync(p, migratedJson, 'utf-8')
-    return migratedJson
+    if (parsed.version === 5) {
+      syncedData = parsed
+    }
   }
 
-  // Auto-migrate v3 → v4 (which also migrates to v5)
-  if (parsed.version === 3) {
-    const migrated = migrateV3ToV4(parsed as CCLaunchDataV3)
-    const migratedJson = JSON.stringify(migrated, null, 2)
-    writeFileSync(p, migratedJson, 'utf-8')
-    return migratedJson
+  // Load local data
+  const localData = loadLocalCCConfig()
+
+  // Merge: local items get localOnly=true
+  const localProviders = localData.providers.map(p => ({ ...p, localOnly: true }))
+  const localConfigs = localData.configs.map(c => ({ ...c, localOnly: true }))
+
+  // Combine synced + local
+  const merged: CCLaunchData = {
+    version: 5,
+    providers: [...(syncedData?.providers ?? []), ...localProviders],
+    configs: [...(syncedData?.configs ?? []), ...localConfigs],
+    selector: syncedData?.selector ?? { enabled: false, funcName: 'cc', promptTitle: '选择启动器' }
   }
 
-  // Auto-migrate v4 → v5
-  if (parsed.version === 4) {
-    const migrated = migrateV4ToV5(parsed as CCLaunchDataV4)
-    const migratedJson = JSON.stringify(migrated, null, 2)
-    writeFileSync(p, migratedJson, 'utf-8')
-    return migratedJson
+  // Return null if no data at all
+  if (merged.providers.length === 0 && merged.configs.length === 0 && !syncedData) {
+    return null
   }
 
-  return raw
+  return JSON.stringify(merged)
+}
+
+/** Split items by localOnly flag, stripping localOnly from synced items */
+function splitByLocal<T extends { localOnly?: boolean }>(items: T[]): { synced: Omit<T, 'localOnly'>[]; local: T[] } {
+  const synced: Omit<T, 'localOnly'>[] = []
+  const local: T[] = []
+  for (const item of items) {
+    if (item.localOnly) {
+      local.push(item)
+    } else {
+      const { localOnly: _, ...rest } = item as T & { localOnly?: boolean }
+      synced.push(rest as Omit<T, 'localOnly'>)
+    }
+  }
+  return { synced, local }
 }
 
 export function saveData(json: string): void {
   const settings = loadSettings()
   ensureConfigDir(settings.configDir)
-  writeFileSync(join(settings.configDir, DATA_FILENAME), json, 'utf-8')
+
+  const data: CCLaunchData = JSON.parse(json)
+
+  // Split providers
+  const { synced: syncedProviders, local: localProviders } = splitByLocal(data.providers)
+
+  // Split configs
+  const { synced: syncedConfigs, local: localConfigs } = splitByLocal(data.configs)
+
+  // Save synced data (without localOnly field)
+  const syncedData: CCLaunchData = {
+    version: 5,
+    providers: syncedProviders as Provider[],
+    configs: syncedConfigs as ConfigSet[],
+    selector: data.selector
+  }
+  writeFileSync(join(settings.configDir, DATA_FILENAME), JSON.stringify(syncedData, null, 2), 'utf-8')
+
+  // Save local data (with localOnly field stripped, we'll re-add on load)
+  const localData: LocalCCLaunchData = {
+    version: 1,
+    providers: localProviders.map(p => { const { localOnly: _, ...rest } = p; return rest }) as Provider[],
+    configs: localConfigs.map(c => { const { localOnly: _, ...rest } = c; return rest }) as ConfigSet[]
+  }
+  saveLocalCCConfig(localData)
 }
 
 // ============================================================

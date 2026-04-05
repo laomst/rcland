@@ -1,5 +1,5 @@
 import type { ShellConfigData } from './shell-types'
-import { createEmptyShellConfig } from './shell-types'
+import { createEmptyShellConfig } from './builtin-functions'
 
 /**
  * Migrate shell config data from any version to latest.

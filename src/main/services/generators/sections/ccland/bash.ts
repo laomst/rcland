@@ -1,19 +1,18 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
-import type { CCLaunchData, ConfigSet, Provider } from '../../../../../shared/types'
-import { getEndpointUrl, CLAUDE_ENV_VAR_KEYS } from '../../../../../shared/types'
-import type { ShellType } from '../../../../../shared/shell'
-import type { CClandSectionData } from './zsh'
+import type { ConfigSet, Provider } from '@shared/types'
+import { getEndpointUrl, CLAUDE_ENV_VAR_KEYS } from '@shared/types'
+import type { ShellType } from '@shared/shell'
+import type { CCLandSectionData } from './zsh'
 
-export class CClandBashGenerator implements SectionGenerator<CClandSectionData> {
+export class CCLandBashGenerator implements SectionGenerator<CCLandSectionData> {
   readonly sectionName = 'ccland'
   readonly shellType: ShellType = 'bash'
 
-  generate(data: CClandSectionData, ctx: GenerateContext): string {
+  generate(data: CCLandSectionData, ctx: GenerateContext): string {
     const { ccConfig, decryptedTokens } = data
     const lines: string[] = []
 
-    lines.push('# === Claude Code 配置 ===')
-    lines.push('# >>> CCland CC >>>')
+    // CC launch functions
 
     const providerMap = new Map(ccConfig.providers.map((p) => [p.id, p]))
     const enabledProviderIds = new Set(ccConfig.providers.filter((p) => p.enabled).map((p) => p.id))
@@ -48,7 +47,6 @@ export class CClandBashGenerator implements SectionGenerator<CClandSectionData> 
       }
     }
 
-    lines.push('# <<< CCland CC <<<')
     return lines.join('\n')
   }
 
@@ -62,7 +60,7 @@ export class CClandBashGenerator implements SectionGenerator<CClandSectionData> 
 
     const tokenVal = tokens.get(`token:${config.id}`)
     if (!tokenVal) {
-      lines.push(`${config.funcName}() { echo "\\033[31m错误: 配置项 ${config.funcName} 未设置 Token.请在 CCland 中配置\\033[0m" >&2; return 1; }`)
+      lines.push(`${config.funcName}() { echo "\\033[31m错误: 配置项 ${config.funcName} 未设置 Token.请在 RCLand 中配置\\033[0m" >&2; return 1; }`)
       return
     }
 

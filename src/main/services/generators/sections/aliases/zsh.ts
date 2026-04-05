@@ -1,6 +1,6 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
-import type { ShellAlias } from '../../../../../shared/shell-types'
-import type { ShellType } from '../../../../../shared/shell'
+import type { ShellAlias } from '@shared/shell-types'
+import type { ShellType } from '@shared/shell'
 
 export class AliasesZshGenerator implements SectionGenerator<ShellAlias[]> {
   readonly sectionName = 'aliases'
@@ -12,9 +12,8 @@ export class AliasesZshGenerator implements SectionGenerator<ShellAlias[]> {
     )
     if (items.length === 0) return ''
 
-    const lines: string[] = ['# === 别名 ===']
+    const lines: string[] = []
     for (const a of items) {
-      if (a.description) lines.push(`# ${a.description}`)
       lines.push(`alias ${a.alias}='${a.command.replace(/'/g, "'\\''")}'`)
     }
     return lines.join('\n')

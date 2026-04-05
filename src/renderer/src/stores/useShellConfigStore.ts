@@ -9,18 +9,8 @@ import type {
   OutputConfig,
   ConflictCheckResult
 } from '@shared/shell-types'
-import { createEmptyShellConfig } from '@shared/shell-types'
-
-/** Helper to reorder an array by moving an item from one position to another */
-function reorder<T extends { id: string }>(arr: T[], activeId: string, overId: string): T[] {
-  const oldIndex = arr.findIndex((x) => x.id === activeId)
-  const newIndex = arr.findIndex((x) => x.id === overId)
-  if (oldIndex === -1 || newIndex === -1) return arr
-  const result = [...arr]
-  const [removed] = result.splice(oldIndex, 1)
-  result.splice(newIndex, 0, removed)
-  return result
-}
+import { createEmptyShellConfig, BUILTIN_FUNCTIONS } from '@shared/builtin-functions'
+import { createShellConfigCrud } from './crud-helpers'
 
 export interface ShellConfigState {
   shellConfig: ShellConfigData
@@ -64,156 +54,107 @@ export interface ShellConfigState {
   checkConflicts: () => Promise<ConflictCheckResult>
 }
 
-export const useShellConfigStore = create<ShellConfigState>((set, get) => ({
-  shellConfig: createEmptyShellConfig(),
-  dataLoaded: false,
+export const useShellConfigStore = create<ShellConfigState>((set, get) => {
+  const variablesCrud = createShellConfigCrud<ShellVariable>('variables', get, set)
+  const pathEntriesCrud = createShellConfigCrud<PathEntry>('pathEntries', get, set)
+  const functionsCrud = createShellConfigCrud<ShellFunction>('functions', get, set)
+  const aliasesCrud = createShellConfigCrud<ShellAlias>('aliases', get, set)
 
-  loadShellConfig: async () => {
-    const json = await window.electronAPI.loadShellConfig()
-    const data: ShellConfigData = JSON.parse(json)
-    set({ shellConfig: data, dataLoaded: true })
-  },
+  return {
+    shellConfig: createEmptyShellConfig(),
+    dataLoaded: false,
 
-  saveShellConfig: async () => {
-    const { shellConfig } = get()
-    await window.electronAPI.saveShellConfig(JSON.stringify(shellConfig))
-  },
+    loadShellConfig: async () => {
+      const json = await window.electronAPI.loadShellConfig()
+      const data: ShellConfigData = JSON.parse(json)
+      // 合并内置函数：保留用户的 enabled 状态，其余用内置定义覆盖
+      const userFunctions = data.functions.filter((f) => !f.builtIn)
+      const mergedBuiltIns = BUILTIN_FUNCTIONS.map((bi) => {
+        const existing = data.functions.find((f) => f.id === bi.id)
+        return { ...bi, enabled: existing ? existing.enabled : bi.enabled }
+      })
+      data.functions = [...mergedBuiltIns, ...userFunctions]
+      set({ shellConfig: data, dataLoaded: true })
+    },
 
-  // Variables
-  addVariable: (v) => {
-    set((s) => ({ shellConfig: { ...s.shellConfig, variables: [...s.shellConfig.variables, v] } }))
-    get().saveShellConfig()
-  },
-
-  updateVariable: (id, patch) => {
-    set((s) => ({
-      shellConfig: {
-        ...s.shellConfig,
-        variables: s.shellConfig.variables.map((v) => (v.id === id ? { ...v, ...patch } : v))
+    saveShellConfig: async () => {
+      const { shellConfig } = get()
+      // 内置函数只保存 id 和 enabled，body 等字段从代码定义加载
+      const dataToSave = {
+        ...shellConfig,
+        functions: shellConfig.functions.map((f) =>
+          f.builtIn ? { id: f.id, enabled: f.enabled, builtIn: true } : f
+        )
       }
-    }))
-    get().saveShellConfig()
-  },
+      await window.electronAPI.saveShellConfig(JSON.stringify(dataToSave))
+    },
 
-  removeVariable: (id) => {
-    set((s) => ({
-      shellConfig: { ...s.shellConfig, variables: s.shellConfig.variables.filter((v) => v.id !== id) }
-    }))
-    get().saveShellConfig()
-  },
+    // Variables
+    addVariable: variablesCrud.add,
+    updateVariable: variablesCrud.update,
+    removeVariable: variablesCrud.remove,
+    reorderVariables: variablesCrud.reorder,
 
-  reorderVariables: (activeId, overId) => {
-    set((s) => ({
-      shellConfig: { ...s.shellConfig, variables: reorder(s.shellConfig.variables, activeId, overId) }
-    }))
-    get().saveShellConfig()
-  },
+    // PATH
+    addPathEntry: pathEntriesCrud.add,
+    updatePathEntry: pathEntriesCrud.update,
+    removePathEntry: pathEntriesCrud.remove,
+    reorderPathEntries: pathEntriesCrud.reorder,
 
-  // PATH
-  addPathEntry: (e) => {
-    set((s) => ({ shellConfig: { ...s.shellConfig, pathEntries: [...s.shellConfig.pathEntries, e] } }))
-    get().saveShellConfig()
-  },
+    // Functions — add and reorder from factory; update and remove are custom
+    addFunction: functionsCrud.add,
 
-  updatePathEntry: (id, patch) => {
-    set((s) => ({
-      shellConfig: {
-        ...s.shellConfig,
-        pathEntries: s.shellConfig.pathEntries.map((p) => (p.id === id ? { ...p, ...patch } : p))
-      }
-    }))
-    get().saveShellConfig()
-  },
+    updateFunction: (id, patch) => {
+      set((s) => ({
+        shellConfig: {
+          ...s.shellConfig,
+          functions: s.shellConfig.functions.map((f) => {
+            if (f.id !== id) return f
+            // 内置函数忽略 enabled 字段的修改
+            if (f.builtIn && 'enabled' in patch) {
+              const { enabled: _, ...rest } = patch
+              return { ...f, ...rest }
+            }
+            return { ...f, ...patch }
+          })
+        }
+      }))
+      get().saveShellConfig()
+    },
 
-  removePathEntry: (id) => {
-    set((s) => ({
-      shellConfig: { ...s.shellConfig, pathEntries: s.shellConfig.pathEntries.filter((p) => p.id !== id) }
-    }))
-    get().saveShellConfig()
-  },
+    removeFunction: (id) => {
+      const fn = get().shellConfig.functions.find((f) => f.id === id)
+      if (fn?.builtIn) return
+      set((s) => ({
+        shellConfig: { ...s.shellConfig, functions: s.shellConfig.functions.filter((f) => f.id !== id) }
+      }))
+      get().saveShellConfig()
+    },
 
-  reorderPathEntries: (activeId, overId) => {
-    set((s) => ({
-      shellConfig: { ...s.shellConfig, pathEntries: reorder(s.shellConfig.pathEntries, activeId, overId) }
-    }))
-    get().saveShellConfig()
-  },
+    reorderFunctions: functionsCrud.reorder,
 
-  // Functions
-  addFunction: (fn) => {
-    set((s) => ({ shellConfig: { ...s.shellConfig, functions: [...s.shellConfig.functions, fn] } }))
-    get().saveShellConfig()
-  },
+    // Aliases
+    addAlias: aliasesCrud.add,
+    updateAlias: aliasesCrud.update,
+    removeAlias: aliasesCrud.remove,
+    reorderAliases: aliasesCrud.reorder,
 
-  updateFunction: (id, patch) => {
-    set((s) => ({
-      shellConfig: {
-        ...s.shellConfig,
-        functions: s.shellConfig.functions.map((f) => (f.id === id ? { ...f, ...patch } : f))
-      }
-    }))
-    get().saveShellConfig()
-  },
+    // Prompt
+    updatePrompt: (config) => {
+      set((s) => ({ shellConfig: { ...s.shellConfig, prompt: config } }))
+      get().saveShellConfig()
+    },
 
-  removeFunction: (id) => {
-    set((s) => ({
-      shellConfig: { ...s.shellConfig, functions: s.shellConfig.functions.filter((f) => f.id !== id) }
-    }))
-    get().saveShellConfig()
-  },
+    // Output
+    updateOutput: (config) => {
+      set((s) => ({ shellConfig: { ...s.shellConfig, output: config } }))
+      get().saveShellConfig()
+    },
 
-  reorderFunctions: (activeId, overId) => {
-    set((s) => ({
-      shellConfig: { ...s.shellConfig, functions: reorder(s.shellConfig.functions, activeId, overId) }
-    }))
-    get().saveShellConfig()
-  },
-
-  // Aliases
-  addAlias: (a) => {
-    set((s) => ({ shellConfig: { ...s.shellConfig, aliases: [...s.shellConfig.aliases, a] } }))
-    get().saveShellConfig()
-  },
-
-  updateAlias: (id, patch) => {
-    set((s) => ({
-      shellConfig: {
-        ...s.shellConfig,
-        aliases: s.shellConfig.aliases.map((a) => (a.id === id ? { ...a, ...patch } : a))
-      }
-    }))
-    get().saveShellConfig()
-  },
-
-  removeAlias: (id) => {
-    set((s) => ({
-      shellConfig: { ...s.shellConfig, aliases: s.shellConfig.aliases.filter((a) => a.id !== id) }
-    }))
-    get().saveShellConfig()
-  },
-
-  reorderAliases: (activeId, overId) => {
-    set((s) => ({
-      shellConfig: { ...s.shellConfig, aliases: reorder(s.shellConfig.aliases, activeId, overId) }
-    }))
-    get().saveShellConfig()
-  },
-
-  // Prompt
-  updatePrompt: (config) => {
-    set((s) => ({ shellConfig: { ...s.shellConfig, prompt: config } }))
-    get().saveShellConfig()
-  },
-
-  // Output
-  updateOutput: (config) => {
-    set((s) => ({ shellConfig: { ...s.shellConfig, output: config } }))
-    get().saveShellConfig()
-  },
-
-  // Conflict check
-  checkConflicts: async () => {
-    const { shellConfig } = get()
-    return window.electronAPI.checkConflicts(JSON.stringify(shellConfig))
+    // Conflict check
+    checkConflicts: async () => {
+      const { shellConfig } = get()
+      return window.electronAPI.checkConflicts(JSON.stringify(shellConfig))
+    }
   }
-}))
+})

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { ShellType } from '../shared/shell'
+import type { ShellType } from '@shared/shell'
 
 export interface ElectronAPI {
   // Config

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CCland is an Electron desktop app for managing Claude Code CLI configurations. It manages Providers (API suppliers), ConfigSets (launch configurations with tokens and env vars), and generates shell config files for zsh/bash/fish/PowerShell.
+RCLand (Run Configuration Land) is an Electron desktop app for managing shell runtime configurations. It manages environment variables, PATH entries, shell functions, aliases, and Claude Code launch configurations (Providers, ConfigSets with tokens and env vars), generating shell config files for zsh/bash/PowerShell.
 
 ## Build & Dev Commands
 

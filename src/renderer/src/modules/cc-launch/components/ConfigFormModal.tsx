@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Input, Modal, Form, Space, Select, Divider, Typography, Button } from 'antd'
+import { Input, Modal, Form, Space, Select, Divider, Typography, Button, Switch } from 'antd'
 import { PlusOutlined, LockOutlined } from '@ant-design/icons'
 import type { ConfigSet, Provider, EnvVarSetting } from '@shared/types'
 import { EnvVarEditor } from './EnvVarEditor'
@@ -13,6 +13,7 @@ interface FormValues {
   name: string
   funcName: string
   envVars: ConfigSet['envVars']
+  localOnly?: boolean
 }
 
 interface ConfigFormModalProps {
@@ -178,6 +179,19 @@ export function ConfigFormModal({
             placeholder="如: cc-glm5"
             style={{ fontFamily: 'monospace' }}
           />
+        </Form.Item>
+        <Form.Item label="仅本机">
+          <Space>
+            <Switch
+              checked={form.localOnly ?? false}
+              onChange={(checked) => setForm((f) => ({ ...f, localOnly: checked }))}
+            />
+            {form.localOnly && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                此配置仅保存在本机，不会同步到其他设备
+              </Text>
+            )}
+          </Space>
         </Form.Item>
         <Divider style={{ margin: '8px 0' }}>Claude 环境变量</Divider>
         <EnvVarEditor envVars={form.envVars} onChange={handleEnvVarChange} />

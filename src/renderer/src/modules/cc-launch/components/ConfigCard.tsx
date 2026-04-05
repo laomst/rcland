@@ -1,20 +1,12 @@
 import { useState } from 'react'
 import { Button, Space, Switch, Typography, Tooltip, App, Select } from 'antd'
-import { EditOutlined, DeleteOutlined, WarningOutlined, CopyOutlined, LockOutlined, HolderOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined, WarningOutlined, CopyOutlined, LockOutlined } from '@ant-design/icons'
 import type { ConfigSet, Provider } from '@shared/types'
 import { useAppStore } from '@renderer/stores/useAppStore'
 import { ConfigFormModal } from './ConfigFormModal'
+import { ItemRow } from '@renderer/components/ItemRow'
 
 const { Text } = Typography
-
-/** Fixed column style with ellipsis */
-const fixedCol = (width: number): React.CSSProperties => ({
-  width,
-  flexShrink: 0,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap'
-})
 
 /** Flexible column style with ellipsis */
 const flexCol = (flex: number): React.CSSProperties => ({
@@ -46,61 +38,21 @@ export function ConfigCard({
   const accent = provider?.color || '#1677ff'
   const providerDisabled = !provider?.enabled
 
-  // Find the key for this config
   const key = provider?.keys.find((k) => k.id === config.keyId)
   const keyMissing = !key && config.keyId
 
-  const configName = config.name || config.description || config.funcName
+  const configName = config.name || config.funcName
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        {/* Index Number - outside card */}
-        {index !== undefined && (
-          <Text type="secondary" style={{ width: 24, textAlign: 'right', flexShrink: 0, fontSize: 12 }}>
-            {index}.
-          </Text>
-        )}
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          flex: 1,
-          background: !config.enabled ? '#f0f0f0' : providerDisabled ? '#fff7e6' : '#f6f8fa',
-          border: `1.5px solid ${providerDisabled ? '#faad14' : accent}40`,
-          borderRadius: 6,
-          padding: '8px 12px',
-          opacity: isDragging ? 0.5 : config.enabled ? 1 : 0.6
-        }}>
-          {/* Drag Handle */}
-          <div
-            {...dragHandleProps}
-            style={{ cursor: 'grab', color: '#999', display: 'flex', alignItems: 'center' }}
-          >
-            <HolderOutlined />
-          </div>
-
-          {/* 1. Provider - fixed */}
-          <Tooltip title={provider?.name ?? '未知'}>
-            <Space size={4} style={fixedCol(110)}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, display: 'inline-block', flexShrink: 0 }} />
-              <Text style={{ fontSize: 12 }}>{provider?.name ?? '未知'}</Text>
-            </Space>
-          </Tooltip>
-
-        <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>|</Text>
-
-        {/* 2. Config Name + Function Name - flexible, most important */}
-        <Tooltip title={`${configName} (${config.funcName})`}>
-          <Space size={6} style={flexCol(1)}>
-            <Text strong style={{ fontSize: 12 }}>{configName}</Text>
-            <Text code style={{ fontSize: 11, color: '#666' }}>({config.funcName})</Text>
-          </Space>
-        </Tooltip>
-
-        {/* 3. Selectors + Actions - fixed width on the right */}
-        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <ItemRow
+        index={index}
+        isDragging={isDragging}
+        enabled={config.enabled}
+        borderColor={providerDisabled ? '#faad14' : accent}
+        background={!config.enabled ? '#f0f0f0' : providerDisabled ? '#fff7e6' : '#f6f8fa'}
+        dragHandleProps={dragHandleProps}
+        actions={<>
           {/* Endpoint Selector */}
           <Select
             size="small"
@@ -164,14 +116,42 @@ export function ConfigCard({
               })
             }} />
           </Tooltip>
+          <Select
+            size="small"
+            variant="borderless"
+            value={config.localOnly ? 'local' : 'sync'}
+            onChange={(val) => updateConfig(config.id, { localOnly: val === 'local' })}
+            style={{ width: 70 }}
+            options={[
+              { value: 'sync', label: '同步' },
+              { value: 'local', label: '本机' }
+            ]}
+          />
           <Switch
             size="small"
             checked={config.enabled}
             onChange={(checked) => updateConfig(config.id, { enabled: checked })}
           />
-        </div>
-        </div>
-      </div>
+        </>}
+      >
+        {/* 1. Provider - fixed */}
+        <Tooltip title={provider?.name ?? '未知'}>
+          <Space size={4} style={{ width: 110, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, display: 'inline-block', flexShrink: 0 }} />
+            <Text style={{ fontSize: 12 }}>{provider?.name ?? '未知'}</Text>
+          </Space>
+        </Tooltip>
+
+        <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>|</Text>
+
+        {/* 2. Config Name + Function Name - flexible */}
+        <Tooltip title={`${configName} (${config.funcName})`}>
+          <div style={{ ...flexCol(1), display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Text strong style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>{configName}</Text>
+            <Text code style={{ fontSize: 11, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>({config.funcName})</Text>
+          </div>
+        </Tooltip>
+      </ItemRow>
 
       <ConfigFormModal
         open={editOpen}
@@ -182,9 +162,10 @@ export function ConfigCard({
           providerId: config.providerId,
           endpointId: config.endpointId,
           keyId: config.keyId,
-          name: config.name || config.description || '',
+          name: config.name || '',
           funcName: config.funcName,
-          envVars: { ...config.envVars }
+          envVars: { ...config.envVars },
+          localOnly: config.localOnly ?? false
         }}
         okText="保存"
         onCancel={() => setEditOpen(false)}
