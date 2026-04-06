@@ -7,6 +7,7 @@ import {
   FileTextOutlined,
   ApiOutlined
 } from '@ant-design/icons'
+import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 
 const menuItems = [
   { key: '/env', label: '环境变量', icon: <AppstoreOutlined /> },
@@ -19,11 +20,12 @@ const menuItems = [
 export function ModuleNav(): React.ReactElement {
   const navigate = useNavigate()
   const location = useLocation()
+  const settings = useSettingsStore((s) => s.settings)
   return (
     <Menu
       theme="dark"
       mode="inline"
-      selectedKeys={[location.pathname === '/' ? '/env' : location.pathname]}
+      selectedKeys={[location.pathname === '/' ? (settings?.defaultPage || '/env') : location.pathname]}
       items={menuItems}
       onClick={({ key }) => navigate(key)}
       style={{ borderRight: 0 }}

@@ -39,10 +39,21 @@ export type EnvVarsMap = Partial<Record<ClaudeEnvVarKey, EnvVarSetting>>
 // App Settings (per-device, stored in Electron userData)
 // ============================================================
 
+export type AppPage = '/env' | '/path' | '/functions' | '/aliases' | '/ccland'
+
+export const APP_PAGE_LABELS: Record<AppPage, string> = {
+  '/env': '环境变量',
+  '/path': 'PATH',
+  '/functions': '函数',
+  '/aliases': '别名',
+  '/ccland': 'CCLand',
+}
+
 export interface AppSettings {
   configDir: string
   keyFilePath: string
   shellProfiles: Partial<Record<ShellType, ShellProfileConfig>>
+  defaultPage?: AppPage
 }
 
 // ============================================================

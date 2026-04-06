@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, Empty, Typography, Spin } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { Typography, Spin } from 'antd'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
@@ -9,9 +8,10 @@ import { ALL_SHELL_TYPES } from '@shared/shell'
 import { EnvVarCard } from '../components/EnvVarCard'
 import { EnvVarFormModal, type EnvVarFormValues } from '../components/EnvVarFormModal'
 import { SortableWrapper } from '@renderer/components/SortableWrapper'
+import { GroupHeader } from '@renderer/components/GroupHeader'
 import { useSortableList } from '@renderer/hooks/useSortableList'
 
-const { Text } = Typography
+const { Title } = Typography
 
 export function EnvVarPage(): React.ReactElement {
   const variables = useShellConfigStore((s) => s.shellConfig.variables)
@@ -20,6 +20,8 @@ export function EnvVarPage(): React.ReactElement {
   const addVariable = useShellConfigStore((s) => s.addVariable)
   const reorderVariables = useShellConfigStore((s) => s.reorderVariables)
 
+  const [syncCollapsed, setSyncCollapsed] = useState(false)
+  const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [editingVarId, setEditingVarId] = useState<string | null>(null)
   const [initialFormValues, setInitialFormValues] = useState<EnvVarFormValues>({
@@ -43,11 +45,11 @@ export function EnvVarPage(): React.ReactElement {
     reorderVariables
   )
 
-  // 添加空白变量
-  const handleAdd = () => {
+  const handleAdd = (localOnly: boolean) => {
     const newVar = createEmptyVariable()
     addVariable({
       ...newVar,
+      localOnly,
       order: variables.length
     })
     setEditingVarId(newVar.id)
@@ -57,7 +59,7 @@ export function EnvVarPage(): React.ReactElement {
       encrypted: false,
       description: '',
       shells: [...ALL_SHELL_TYPES],
-      localOnly: false
+      localOnly
     })
     setAddOpen(true)
   }
@@ -72,71 +74,45 @@ export function EnvVarPage(): React.ReactElement {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div>
-          <Text strong style={{ fontSize: 15 }}>环境变量</Text>
-          <Text type="secondary" style={{ marginLeft: 8 }}>({variables.length} 个)</Text>
-        </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleAdd}
-        >
-          添加变量
-        </Button>
-      </div>
+      <Title level={4} style={{ marginBottom: 16 }}>环境变量</Title>
 
-      {variables.length === 0
-        ? <Empty description="暂无环境变量，点击右上角添加" />
-        : (
-          <>
-            {syncedVars.length > 0 && (
-              <>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
-                  同步配置 ({syncedVars.length})
-                </Text>
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={syncedVars.map((v) => v.id)} strategy={verticalListSortingStrategy}>
-                    {syncedVars.map((v, idx) => (
-                      <SortableWrapper key={v.id} id={v.id}>
-                        {(dragHandleProps) => (
-                          <EnvVarCard
-                            variable={v}
-                            index={idx + 1}
-                            dragHandleProps={dragHandleProps as any}
-                          />
-                        )}
-                      </SortableWrapper>
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              </>
-            )}
-            {localVars.length > 0 && (
-              <>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: syncedVars.length > 0 ? 16 : 0, marginBottom: 8 }}>
-                  本机配置 ({localVars.length})
-                </Text>
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={localVars.map((v) => v.id)} strategy={verticalListSortingStrategy}>
-                    {localVars.map((v, idx) => (
-                      <SortableWrapper key={v.id} id={v.id}>
-                        {(dragHandleProps) => (
-                          <EnvVarCard
-                            variable={v}
-                            index={syncedVars.length + idx + 1}
-                            dragHandleProps={dragHandleProps as any}
-                          />
-                        )}
-                      </SortableWrapper>
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              </>
-            )}
-          </>
-        )
-      }
+      <GroupHeader title="同步配置" count={syncedVars.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+      {!syncCollapsed && syncedVars.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={syncedVars.map((v) => v.id)} strategy={verticalListSortingStrategy}>
+            {syncedVars.map((v, idx) => (
+              <SortableWrapper key={v.id} id={v.id}>
+                {(dragHandleProps) => (
+                  <EnvVarCard
+                    variable={v}
+                    index={idx + 1}
+                    dragHandleProps={dragHandleProps as any}
+                  />
+                )}
+              </SortableWrapper>
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
+
+      <GroupHeader title="本机配置" count={localVars.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      {!localCollapsed && localVars.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={localVars.map((v) => v.id)} strategy={verticalListSortingStrategy}>
+            {localVars.map((v, idx) => (
+              <SortableWrapper key={v.id} id={v.id}>
+                {(dragHandleProps) => (
+                  <EnvVarCard
+                    variable={v}
+                    index={syncedVars.length + idx + 1}
+                    dragHandleProps={dragHandleProps as any}
+                  />
+                )}
+              </SortableWrapper>
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
 
       <EnvVarFormModal
         open={addOpen}

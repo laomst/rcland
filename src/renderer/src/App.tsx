@@ -95,7 +95,7 @@ function AppLayout(): React.ReactElement {
         <Layout>
           <Content className="content-area">
             <Routes>
-              <Route path="/" element={<Navigate to="/env" replace />} />
+              <Route path="/" element={settings ? <Navigate to={settings.defaultPage || '/env'} replace /> : null} />
               <Route path="/env" element={<EnvVarPage />} />
               <Route path="/path" element={<PathPage />} />
               <Route path="/functions" element={<FunctionPage />} />

@@ -157,7 +157,6 @@ export function ConfigCard({
         open={editOpen}
         title={`编辑: ${configName}`}
         providers={providers}
-        isEdit
         initialValues={{
           providerId: config.providerId,
           endpointId: config.endpointId,

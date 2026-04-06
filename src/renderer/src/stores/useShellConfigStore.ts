@@ -22,24 +22,28 @@ export interface ShellConfigState {
 
   // Variables CRUD
   addVariable: (v: ShellVariable) => void
+  addVariableAfter: (afterId: string, v: ShellVariable) => void
   updateVariable: (id: string, patch: Partial<ShellVariable>) => void
   removeVariable: (id: string) => void
   reorderVariables: (activeId: string, overId: string) => void
 
   // PATH CRUD
   addPathEntry: (e: PathEntry) => void
+  addPathEntryAfter: (afterId: string, e: PathEntry) => void
   updatePathEntry: (id: string, patch: Partial<PathEntry>) => void
   removePathEntry: (id: string) => void
   reorderPathEntries: (activeId: string, overId: string) => void
 
   // Functions CRUD
   addFunction: (fn: ShellFunction) => void
+  addFunctionAfter: (afterId: string, fn: ShellFunction) => void
   updateFunction: (id: string, patch: Partial<ShellFunction>) => void
   removeFunction: (id: string) => void
   reorderFunctions: (activeId: string, overId: string) => void
 
   // Aliases CRUD
   addAlias: (a: ShellAlias) => void
+  addAliasAfter: (afterId: string, a: ShellAlias) => void
   updateAlias: (id: string, patch: Partial<ShellAlias>) => void
   removeAlias: (id: string) => void
   reorderAliases: (activeId: string, overId: string) => void
@@ -91,18 +95,21 @@ export const useShellConfigStore = create<ShellConfigState>((set, get) => {
 
     // Variables
     addVariable: variablesCrud.add,
+    addVariableAfter: variablesCrud.addAfter,
     updateVariable: variablesCrud.update,
     removeVariable: variablesCrud.remove,
     reorderVariables: variablesCrud.reorder,
 
     // PATH
     addPathEntry: pathEntriesCrud.add,
+    addPathEntryAfter: pathEntriesCrud.addAfter,
     updatePathEntry: pathEntriesCrud.update,
     removePathEntry: pathEntriesCrud.remove,
     reorderPathEntries: pathEntriesCrud.reorder,
 
     // Functions — add and reorder from factory; update and remove are custom
     addFunction: functionsCrud.add,
+    addFunctionAfter: functionsCrud.addAfter,
 
     updateFunction: (id, patch) => {
       set((s) => ({
@@ -135,6 +142,7 @@ export const useShellConfigStore = create<ShellConfigState>((set, get) => {
 
     // Aliases
     addAlias: aliasesCrud.add,
+    addAliasAfter: aliasesCrud.addAfter,
     updateAlias: aliasesCrud.update,
     removeAlias: aliasesCrud.remove,
     reorderAliases: aliasesCrud.reorder,

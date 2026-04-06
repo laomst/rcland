@@ -34,22 +34,15 @@ export class PowerShellGenerator extends BaseShellGenerator {
       const entries = enabledConfigs.map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
       if (entries.length > 0) {
         lines.push(this.separator('Selector'))
-        lines.push('')
+        this.writeSelectorFunction(lines, data.selector.funcName, data.selector.promptTitle, entries)
+      }
 
-        lines.push(`function ${data.selector.funcName} {`)
-        lines.push('    $opts = @(')
-        for (const entry of entries) {
-          lines.push(`        "${entry.funcName}:${entry.label}"`)
-        }
-        lines.push('    )')
-        lines.push(`    prompt-select "${data.selector.promptTitle}" $opts`)
-        lines.push('')
-        lines.push('    switch ($REPLY) {')
-        for (const entry of entries) {
-          lines.push(`        '${entry.funcName}'  { ${entry.funcName} @args ; break }`)
-        }
-        lines.push('    }')
-        lines.push('}')
+      // ccl: local-only selector
+      const localEntries = enabledConfigs
+        .filter((c) => c.localOnly)
+        .map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
+      if (localEntries.length > 0) {
+        this.writeSelectorFunction(lines, 'ccl', data.selector.promptTitle, localEntries)
       }
     }
 
@@ -57,10 +50,38 @@ export class PowerShellGenerator extends BaseShellGenerator {
       lines.push(this.separator('Aliases'))
       lines.push('')
       lines.push(`function ccd { ${data.selector.funcName} --dangerously-skip-permissions @args }`)
+
+      const hasLocal = enabledConfigs.some((c) => c.localOnly)
+      if (hasLocal) {
+        lines.push(`function ccld { ccl --dangerously-skip-permissions @args }`)
+      }
     }
 
     lines.push('')
     return lines.join('\n')
+  }
+
+  private writeSelectorFunction(
+    lines: string[],
+    funcName: string,
+    promptTitle: string,
+    entries: { funcName: string; label: string }[]
+  ): void {
+    lines.push('')
+    lines.push(`function ${funcName} {`)
+    lines.push('    $opts = @(')
+    for (const entry of entries) {
+      lines.push(`        "${entry.funcName}:${entry.label}"`)
+    }
+    lines.push('    )')
+    lines.push(`    prompt-select "${promptTitle}" $opts`)
+    lines.push('')
+    lines.push('    switch ($REPLY) {')
+    for (const entry of entries) {
+      lines.push(`        '${entry.funcName}'  { ${entry.funcName} @args ; break }`)
+    }
+    lines.push('    }')
+    lines.push('}')
   }
 
   generateSourceLine(outputPath: string): string {

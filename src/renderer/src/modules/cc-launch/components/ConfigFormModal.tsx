@@ -23,7 +23,6 @@ interface ConfigFormModalProps {
   initialValues: FormValues
   okText: string
   okDisabled?: boolean
-  isEdit?: boolean
   onCancel: () => void
   onOk: (values: FormValues) => void
   onAddKey?: () => void
@@ -36,7 +35,6 @@ export function ConfigFormModal({
   initialValues,
   okText,
   okDisabled,
-  isEdit = false,
   onCancel,
   onOk,
   onAddKey
@@ -53,16 +51,17 @@ export function ConfigFormModal({
     const newProvider = providers.find((p) => p.id === providerId)
     const firstEndpointId = newProvider?.endpoints?.[0]?.id ?? ''
     const firstKeyId = newProvider?.keys?.[0]?.id ?? ''
-    setForm((f) => ({
-      ...f,
+    // 切换供应商时清空所有关联字段
+    const templateEnvVars = newProvider?.template?.envVars ?? {}
+    setForm({
       providerId,
       endpointId: firstEndpointId,
       keyId: firstKeyId,
-      envVars: {
-        ...f.envVars,
-        ...newProvider?.template?.envVars
-      }
-    }))
+      name: '',
+      funcName: '',
+      envVars: { ...templateEnvVars },
+      localOnly: form.localOnly
+    })
   }
 
   const provider = providers.find((p) => p.id === form.providerId)
@@ -89,28 +88,21 @@ export function ConfigFormModal({
         style={{ marginTop: 16 }}
       >
         <Form.Item label="供应商">
-          {isEdit ? (
-            <Space>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: provider?.color || '#1677ff', display: 'inline-block' }} />
-              <Text>{provider?.name ?? '未知'}</Text>
-            </Space>
-          ) : (
-            <Select
-              value={form.providerId}
-              onChange={handleProviderChange}
-              placeholder="选择供应商"
-              style={{ width: '100%' }}
-              options={providers.map((p) => ({
-                value: p.id,
-                label: (
-                  <Space>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: p.color || '#1677ff', display: 'inline-block' }} />
-                    {p.name}
-                  </Space>
-                )
-              }))}
-            />
-          )}
+          <Select
+            value={form.providerId}
+            onChange={handleProviderChange}
+            placeholder="选择供应商"
+            style={{ width: '100%' }}
+            options={providers.map((p) => ({
+              value: p.id,
+              label: (
+                <Space>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: p.color || '#1677ff', display: 'inline-block' }} />
+                  {p.name}
+                </Space>
+              )
+            }))}
+          />
         </Form.Item>
         <Form.Item label="接入点">
           <Select

@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Button, Empty, Typography } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { Empty } from 'antd'
 import {
   DndContext,
   closestCenter,
@@ -20,9 +19,8 @@ import { CSS } from '@dnd-kit/utilities'
 import { useAppStore, createEmptyConfig } from '@renderer/stores/useAppStore'
 import { ConfigCard } from './ConfigCard'
 import { ConfigFormModal } from './ConfigFormModal'
+import { GroupHeader } from '@renderer/components/GroupHeader'
 import type { ConfigSet, Provider } from '@shared/types'
-
-const { Text } = Typography
 
 interface SortableConfigCardProps {
   config: ConfigSet
@@ -63,7 +61,10 @@ export function ConfigTab(): React.ReactElement {
   const providers = useAppStore((s) => s.providers)
   const addConfig = useAppStore((s) => s.addConfig)
   const reorderConfigs = useAppStore((s) => s.reorderConfigs)
+  const [syncCollapsed, setSyncCollapsed] = useState(false)
+  const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
+  const [addLocalOnly, setAddLocalOnly] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -81,7 +82,12 @@ export function ConfigTab(): React.ReactElement {
   const firstKeyId = firstProvider?.keys?.[0]?.id ?? ''
   const firstTemplateEnvVars = firstProvider?.template?.envVars ?? createEmptyConfig(firstProvider?.id ?? '', '', '').envVars
 
-  const handleAdd = (values: {
+  const handleAdd = (localOnly: boolean) => {
+    setAddLocalOnly(localOnly)
+    setAddOpen(true)
+  }
+
+  const handleConfirmAdd = (values: {
     providerId: string
     endpointId: string
     keyId: string
@@ -120,58 +126,33 @@ export function ConfigTab(): React.ReactElement {
     <div>
       {providers.length === 0
         ? <Empty description="请先在「供应商管理」中添加供应商" />
-        : configs.length === 0
-          ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-              <Empty description="暂无配置" />
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setAddOpen(true)}
-              >
-                添加配置
-              </Button>
-            </div>
-          )
-          : (
-            <>
-              {/* 同步配置 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <Text strong style={{ fontSize: 14 }}>同步配置 ({syncedConfigs.length})</Text>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  size="small"
-                  onClick={() => setAddOpen(true)}
-                >
-                  添加
-                </Button>
-              </div>
-              {syncedConfigs.length > 0 && (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                    {syncedConfigs.map((c, idx) => (
-                      <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              )}
+        : (
+          <>
+            {/* 同步配置 */}
+            <GroupHeader title="同步配置" count={syncedConfigs.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+            {!syncCollapsed && syncedConfigs.length > 0 && (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                  {syncedConfigs.map((c, idx) => (
+                    <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            )}
 
-              {/* 本机配置 */}
-              <Text strong style={{ fontSize: 14, display: 'block', marginTop: 16, marginBottom: 8 }}>
-                本机配置 ({localConfigs.length})
-              </Text>
-              {localConfigs.length > 0 && (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                    {localConfigs.map((c, idx) => (
-                      <SortableConfigCard key={c.id} config={c} providers={providers} index={syncedConfigs.length + idx + 1} />
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              )}
-            </>
-          )
+            {/* 本机配置 */}
+            <GroupHeader title="本机配置" count={localConfigs.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+            {!localCollapsed && localConfigs.length > 0 && (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                  {localConfigs.map((c, idx) => (
+                    <SortableConfigCard key={c.id} config={c} providers={providers} index={syncedConfigs.length + idx + 1} />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            )}
+          </>
+        )
       }
 
       <ConfigFormModal
@@ -185,11 +166,11 @@ export function ConfigTab(): React.ReactElement {
           name: '',
           funcName: '',
           envVars: firstTemplateEnvVars,
-          localOnly: false
+          localOnly: addLocalOnly
         }}
         okText="添加"
         onCancel={() => setAddOpen(false)}
-        onOk={handleAdd}
+        onOk={handleConfirmAdd}
         onAddKey={handleAddKey}
       />
     </div>

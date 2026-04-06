@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Button, Switch, Tooltip, App, Select } from 'antd'
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
+ import { EditOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons'
 import { ItemRow } from './ItemRow'
 
 interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly?: boolean; order?: number }> {
@@ -11,6 +11,7 @@ interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly
   deleteConfirmContent: string
   onUpdate: (id: string, patch: Partial<T>) => void
   onRemove: (id: string) => void
+  onDuplicate?: (item: T) => void
   getAllItems: () => T[]
   renderContent: (item: T) => ReactNode
   renderEditModal: (open: boolean, onClose: () => void) => ReactNode
@@ -24,6 +25,7 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
   deleteConfirmContent,
   onUpdate,
   onRemove,
+  onDuplicate,
   getAllItems,
   renderContent,
   renderEditModal
@@ -58,6 +60,11 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
         enabled={item.enabled}
         dragHandleProps={dragHandleProps}
         actions={<>
+          {onDuplicate && (
+            <Tooltip title="复制">
+              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => onDuplicate(item)} />
+            </Tooltip>
+          )}
           <Tooltip title="编辑">
             <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
           </Tooltip>

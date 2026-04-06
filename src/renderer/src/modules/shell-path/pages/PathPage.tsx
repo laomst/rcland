@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, Empty, Typography, Spin } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { Typography, Spin } from 'antd'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
@@ -9,9 +8,10 @@ import { getOsSupportedShells } from '@shared/shell'
 import { PathCard } from '../components/PathCard'
 import { PathFormModal, type PathFormValues } from '../components/PathFormModal'
 import { SortableWrapper } from '@renderer/components/SortableWrapper'
+import { GroupHeader } from '@renderer/components/GroupHeader'
 import { useSortableList } from '@renderer/hooks/useSortableList'
 
-const { Text } = Typography
+const { Title } = Typography
 
 export function PathPage(): React.ReactElement {
   const pathEntries = useShellConfigStore((s) => s.shellConfig.pathEntries)
@@ -19,7 +19,10 @@ export function PathPage(): React.ReactElement {
   const loadShellConfig = useShellConfigStore((s) => s.loadShellConfig)
   const addPathEntry = useShellConfigStore((s) => s.addPathEntry)
   const reorderPathEntries = useShellConfigStore((s) => s.reorderPathEntries)
+  const [syncCollapsed, setSyncCollapsed] = useState(false)
+  const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
+  const [addLocalOnly, setAddLocalOnly] = useState(false)
 
   // Load data on mount
   useEffect(() => {
@@ -33,7 +36,12 @@ export function PathPage(): React.ReactElement {
     reorderPathEntries
   )
 
-  const handleAdd = (values: PathFormValues) => {
+  const handleAdd = (localOnly: boolean) => {
+    setAddLocalOnly(localOnly)
+    setAddOpen(true)
+  }
+
+  const handleConfirmAdd = (values: PathFormValues) => {
     const newEntry = createEmptyPathEntry()
     addPathEntry({
       ...newEntry,
@@ -56,71 +64,45 @@ export function PathPage(): React.ReactElement {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div>
-          <Text strong style={{ fontSize: 15 }}>PATH 环境变量</Text>
-          <Text type="secondary" style={{ marginLeft: 8 }}>({pathEntries.length} 个)</Text>
-        </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setAddOpen(true)}
-        >
-          添加路径
-        </Button>
-      </div>
+      <Title level={4} style={{ marginBottom: 16 }}>PATH 环境变量</Title>
 
-      {pathEntries.length === 0
-        ? <Empty description="暂无 PATH 条目，点击右上角添加" />
-        : (
-          <>
-            {syncedPaths.length > 0 && (
-              <>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
-                  同步配置 ({syncedPaths.length})
-                </Text>
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={syncedPaths.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-                    {syncedPaths.map((p, idx) => (
-                      <SortableWrapper key={p.id} id={p.id}>
-                        {(dragHandleProps) => (
-                          <PathCard
-                            pathEntry={p}
-                            index={idx + 1}
-                            dragHandleProps={dragHandleProps as any}
-                          />
-                        )}
-                      </SortableWrapper>
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              </>
-            )}
-            {localPaths.length > 0 && (
-              <>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: syncedPaths.length > 0 ? 16 : 0, marginBottom: 8 }}>
-                  本机配置 ({localPaths.length})
-                </Text>
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={localPaths.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-                    {localPaths.map((p, idx) => (
-                      <SortableWrapper key={p.id} id={p.id}>
-                        {(dragHandleProps) => (
-                          <PathCard
-                            pathEntry={p}
-                            index={syncedPaths.length + idx + 1}
-                            dragHandleProps={dragHandleProps as any}
-                          />
-                        )}
-                      </SortableWrapper>
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              </>
-            )}
-          </>
-        )
-      }
+      <GroupHeader title="同步配置" count={syncedPaths.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+      {!syncCollapsed && syncedPaths.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={syncedPaths.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            {syncedPaths.map((p, idx) => (
+              <SortableWrapper key={p.id} id={p.id}>
+                {(dragHandleProps) => (
+                  <PathCard
+                    pathEntry={p}
+                    index={idx + 1}
+                    dragHandleProps={dragHandleProps as any}
+                  />
+                )}
+              </SortableWrapper>
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
+
+      <GroupHeader title="本机配置" count={localPaths.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      {!localCollapsed && localPaths.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={localPaths.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            {localPaths.map((p, idx) => (
+              <SortableWrapper key={p.id} id={p.id}>
+                {(dragHandleProps) => (
+                  <PathCard
+                    pathEntry={p}
+                    index={syncedPaths.length + idx + 1}
+                    dragHandleProps={dragHandleProps as any}
+                  />
+                )}
+              </SortableWrapper>
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
 
       <PathFormModal
         open={addOpen}
@@ -129,11 +111,11 @@ export function PathPage(): React.ReactElement {
           path: '',
           description: '',
           shells: [...getOsSupportedShells()],
-          localOnly: false
+          localOnly: addLocalOnly
         }}
         okText="添加"
         onCancel={() => setAddOpen(false)}
-        onOk={handleAdd}
+        onOk={handleConfirmAdd}
       />
     </div>
   )

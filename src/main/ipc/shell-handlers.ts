@@ -41,11 +41,13 @@ function removeMarkerBlock(content: string, beginMarker: string, endMarker: stri
  * Inject RCLand source block at the top of a shell profile file.
  * Removes legacy CCland blocks and existing RCLand blocks first.
  */
-function injectSourceBlock(profilePath: string, outputPath: string): void {
+function injectSourceBlock(profilePath: string, outputPath: string, shellType: ShellType): void {
   let content = readFileSync(profilePath, 'utf-8')
   content = removeMarkerBlock(content, '# >>> CCland >>>', '# <<< CCland <<<', profilePath)
   content = removeMarkerBlock(content, '# >>> RCLand >>>', '# <<< RCLand <<<', profilePath)
-  const sourceBlock = `# >>> RCLand >>>\nsource ${outputPath}\n# <<< RCLand <<<`
+  // PowerShell uses dot-sourcing (. "path"), others use source
+  const sourceLine = shellType === 'powershell' ? `. "${outputPath}"` : `source ${outputPath}`
+  const sourceBlock = `# >>> RCLand >>>\n${sourceLine}\n# <<< RCLand <<<`
   writeFileSync(profilePath, sourceBlock + '\n\n' + content.trimStart(), 'utf-8')
 }
 
@@ -101,7 +103,7 @@ export function registerShellHandlers(): void {
       {
         const profilePath = getShellProfilePath(shellType).replace(/^~/, process.env.HOME || '~')
         if (existsSync(profilePath)) {
-          injectSourceBlock(profilePath, outputPath)
+          injectSourceBlock(profilePath, outputPath, shellType)
         }
       }
       appliedShells.push(shellType)
@@ -137,7 +139,7 @@ export function registerShellHandlers(): void {
       {
         const profilePath = getShellProfilePath(shellType).replace(/^~/, process.env.HOME || '~')
         if (existsSync(profilePath)) {
-          injectSourceBlock(profilePath, outputPath)
+          injectSourceBlock(profilePath, outputPath, shellType)
         }
       }
       appliedShells.push(shellType)

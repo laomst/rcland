@@ -30,6 +30,13 @@ export function AliasCard({
       deleteConfirmContent={`确定删除别名 "${alias.alias}" 吗？`}
       onUpdate={updateAlias}
       onRemove={(id) => useShellConfigStore.getState().removeAlias(id)}
+      onDuplicate={(alias) => {
+        useShellConfigStore.getState().addAliasAfter(alias.id, {
+          ...alias,
+          id: crypto.randomUUID(),
+          alias: alias.alias + '-copy'
+        })
+      }}
       getAllItems={() => useShellConfigStore.getState().shellConfig.aliases}
       renderContent={(item) => {
         const displayCommand = item.command.length > 40

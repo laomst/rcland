@@ -34,22 +34,15 @@ export class ZshGenerator extends BaseShellGenerator {
       const entries = enabledConfigs.map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
       if (entries.length > 0) {
         lines.push(this.separator('Selector'))
-        lines.push('')
+        this.writeSelectorFunction(lines, data.selector.funcName, data.selector.promptTitle, entries)
+      }
 
-        lines.push(`${data.selector.funcName}() {`)
-        lines.push('  local _opts=(')
-        for (const entry of entries) {
-          lines.push(`      "${entry.funcName}:${entry.label}"`)
-        }
-        lines.push('  )')
-        lines.push(`  prompt-select "${data.selector.promptTitle}" "\${_opts[@]}" || return 0`)
-        lines.push('')
-        lines.push('  case $REPLY in')
-        for (const entry of entries) {
-          lines.push(`    ${entry.funcName})  ${entry.funcName} "$@" ;;`)
-        }
-        lines.push('  esac')
-        lines.push('}')
+      // ccl: local-only selector
+      const localEntries = enabledConfigs
+        .filter((c) => c.localOnly)
+        .map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
+      if (localEntries.length > 0) {
+        this.writeSelectorFunction(lines, 'ccl', data.selector.promptTitle, localEntries)
       }
     }
 
@@ -57,10 +50,38 @@ export class ZshGenerator extends BaseShellGenerator {
       lines.push(this.separator('Aliases'))
       lines.push('')
       lines.push(`alias ccd='${data.selector.funcName} --dangerously-skip-permissions'`)
+
+      const hasLocal = enabledConfigs.some((c) => c.localOnly)
+      if (hasLocal) {
+        lines.push(`alias ccld='ccl --dangerously-skip-permissions'`)
+      }
     }
 
     lines.push('')
     return lines.join('\n')
+  }
+
+  private writeSelectorFunction(
+    lines: string[],
+    funcName: string,
+    promptTitle: string,
+    entries: { funcName: string; label: string }[]
+  ): void {
+    lines.push('')
+    lines.push(`${funcName}() {`)
+    lines.push('  local _opts=(')
+    for (const entry of entries) {
+      lines.push(`      "${entry.funcName}:${entry.label}"`)
+    }
+    lines.push('  )')
+    lines.push(`  prompt-select "${promptTitle}" "\${_opts[@]}" || return 0`)
+    lines.push('')
+    lines.push('  case $REPLY in')
+    for (const entry of entries) {
+      lines.push(`    ${entry.funcName})  ${entry.funcName} "$@" ;;`)
+    }
+    lines.push('  esac')
+    lines.push('}')
   }
 
   generateSourceLine(outputPath: string): string {

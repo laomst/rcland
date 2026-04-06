@@ -27,27 +27,46 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
     if (ccConfig.selector.enabled) {
       const entries = enabledConfigs.map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
       if (entries.length > 0) {
-        lines.push('')
-        lines.push(`function ${ccConfig.selector.funcName} {`)
-        lines.push('    $opts = @(')
-        for (const entry of entries) {
-          lines.push(`        "${entry.funcName}:${entry.label}"`)
-        }
-        lines.push('    )')
-        lines.push(`    prompt-select "${ccConfig.selector.promptTitle}" $opts`)
-        lines.push('')
-        lines.push('    switch ($REPLY) {')
-        for (const entry of entries) {
-          lines.push(`        '${entry.funcName}'  { ${entry.funcName} @args ; break }`)
-        }
-        lines.push('    }')
-        lines.push('}')
+        this.writeSelectorFunction(lines, ccConfig.selector.funcName, ccConfig.selector.promptTitle, entries)
         lines.push('')
         lines.push(`function ccd { ${ccConfig.selector.funcName} --dangerously-skip-permissions @args }`)
+      }
+
+      // ccl: local-only selector
+      const localEntries = enabledConfigs
+        .filter((c) => c.localOnly)
+        .map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
+      if (localEntries.length > 0) {
+        this.writeSelectorFunction(lines, 'ccl', ccConfig.selector.promptTitle, localEntries)
+        lines.push('')
+        lines.push(`function ccld { ccl --dangerously-skip-permissions @args }`)
       }
     }
 
     return lines.join('\n')
+  }
+
+  private writeSelectorFunction(
+    lines: string[],
+    funcName: string,
+    promptTitle: string,
+    entries: { funcName: string; label: string }[]
+  ): void {
+    lines.push('')
+    lines.push(`function ${funcName} {`)
+    lines.push('    $opts = @(')
+    for (const entry of entries) {
+      lines.push(`        "${entry.funcName}:${entry.label}"`)
+    }
+    lines.push('    )')
+    lines.push(`    prompt-select "${promptTitle}" $opts`)
+    lines.push('')
+    lines.push('    switch ($REPLY) {')
+    for (const entry of entries) {
+      lines.push(`        '${entry.funcName}'  { ${entry.funcName} @args ; break }`)
+    }
+    lines.push('    }')
+    lines.push('}')
   }
 
   private writeFunction(

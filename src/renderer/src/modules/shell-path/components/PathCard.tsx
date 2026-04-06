@@ -29,6 +29,12 @@ export function PathCard({
       deleteConfirmContent={`确定删除 PATH 条目 "${pathEntry.path}" 吗？`}
       onUpdate={updatePathEntry}
       onRemove={(id) => useShellConfigStore.getState().removePathEntry(id)}
+      onDuplicate={(pathEntry) => {
+        useShellConfigStore.getState().addPathEntryAfter(pathEntry.id, {
+          ...pathEntry,
+          id: crypto.randomUUID()
+        })
+      }}
       getAllItems={() => useShellConfigStore.getState().shellConfig.pathEntries}
       renderContent={(item) => {
         const displayPath = item.path.length > 50

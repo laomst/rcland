@@ -29,6 +29,13 @@ export function EnvVarCard({
       deleteConfirmContent={`确定删除环境变量 "${variable.key}" 吗？`}
       onUpdate={updateVariable}
       onRemove={(id) => useShellConfigStore.getState().removeVariable(id)}
+      onDuplicate={(variable) => {
+        useShellConfigStore.getState().addVariableAfter(variable.id, {
+          ...variable,
+          id: crypto.randomUUID(),
+          key: variable.key + '_COPY'
+        })
+      }}
       getAllItems={() => useShellConfigStore.getState().shellConfig.variables}
       renderContent={(item) => {
         const displayValue = item.encrypted

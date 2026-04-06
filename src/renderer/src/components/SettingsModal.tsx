@@ -1,9 +1,9 @@
-import { Modal, Form, Input, Space, Button, Divider, Checkbox } from 'antd'
+import { Modal, Form, Input, Space, Button, Divider, Checkbox, Select } from 'antd'
 import { App as AntdApp } from 'antd'
 import { FolderOpenOutlined, KeyOutlined } from '@ant-design/icons'
 import { useState, useCallback } from 'react'
 import { ALL_SHELL_TYPES, SHELL_LABELS, SHELL_OS_SUPPORT, type ShellType } from '@shared/shell'
-import type { AppSettings } from '@shared/types'
+import { APP_PAGE_LABELS, type AppPage, type AppSettings } from '@shared/types'
 import { useAppStore } from '@renderer/stores/useAppStore'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
@@ -209,6 +209,14 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
                 <Button disabled={keyExists} onClick={handleInitKey}>初始化密钥</Button>
                 <Button disabled={!keyExists} onClick={handleReplaceKey}>更换密钥</Button>
               </Space>
+            </Form.Item>
+            <Form.Item label="默认首页">
+              <Select
+                value={editSettings.defaultPage || '/env'}
+                onChange={(value: AppPage) => setEditSettings({ ...editSettings, defaultPage: value })}
+                options={Object.entries(APP_PAGE_LABELS).map(([key, label]) => ({ value: key, label }))}
+                style={{ width: 200 }}
+              />
             </Form.Item>
 
             <Divider>Shell 设置</Divider>

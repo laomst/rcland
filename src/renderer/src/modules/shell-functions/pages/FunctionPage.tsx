@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button, Empty, Typography } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { Typography } from 'antd'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
@@ -9,9 +8,10 @@ import type { ShellFunction } from '@shared/shell-types'
 import { FunctionCard } from '../components/FunctionCard'
 import { FunctionFormModal } from '../components/FunctionFormModal'
 import { SortableWrapper } from '@renderer/components/SortableWrapper'
+import { GroupHeader } from '@renderer/components/GroupHeader'
 import { useSortableList } from '@renderer/hooks/useSortableList'
 
-const { Title, Text } = Typography
+const { Title } = Typography
 
 /** 提取函数名 */
 function extractFunctionName(code: string): string | null {
@@ -48,6 +48,8 @@ export default function FunctionPage(): React.ReactElement {
   const reorderFunctions = useShellConfigStore((s) => s.reorderFunctions)
   const addFunction = useShellConfigStore((s) => s.addFunction)
 
+  const [syncCollapsed, setSyncCollapsed] = useState(false)
+  const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [editingFuncId, setEditingFuncId] = useState<string | null>(null)
   const [initialFormValues, setInitialFormValues] = useState<{
@@ -79,10 +81,10 @@ export default function FunctionPage(): React.ReactElement {
     reorderFunctions
   )
 
-  // 添加空白函数
-  const handleAdd = () => {
+  const handleAdd = (localOnly: boolean) => {
     const newFunc = createEmptyFunction()
     newFunc.order = functions.length
+    newFunc.localOnly = localOnly
     addFunction(newFunc)
     setEditingFuncId(newFunc.id)
     setInitialFormValues({
@@ -90,21 +92,14 @@ export default function FunctionPage(): React.ReactElement {
       category: 'custom',
       description: '',
       body: {},
-      localOnly: false
+      localOnly
     })
     setAddModalOpen(true)
   }
 
   return (
     <div style={{ padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>
-          Shell 函数
-        </Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-          添加函数
-        </Button>
-      </div>
+      <Title level={4} style={{ marginBottom: 16 }}>Shell 函数</Title>
 
       {/* 内置函数区域（固定，不可拖拽） */}
       {builtInFunctions.map((func, idx) => (
@@ -112,65 +107,49 @@ export default function FunctionPage(): React.ReactElement {
       ))}
 
       {/* 用户函数区域 */}
-      {syncedFunctions.length === 0 && localFunctions.length === 0 && builtInFunctions.length === 0 ? (
-        <Empty
-          description="暂无函数定义"
-          style={{ marginTop: 48 }}
-        >
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            添加第一个函数
-          </Button>
-        </Empty>
-      ) : (
-        <>
-          {/* 同步函数 */}
-          {syncedFunctions.length > 0 && (
-            <>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
-                同步配置 ({syncedFunctions.length})
-              </Text>
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={syncedFunctions.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-                  {syncedFunctions.map((func, idx) => (
-                    <SortableWrapper key={func.id} id={func.id}>
-                      {(dragHandleProps) => (
-                        <FunctionCard
-                          func={func}
-                          index={builtInFunctions.length + idx + 1}
-                          dragHandleProps={dragHandleProps as any}
-                        />
-                      )}
-                    </SortableWrapper>
-                  ))}
-                </SortableContext>
-              </DndContext>
-            </>
-          )}
+      <GroupHeader
+        title="同步配置"
+        count={syncedFunctions.length}
+        collapsed={syncCollapsed}
+        onToggle={() => setSyncCollapsed(!syncCollapsed)}
+        onAdd={() => handleAdd(false)}
+        style={builtInFunctions.length > 0 ? { marginTop: 16 } : undefined}
+      />
+      {!syncCollapsed && syncedFunctions.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={syncedFunctions.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+            {syncedFunctions.map((func, idx) => (
+              <SortableWrapper key={func.id} id={func.id}>
+                {(dragHandleProps) => (
+                  <FunctionCard
+                    func={func}
+                    index={builtInFunctions.length + idx + 1}
+                    dragHandleProps={dragHandleProps as any}
+                  />
+                )}
+              </SortableWrapper>
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
 
-          {/* 本机函数 */}
-          {localFunctions.length > 0 && (
-            <>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: syncedFunctions.length > 0 ? 16 : 0, marginBottom: 8 }}>
-                本机配置 ({localFunctions.length})
-              </Text>
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={localFunctions.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-                  {localFunctions.map((func, idx) => (
-                    <SortableWrapper key={func.id} id={func.id}>
-                      {(dragHandleProps) => (
-                        <FunctionCard
-                          func={func}
-                          index={builtInFunctions.length + syncedFunctions.length + idx + 1}
-                          dragHandleProps={dragHandleProps as any}
-                        />
-                      )}
-                    </SortableWrapper>
-                  ))}
-                </SortableContext>
-              </DndContext>
-            </>
-          )}
-        </>
+      <GroupHeader title="本机配置" count={localFunctions.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      {!localCollapsed && localFunctions.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={localFunctions.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+            {localFunctions.map((func, idx) => (
+              <SortableWrapper key={func.id} id={func.id}>
+                {(dragHandleProps) => (
+                  <FunctionCard
+                    func={func}
+                    index={builtInFunctions.length + syncedFunctions.length + idx + 1}
+                    dragHandleProps={dragHandleProps as any}
+                  />
+                )}
+              </SortableWrapper>
+            ))}
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Add/Edit Modal */}

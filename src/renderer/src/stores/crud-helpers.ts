@@ -24,6 +24,15 @@ export function createShellConfigCrud<T extends { id: string }>(
       }))
       get().saveShellConfig()
     },
+    addAfter: (afterId: string, item: T) => {
+      set((s: any) => {
+        const arr = [...s.shellConfig[field]]
+        const idx = arr.findIndex((x: T) => x.id === afterId)
+        arr.splice(idx + 1, 0, item)
+        return { shellConfig: { ...s.shellConfig, [field]: arr } }
+      })
+      get().saveShellConfig()
+    },
     update: (id: string, patch: Partial<T>) => {
       set((s: any) => ({
         shellConfig: {

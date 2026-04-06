@@ -2,89 +2,92 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## 项目概述
 
-RCLand (Run Configuration Land) is an Electron desktop app for managing shell runtime configurations. It manages environment variables, PATH entries, shell functions, aliases, and Claude Code launch configurations (Providers, ConfigSets with tokens and env vars), generating shell config files for zsh/bash/PowerShell.
+CCland (RCLand) 是一个 Electron 桌面应用，用于管理 Claude Code CLI 的 Shell 配置。支持多 Shell（Zsh、Bash、PowerShell）、多 API Provider、加密密钥管理和云同步。
 
-## Build & Dev Commands
+## 常用命令
 
 ```bash
-npm run dev       # Start dev server with hot reload (electron-vite dev)
-npm run build     # Build all (main + preload + renderer) to out/
-npm run preview   # Preview production build
-npm run pack      # Package without installer (electron-builder --dir)
-npm run dist      # Build distributable (dmg/zip/nsis/AppImage/deb)
+npm run dev       # 启动开发服务器（Electron + Vite HMR）
+npm run build     # 编译 TypeScript 并打包
+npm run preview   # 预览构建产物
+npm run pack      # 打包为目录（不签名）
+npm run dist      # 构建平台安装包
 ```
 
-No test framework is configured yet.
+无测试框架、无 lint 工具。
 
-## Architecture
+## 架构
 
-### Three-Process Electron Structure
+### Electron 三层架构
 
-- **Main process** (`src/main/`): Node.js backend — IPC handlers, file I/O, crypto, shell config generation
-- **Preload** (`src/preload/index.ts`): `contextBridge` exposing `window.electronAPI` with typed IPC methods
-- **Renderer** (`src/renderer/`): React 19 + Ant Design 5 + Zustand — the full UI
+- **Main** (`src/main/`) — 应用生命周期、窗口管理、文件 I/O、IPC handlers
+- **Preload** (`src/preload/index.ts`) — Context Bridge，暴露 `window.electronAPI`，所有 IPC 通道的类型安全桥接
+- **Renderer** (`src/renderer/src/`) — React 19 SPA，Ant Design UI，Zustand 状态管理
 
-### Data Flow
+### 路由（Hash Router）
+
+| 路径 | 功能 |
+|------|------|
+| `/env` | 环境变量管理 |
+| `/path` | PATH 管理 |
+| `/functions` | Shell 函数 |
+| `/aliases` | Shell 别名 |
+| `/ccland` | CC Launch 配置（Provider/密钥/配置集） |
+
+### 状态管理（Zustand）
+
+三个独立 Store：
+- `useAppStore` — CCLaunch 数据（providers、configs、selector）
+- `useSettingsStore` — 应用设置（shell profiles、密钥路径、默认页面）
+- `useShellConfigStore` — Shell 配置（变量、PATH、函数、别名）
+
+所有 Store 的修改通过 IPC 调用 Main 进程写入文件系统。
+
+### 数据持久化
+
+| 文件 | 内容 | 可同步 |
+|------|------|--------|
+| `rcland.config.claudecode.json` (v5) | Providers、ConfigSets、Selector | 是 |
+| `rcland.config.shell.json` (v1) | 变量、PATH、函数、别名 | 是 |
+| Electron userData | AppSettings（shell profiles、密钥路径） | 否 |
+
+### IPC 通道分组
+
+- `config:*` / `data:*` / `settings:*` / `shell-config:*` — 数据读写
+- `crypto:*` — 加密/解密/密钥管理
+- `shell:*` — Shell 脚本生成和应用
+- `backup:*` — 备份管理
+- `dialog:*` — 原生文件对话框
+
+### 路径别名
 
 ```
-Renderer (React/Zustand)
-  → window.electronAPI.* (IPC calls)
-    → Main process handlers (src/main/ipc.ts)
-      → Services (config.ts, crypto.ts, generators/*)
-        → File system (data.json, settings.json, key file, shell profiles)
+@shared  → src/shared
+@renderer → src/renderer/src
 ```
 
-All data CRUD goes through Zustand store → `electronAPI` IPC → main process services. The store calls `saveData()` after every mutation.
+## 关键模式
 
-### Path Aliases
+### CRUD + 自动保存
+Store 中每个实体（变量/PATH/函数/别名）实现 add/update/remove/reorder 操作，修改后自动通过 IPC 保存。CRUD 辅助函数在 `stores/crud-helpers.ts`。
 
-- `@shared/*` → `src/shared/*` (available in all three processes)
-- `@renderer/*` → `src/renderer/src/*` (renderer only)
+### localOnly 标记
+Provider 和 ConfigSet 可标记 `localOnly: true`，不参与云同步。本地数据存储在独立的 `LocalCCLaunchData` 结构中。
 
-### Data Model (v3)
+### builtIn 函数
+Shell 函数可标记 `builtIn: true`（只读、不可编辑/删除），加载时与用户函数合并。
 
-Stored in `{configDir}/data.json`. Key types in `src/shared/types.ts`:
+### 加密
+敏感 token 以 `enc:v1:...` 格式加密存储，基于口令派生密钥。解密按需执行。
 
-- **`CCLaunchData`**: Top-level container with `providers[]`, `configs[]`, and `selector`
-- **`Provider`**: API supplier (name, baseUrl, color, optional template)
-- **`ConfigSet`**: Launch config with `providerId` foreign key, `funcName`, `token`, `envVars`
-- **`AppSettings`**: Per-device settings in Electron `userData` — `configDir`, `keyFilePath`, `shellProfiles`
+### 多 Shell 适配
+Shell 脚本生成在 `src/main/services/generators/`，按 section 拆分（path/variables/functions/aliases/ccland），每个 section 处理不同 Shell 的语法差异。
 
-v2→v3 migration is in `src/shared/migration.ts` — providers and configs were separated from nested to flat structure.
+### 模块化 UI
+每个功能模块（`src/renderer/src/modules/`）自包含：页面组件 + 表单模态框 + 卡片组件。共享组件在 `src/renderer/src/components/`（BaseItemCard、SortableWrapper、GroupHeader 等）。
 
-### Shell Generator System (Strategy Pattern)
+## 技术栈
 
-`src/main/services/generators/`:
-
-- `base.ts` — `ShellGenerator` interface + `BaseShellGenerator` abstract class
-- `index.ts` — Registry with `getGenerator(shellType)` factory
-- `zsh.ts`, `bash.ts`, `powershell.ts`, `fish.ts` — Per-shell implementations
-
-Each generator converts `CCLaunchData` + decrypted values into shell-specific config file content.
-
-### Encryption
-
-AES-256-GCM via `src/main/services/crypto.ts`. Encrypted values prefixed with `enc:v1:`. Key file path stored in settings (not in sync directory). Encryption/decryption happens in main process only.
-
-### Renderer Structure
-
-- `src/renderer/src/App.tsx` — Root layout with sidebar nav, content area, footer action bar, settings modal
-- `src/renderer/src/stores/useAppStore.ts` — Single Zustand store for all state + CRUD actions
-- `src/renderer/src/modules/cc-launch/` — Main feature module:
-  - `pages/CCConfigPage.tsx` — Tab layout (ConfigTab + ProviderTab)
-  - `components/` — ProviderCard, ConfigCard, ProviderTab, ConfigTab, ProviderFormModal, ConfigFormModal, TokenEditModal, EnvVarEditor
-
-### IPC Channels
-
-Defined in `src/main/ipc.ts`, exposed via `src/preload/index.ts`:
-
-| Channel | Purpose |
-|---------|---------|
-| `config:getDir/setDir` | Config directory management |
-| `data:load/save` | Read/write data.json |
-| `settings:load/save` | Read/write settings.json |
-| `crypto:initKey/encrypt/decrypt` | Key management and AES operations |
-| `shell:detect/generate/apply` | Shell detection, preview, and file writing |
-| `dialog:open/save` | Native file dialogs |
+React 19 + TypeScript 5.8 + Ant Design 5 + Zustand 5 + @dnd-kit + Electron 35 + electron-vite
