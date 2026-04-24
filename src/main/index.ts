@@ -49,8 +49,21 @@ app.whenReady().then(() => {
   // Register all IPC handlers before creating window
   registerIpcHandlers()
 
-  // Set minimal application menu (View > Reload only)
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
+  // Set application menu
+  const isMac = platform() === 'darwin'
+  const template: Electron.MenuItemConstructorOptions[] = [
+    ...(isMac ? [{
+      label: 'RCLand',
+      submenu: [
+        { role: 'about' as const },
+        { type: 'separator' as const },
+        { role: 'hide' as const },
+        { role: 'hideOthers' as const },
+        { role: 'unhide' as const },
+        { type: 'separator' as const },
+        { role: 'quit' as const }
+      ]
+    }] : []),
     {
       label: 'Edit',
       submenu: [
@@ -70,7 +83,8 @@ app.whenReady().then(() => {
         { role: 'toggleDevTools' }
       ]
     }
-  ]))
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 
   createWindow()
 

@@ -1,4 +1,5 @@
 import { Tooltip, Typography } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { FolderOutlined } from '@ant-design/icons'
 import type { PathEntry } from '@shared/shell-types'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
@@ -18,6 +19,7 @@ export function PathCard({
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }): React.ReactElement {
+  const { t } = useTranslation()
   const updatePathEntry = useShellConfigStore((s) => s.updatePathEntry)
 
   return (
@@ -26,7 +28,7 @@ export function PathCard({
       index={index}
       isDragging={isDragging}
       dragHandleProps={dragHandleProps}
-      deleteConfirmContent={`确定删除 PATH 条目 "${pathEntry.path}" 吗？`}
+      deleteConfirmContent={t('shellPath.deleteConfirm', { path: pathEntry.path })}
       onUpdate={updatePathEntry}
       onRemove={(id) => useShellConfigStore.getState().removePathEntry(id)}
       onDuplicate={(pathEntry) => {
@@ -48,7 +50,7 @@ export function PathCard({
             {/* Path */}
             <Tooltip title={item.path}>
               <Text style={{ fontSize: 12, flex: 1, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {displayPath || '(未设置)'}
+                {displayPath || t('common.notSet')}
               </Text>
             </Tooltip>
 
@@ -66,7 +68,7 @@ export function PathCard({
       renderEditModal={(open, onClose) => (
         <PathFormModal
           open={open}
-          title={`编辑: ${pathEntry.path}`}
+          title={t('shellPath.editTitle', { path: pathEntry.path })}
           isEdit
           initialValues={{
             path: pathEntry.path,
@@ -74,7 +76,7 @@ export function PathCard({
             shells: pathEntry.shells ?? [],
             localOnly: pathEntry.localOnly ?? false
           }}
-          okText="保存"
+          okText={t('common.save')}
           onCancel={onClose}
           onOk={(values) => {
             updatePathEntry(pathEntry.id, {

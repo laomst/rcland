@@ -1,4 +1,5 @@
 import { Input, Modal, Form, Checkbox, Space, Typography, Switch } from 'antd'
+import { useTranslation } from 'react-i18next'
 import type { ShellType } from '@shared/shell'
 import { SHELL_LABELS, ALL_SHELL_TYPES } from '@shared/shell'
 import { useFormModal } from '@renderer/hooks/useFormModal'
@@ -43,6 +44,7 @@ export function AliasFormModal({
   onCancel,
   onOk
 }: AliasFormModalProps): React.ReactElement {
+  const { t } = useTranslation()
   const { formState, setField, toggleShell } = useFormModal({
     initialState: ALIAS_INITIAL_STATE,
     editingValues: open ? initialValues : undefined,
@@ -58,7 +60,7 @@ export function AliasFormModal({
       onOk={() => onOk(formState)}
       onCancel={onCancel}
       okText={okText}
-      cancelText="取消"
+      cancelText={t('common.cancel')}
       okButtonProps={{ disabled: okDisabled ?? !isValid }}
       width={560}
     >
@@ -69,34 +71,34 @@ export function AliasFormModal({
         colon={false}
         style={{ marginTop: 16 }}
       >
-        <Form.Item label="别名" required>
+        <Form.Item label={t('shellAliases.aliasLabel')} required>
           <Input
             value={formState.alias}
             onChange={(e) => setField('alias', e.target.value)}
-            placeholder="如 ll, gs, dcu"
+            placeholder={t('shellAliases.aliasPlaceholder')}
             style={{ fontFamily: 'monospace' }}
           />
         </Form.Item>
 
-        <Form.Item label="命令" required>
+        <Form.Item label={t('shellAliases.commandLabel')} required>
           <TextArea
             value={formState.command}
             onChange={(e) => setField('command', e.target.value)}
-            placeholder="如 ls -la, git status"
+            placeholder={t('shellAliases.commandPlaceholder')}
             autoSize={{ minRows: 2, maxRows: 6 }}
             style={{ fontFamily: 'monospace' }}
           />
         </Form.Item>
 
-        <Form.Item label="描述">
+        <Form.Item label={t('common.description')}>
           <Input
             value={formState.description}
             onChange={(e) => setField('description', e.target.value)}
-            placeholder="可选描述"
+            placeholder={t('common.descriptionPlaceholder')}
           />
         </Form.Item>
 
-        <Form.Item label="仅本机">
+        <Form.Item label={t('common.localOnly')}>
           <Space>
             <Switch
               checked={formState.localOnly}
@@ -104,13 +106,13 @@ export function AliasFormModal({
             />
             {formState.localOnly && (
               <Text type="secondary" style={{ fontSize: 12 }}>
-                此配置仅保存在本机，不会同步到其他设备
+                {t('common.localOnlyHint')}
               </Text>
             )}
           </Space>
         </Form.Item>
 
-        <Form.Item label="适用 Shell">
+        <Form.Item label={t('common.applicableShells')}>
           <Space size={12}>
             {ALL_SHELL_TYPES.map((shell) => (
               <Checkbox

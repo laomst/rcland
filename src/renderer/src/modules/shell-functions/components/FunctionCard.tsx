@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button, Space, Switch, Typography, Tooltip, App, Tag, Select } from 'antd'
 import { EditOutlined, DeleteOutlined, LockOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ShellFunction } from '@shared/shell-types'
@@ -7,18 +8,6 @@ import { FunctionFormModal } from './FunctionFormModal'
 import { ItemRow } from '@renderer/components/ItemRow'
 
 const { Text } = Typography
-
-/** Category labels and colors */
-const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
-  builtin: { label: '内置', color: 'geekblue' },
-  git: { label: 'Git', color: 'orange' },
-  fs: { label: '文件系统', color: 'green' },
-  network: { label: '网络', color: 'blue' },
-  dev: { label: '开发', color: 'purple' },
-  system: { label: '系统', color: 'cyan' },
-  archive: { label: '归档', color: 'gold' },
-  custom: { label: '自定义', color: 'default' }
-}
 
 /** Flexible column style with ellipsis */
 const flexCol = (flex: number): React.CSSProperties => ({
@@ -40,12 +29,27 @@ export function FunctionCard({
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }): React.ReactElement {
+  const { t } = useTranslation()
   const { modal } = App.useApp()
+
+  const categoryConfig: Record<string, { label: string; color: string }> = {
+    builtin: { label: t('shellFunctions.categories.builtin'), color: 'geekblue' },
+    git: { label: 'Git', color: 'orange' },
+    fs: { label: t('shellFunctions.categories.filesystem'), color: 'green' },
+    network: { label: t('shellFunctions.categories.network'), color: 'blue' },
+    dev: { label: t('shellFunctions.categories.dev'), color: 'purple' },
+    system: { label: t('shellFunctions.categories.system'), color: 'cyan' },
+    archive: { label: t('shellFunctions.categories.archive'), color: 'gold' },
+    search: { label: t('shellFunctions.categories.search'), color: 'lime' },
+    process: { label: t('shellFunctions.categories.process'), color: 'red' },
+    custom: { label: t('shellFunctions.categories.custom'), color: 'default' },
+  }
+
   const updateFunction = useShellConfigStore((s) => s.updateFunction)
   const removeFunction = useShellConfigStore((s) => s.removeFunction)
   const [editOpen, setEditOpen] = useState(false)
 
-  const categoryInfo = CATEGORY_CONFIG[func.category] || CATEGORY_CONFIG.custom
+  const categoryInfo = categoryConfig[func.category] || categoryConfig.custom
   const shellsWithBody = Object.keys(func.body).filter((k) => func.body[k as keyof typeof func.body]?.trim()).length
 
   return (
@@ -60,17 +64,17 @@ export function FunctionCard({
         actions={<>
           {func.builtIn ? (
             <>
-              <Tag color="geekblue" icon={<LockOutlined />} style={{ margin: 0 }}>内置</Tag>
-              <Tooltip title="查看">
+              <Tag color="geekblue" icon={<LockOutlined />} style={{ margin: 0 }}>{t('shellFunctions.builtIn')}</Tag>
+              <Tooltip title={t('shellFunctions.view')}>
                 <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => setEditOpen(true)} />
               </Tooltip>
             </>
           ) : (
             <>
-              <Tooltip title="编辑">
+              <Tooltip title={t('common.edit')}>
                 <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
               </Tooltip>
-              <Tooltip title="删除">
+              <Tooltip title={t('common.delete')}>
                 <Button
                   type="text"
                   size="small"
@@ -78,11 +82,11 @@ export function FunctionCard({
                   icon={<DeleteOutlined />}
                   onClick={() => {
                     modal.confirm({
-                      title: '确认删除',
-                      content: `确定删除函数 "${func.name}" 吗？`,
-                      okText: '删除',
+                      title: t('common.confirmDelete'),
+                      content: t('shellFunctions.deleteConfirm', { name: func.name }),
+                      okText: t('common.delete'),
                       okType: 'danger',
-                      cancelText: '取消',
+                      cancelText: t('common.cancel'),
                       onOk: () => removeFunction(func.id)
                     })
                   }}
@@ -101,13 +105,13 @@ export function FunctionCard({
                 }}
                 style={{ width: 70 }}
                 options={[
-                  { value: 'sync', label: '同步' },
-                  { value: 'local', label: '本机' }
+                  { value: 'sync', label: t('common.synced') },
+                  { value: 'local', label: t('common.local') }
                 ]}
               />
             </>
           )}
-          <Tooltip title={func.builtIn ? '内置函数不可禁用' : undefined}>
+          <Tooltip title={func.builtIn ? t('shellFunctions.builtInNoDisable') : undefined}>
             <Switch
               size="small"
               checked={func.enabled}
@@ -136,7 +140,7 @@ export function FunctionCard({
         </Tooltip>
 
         {/* Shell body indicator */}
-        <Tooltip title={`已定义 ${shellsWithBody} 个 Shell 实现`}>
+        <Tooltip title={t('shellFunctions.shellImplCount', { count: shellsWithBody })}>
           <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>
             [{shellsWithBody} shell{shellsWithBody !== 1 ? 's' : ''}]
           </Text>
@@ -145,7 +149,7 @@ export function FunctionCard({
 
       <FunctionFormModal
         open={editOpen}
-        title={func.builtIn ? `查看内置函数: ${func.name}` : `编辑函数: ${func.name}`}
+        title={func.builtIn ? t('shellFunctions.viewBuiltinTitle', { name: func.name }) : t('shellFunctions.editItemTitle', { name: func.name })}
         initialValues={{
           name: func.name,
           category: func.category,
@@ -153,7 +157,7 @@ export function FunctionCard({
           body: { ...func.body },
           localOnly: func.localOnly ?? false
         }}
-        okText="保存"
+        okText={t('common.save')}
         readOnly={func.builtIn}
         onCancel={() => setEditOpen(false)}
         onOk={(values) => {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Typography, Spin } from 'antd'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -14,6 +15,7 @@ import { useSortableList } from '@renderer/hooks/useSortableList'
 const { Title } = Typography
 
 export function PathPage(): React.ReactElement {
+  const { t } = useTranslation()
   const pathEntries = useShellConfigStore((s) => s.shellConfig.pathEntries)
   const dataLoaded = useShellConfigStore((s) => s.dataLoaded)
   const loadShellConfig = useShellConfigStore((s) => s.loadShellConfig)
@@ -64,9 +66,9 @@ export function PathPage(): React.ReactElement {
 
   return (
     <div>
-      <Title level={4} style={{ marginBottom: 16 }}>PATH 环境变量</Title>
+      <Title level={4} style={{ marginBottom: 16 }}>{t('shellPath.title')}</Title>
 
-      <GroupHeader title="同步配置" count={syncedPaths.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+      <GroupHeader title={t('common.syncedConfig')} count={syncedPaths.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
       {!syncCollapsed && syncedPaths.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={syncedPaths.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -85,7 +87,7 @@ export function PathPage(): React.ReactElement {
         </DndContext>
       )}
 
-      <GroupHeader title="本机配置" count={localPaths.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      <GroupHeader title={t('common.localConfig')} count={localPaths.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
       {!localCollapsed && localPaths.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={localPaths.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -106,14 +108,14 @@ export function PathPage(): React.ReactElement {
 
       <PathFormModal
         open={addOpen}
-        title="新建 PATH 条目"
+        title={t('shellPath.addTitle')}
         initialValues={{
           path: '',
           description: '',
           shells: [...getOsSupportedShells()],
           localOnly: addLocalOnly
         }}
-        okText="添加"
+        okText={t('common.add')}
         onCancel={() => setAddOpen(false)}
         onOk={handleConfirmAdd}
       />

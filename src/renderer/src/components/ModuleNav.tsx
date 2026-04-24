@@ -8,19 +8,22 @@ import {
   ApiOutlined
 } from '@ant-design/icons'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
+import { useTranslation } from 'react-i18next'
 
-const menuItems = [
-  { key: '/env', label: '环境变量', icon: <AppstoreOutlined /> },
-  { key: '/path', label: 'PATH', icon: <NodeIndexOutlined /> },
-  { key: '/functions', label: '函数', icon: <FunctionOutlined /> },
-  { key: '/aliases', label: '别名', icon: <FileTextOutlined /> },
-  { type: 'divider' as const },
-  { key: '/ccland', label: 'CCLand', icon: <ApiOutlined /> }
-]
 export function ModuleNav(): React.ReactElement {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const settings = useSettingsStore((s) => s.settings)
+
+  const menuItems = [
+    { key: '/env', label: t('nav.env'), icon: <AppstoreOutlined /> },
+    { key: '/path', label: t('nav.path'), icon: <NodeIndexOutlined /> },
+    { key: '/functions', label: t('nav.functions'), icon: <FunctionOutlined /> },
+    { key: '/aliases', label: t('nav.aliases'), icon: <FileTextOutlined /> },
+    { type: 'divider' as const },
+    { key: '/ccland', label: t('nav.ccland'), icon: <ApiOutlined /> }
+  ]
   return (
     <Menu
       theme="dark"

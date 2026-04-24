@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Typography } from 'antd'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -42,6 +43,7 @@ function extractFuncNames(body: ShellFunction['body']): ShellFunction['funcNames
 }
 
 export default function FunctionPage(): React.ReactElement {
+  const { t } = useTranslation()
   const loadShellConfig = useShellConfigStore((s) => s.loadShellConfig)
   const dataLoaded = useShellConfigStore((s) => s.dataLoaded)
   const functions = useShellConfigStore((s) => s.shellConfig.functions)
@@ -99,7 +101,7 @@ export default function FunctionPage(): React.ReactElement {
 
   return (
     <div style={{ padding: 16 }}>
-      <Title level={4} style={{ marginBottom: 16 }}>Shell 函数</Title>
+      <Title level={4} style={{ marginBottom: 16 }}>{t('shellFunctions.title')}</Title>
 
       {/* 内置函数区域（固定，不可拖拽） */}
       {builtInFunctions.map((func, idx) => (
@@ -108,7 +110,7 @@ export default function FunctionPage(): React.ReactElement {
 
       {/* 用户函数区域 */}
       <GroupHeader
-        title="同步配置"
+        title={t('common.syncedConfig')}
         count={syncedFunctions.length}
         collapsed={syncCollapsed}
         onToggle={() => setSyncCollapsed(!syncCollapsed)}
@@ -133,7 +135,7 @@ export default function FunctionPage(): React.ReactElement {
         </DndContext>
       )}
 
-      <GroupHeader title="本机配置" count={localFunctions.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      <GroupHeader title={t('common.localConfig')} count={localFunctions.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
       {!localCollapsed && localFunctions.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={localFunctions.map((f) => f.id)} strategy={verticalListSortingStrategy}>
@@ -155,9 +157,9 @@ export default function FunctionPage(): React.ReactElement {
       {/* Add/Edit Modal */}
       <FunctionFormModal
         open={addModalOpen}
-        title={editingFuncId && functions.find(f => f.id === editingFuncId)?.name ? "编辑函数" : "添加函数"}
+        title={editingFuncId && functions.find(f => f.id === editingFuncId)?.name ? t('shellFunctions.editTitle') : t('shellFunctions.addTitle')}
         initialValues={initialFormValues}
-        okText="保存"
+        okText={t('common.save')}
         onCancel={() => {
           // 如果是新建且没有填写名称，删除空白函数
           const editingFunc = editingFuncId ? functions.find(f => f.id === editingFuncId) : null

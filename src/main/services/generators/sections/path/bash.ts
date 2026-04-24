@@ -16,15 +16,7 @@ export class PathBashGenerator implements SectionGenerator<PathEntry[]> {
     lines.push('CUSTOM_PATHS=()')
 
     for (const e of items) {
-      // 检测路径中是否包含变量引用，生成条件性语法
-      const varMatch = e.path.match(/\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/)
-      if (varMatch) {
-        const varName = varMatch[1]
-        // 生成条件性路径：${VAR:+$VAR/path}
-        lines.push(`CUSTOM_PATHS+=("\${${varName}:+${e.path}}")`)
-      } else {
-        lines.push(`CUSTOM_PATHS+=("${e.path}")`)
-      }
+      lines.push(`CUSTOM_PATHS+=("${e.path}")`)
     }
 
     lines.push('')

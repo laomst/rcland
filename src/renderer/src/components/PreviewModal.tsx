@@ -1,19 +1,21 @@
 import { Modal } from 'antd'
 import { useState } from 'react'
 import { SHELL_LABELS, type ShellType } from '@shared/shell'
+import { useTranslation } from 'react-i18next'
 
 export function usePreview() {
+  const { t } = useTranslation()
   const [previewShell, setPreviewShell] = useState<ShellType | null>(null)
   const [previewContent, setPreviewContent] = useState('')
 
   const handlePreview = async (shell: ShellType) => {
     setPreviewShell(shell)
-    setPreviewContent('加载中...')
+    setPreviewContent(t('preview.loading'))
     try {
       const content = await window.electronAPI.generateAllConfig(shell)
       setPreviewContent(content)
     } catch (err) {
-      setPreviewContent(`生成失败: ${err instanceof Error ? err.message : String(err)}`)
+      setPreviewContent(t('preview.generateFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
@@ -29,9 +31,10 @@ export interface PreviewModalProps {
 }
 
 export function PreviewModal({ shell, content, onClose }: PreviewModalProps): React.ReactElement {
+  const { t } = useTranslation()
   return (
     <Modal
-      title={shell ? `配置预览 — ${SHELL_LABELS[shell]}` : '配置预览'}
+      title={shell ? t('preview.title', { shell: SHELL_LABELS[shell] }) : t('preview.titleGeneric')}
       open={shell !== null}
       onCancel={onClose}
       width={720}

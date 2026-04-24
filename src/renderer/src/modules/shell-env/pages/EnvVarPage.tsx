@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Typography, Spin } from 'antd'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -14,6 +15,7 @@ import { useSortableList } from '@renderer/hooks/useSortableList'
 const { Title } = Typography
 
 export function EnvVarPage(): React.ReactElement {
+  const { t } = useTranslation()
   const variables = useShellConfigStore((s) => s.shellConfig.variables)
   const dataLoaded = useShellConfigStore((s) => s.dataLoaded)
   const loadShellConfig = useShellConfigStore((s) => s.loadShellConfig)
@@ -74,9 +76,9 @@ export function EnvVarPage(): React.ReactElement {
 
   return (
     <div>
-      <Title level={4} style={{ marginBottom: 16 }}>环境变量</Title>
+      <Title level={4} style={{ marginBottom: 16 }}>{t('shellEnv.title')}</Title>
 
-      <GroupHeader title="同步配置" count={syncedVars.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+      <GroupHeader title={t('common.syncedConfig')} count={syncedVars.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
       {!syncCollapsed && syncedVars.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={syncedVars.map((v) => v.id)} strategy={verticalListSortingStrategy}>
@@ -95,7 +97,7 @@ export function EnvVarPage(): React.ReactElement {
         </DndContext>
       )}
 
-      <GroupHeader title="本机配置" count={localVars.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      <GroupHeader title={t('common.localConfig')} count={localVars.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
       {!localCollapsed && localVars.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={localVars.map((v) => v.id)} strategy={verticalListSortingStrategy}>
@@ -116,9 +118,9 @@ export function EnvVarPage(): React.ReactElement {
 
       <EnvVarFormModal
         open={addOpen}
-        title={editingVarId && variables.find(v => v.id === editingVarId)?.key ? "编辑环境变量" : "新建环境变量"}
+        title={editingVarId && variables.find(v => v.id === editingVarId)?.key ? t('shellEnv.editTitle') : t('shellEnv.addTitle')}
         initialValues={initialFormValues}
-        okText="保存"
+        okText={t('common.save')}
         onCancel={() => {
           // 如果是新建且没有填写 key，删除空白变量
           const editingVar = editingVarId ? variables.find(v => v.id === editingVarId) : null

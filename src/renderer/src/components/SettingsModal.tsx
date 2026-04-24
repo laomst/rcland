@@ -3,7 +3,8 @@ import { App as AntdApp } from 'antd'
 import { FolderOpenOutlined, KeyOutlined } from '@ant-design/icons'
 import { useState, useCallback } from 'react'
 import { ALL_SHELL_TYPES, SHELL_LABELS, SHELL_OS_SUPPORT, type ShellType } from '@shared/shell'
-import { APP_PAGE_LABELS, type AppPage, type AppSettings } from '@shared/types'
+import { getAppPageLabels, type AppPage, type AppSettings } from '@shared/types'
+import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@renderer/stores/useAppStore'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
@@ -24,6 +25,7 @@ export interface SettingsModalProps {
 
 export function SettingsModal({ open, onClose }: SettingsModalProps): React.ReactElement {
   const { message, modal } = AntdApp.useApp()
+  const { t, i18n } = useTranslation()
   const osShells = getOsSupportedShells()
 
   const settings = useSettingsStore((s) => s.settings)
@@ -77,7 +79,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
     }
 
     onClose()
-    message.success('设置已保存')
+    message.success(t('settings.saved'))
   }
 
   const toggleShellEnabled = (shell: ShellType, enabled: boolean) => {
@@ -97,15 +99,15 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
 
   const handleReplaceKey = () => {
     modal.confirm({
-      title: '更换密钥',
+      title: t('settings.replaceKeyTitle'),
       content: (
         <div>
-          <p>更换密钥将会使用新密钥重新加密所有已保存的 Token。</p>
-          <p style={{ fontSize: 12, color: '#999' }}>此操作不可撤销，请确保您记住新密钥。</p>
+          <p>{t('settings.replaceKeyContent')}</p>
+          <p style={{ fontSize: 12, color: '#999' }}>{t('settings.replaceKeyWarning')}</p>
         </div>
       ),
-      okText: '继续',
-      cancelText: '取消',
+      okText: t('settings.continue'),
+      cancelText: t('common.cancel'),
       onOk: () => {
         openKeyModal('replace')
       }
@@ -120,38 +122,38 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
       if (mode === 'migrate') {
         await window.electronAPI.migrateKeyFile(oldPath, newPath)
         await updateSettings(newSettings)
-        message.success('密钥文件已迁移到新位置')
+        message.success(t('settings.keyMigrated'))
       } else if (mode === 'reencrypt') {
         const result = await window.electronAPI.reencryptWithKeyPath(oldPath, newPath)
         await updateSettings(newSettings)
         if (result.failedCount > 0) {
-          message.warning(`数据迁移完成，${result.reencryptedCount} 个 Token 已重新加密，${result.failedCount} 个失败`)
+          message.warning(t('settings.reencryptPartial', { success: result.reencryptedCount, failed: result.failedCount }))
         } else {
-          message.success(`数据迁移完成，${result.reencryptedCount} 个 Token 已重新加密`)
+          message.success(t('settings.reencryptSuccess', { success: result.reencryptedCount }))
         }
       } else if (mode === 'newKey') {
         await window.electronAPI.initKey(undefined)
         await updateSettings(newSettings)
-        message.success('已在新位置初始化新密钥（旧数据将无法解密）')
+        message.success(t('settings.newKeyInitialized'))
       }
       setKeyPathChangeState(null)
       onClose()
       await refreshKeyExists()
       await loadData()
     } catch (err) {
-      message.error(`迁移失败: ${err instanceof Error ? err.message : String(err)}`)
+      message.error(t('settings.migrationFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
   return (
     <>
       <Modal
-        title="基础设置"
+        title={t('settings.title')}
         open={open}
         onCancel={onClose}
         onOk={saveSettings}
-        okText="保存"
-        cancelText="取消"
+        okText={t('common.save')}
+        cancelText={t('common.cancel')}
         width={680}
         afterOpenChange={(visible) => { if (visible) handleOpen() }}
       >
@@ -163,8 +165,8 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
             colon={false}
             style={{ marginTop: 16 }}
           >
-            <Divider>通用设置</Divider>
-            <Form.Item label="配置目录" extra="可放在 iCloud/Dropbox 等同步目录中">
+            <Divider>{t('settings.general')}</Divider>
+            <Form.Item label={t('settings.configDir')} extra={t('settings.configDirHint')}>
               <Space.Compact style={{ width: '100%' }}>
                 <Input
                   value={editSettings.configDir}
@@ -175,7 +177,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
                   icon={<FolderOpenOutlined />}
                   onClick={async () => {
                     const path = await window.electronAPI.showOpenDialog({
-                      title: '选择配置目录',
+                      title: t('settings.selectConfigDir'),
                       defaultPath: editSettings.configDir,
                       properties: ['openDirectory']
                     })
@@ -184,7 +186,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
                 />
               </Space.Compact>
             </Form.Item>
-            <Form.Item label="密钥文件路径" extra="用于加密/解密 Token，不应放在同步目录中">
+            <Form.Item label={t('settings.keyFilePath')} extra={t('settings.keyFilePathHint')}>
               <Space.Compact style={{ width: '100%' }}>
                 <Input
                   value={editSettings.keyFilePath}
@@ -195,7 +197,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
                   icon={<KeyOutlined />}
                   onClick={async () => {
                     const path = await window.electronAPI.showOpenDialog({
-                      title: '选择密钥文件',
+                      title: t('settings.selectKeyFile'),
                       defaultPath: editSettings.keyFilePath,
                       properties: ['openFile']
                     })
@@ -204,22 +206,36 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
                 />
               </Space.Compact>
             </Form.Item>
-            <Form.Item label="密钥管理">
+            <Form.Item label={t('settings.keyManagement')}>
               <Space>
-                <Button disabled={keyExists} onClick={handleInitKey}>初始化密钥</Button>
-                <Button disabled={!keyExists} onClick={handleReplaceKey}>更换密钥</Button>
+                <Button disabled={keyExists} onClick={handleInitKey}>{t('settings.initKey')}</Button>
+                <Button disabled={!keyExists} onClick={handleReplaceKey}>{t('settings.replaceKey')}</Button>
               </Space>
             </Form.Item>
-            <Form.Item label="默认首页">
+            <Form.Item label={t('settings.defaultPage')}>
               <Select
                 value={editSettings.defaultPage || '/env'}
                 onChange={(value: AppPage) => setEditSettings({ ...editSettings, defaultPage: value })}
-                options={Object.entries(APP_PAGE_LABELS).map(([key, label]) => ({ value: key, label }))}
+                options={Object.entries(getAppPageLabels(t)).map(([key, label]) => ({ value: key, label }))}
+                style={{ width: 200 }}
+              />
+            </Form.Item>
+            <Form.Item label={t('settings.language')}>
+              <Select
+                value={editSettings.language || 'zh-CN'}
+                onChange={(value: 'zh-CN' | 'en') => {
+                  setEditSettings({ ...editSettings, language: value })
+                  i18n.changeLanguage(value)
+                }}
+                options={[
+                  { label: '简体中文', value: 'zh-CN' },
+                  { label: 'English', value: 'en' },
+                ]}
                 style={{ width: 200 }}
               />
             </Form.Item>
 
-            <Divider>Shell 设置</Divider>
+            <Divider>{t('settings.shellSettings')}</Divider>
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               {ALL_SHELL_TYPES.map((shell) => {
                 const supported = osShells.includes(shell)
@@ -234,7 +250,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
                       {SHELL_LABELS[shell]}
                       {!supported && (
                         <span style={{ fontSize: 11, color: '#999', marginLeft: 4 }}>
-                          (当前系统不支持)
+                          {t('settings.notSupported')}
                         </span>
                       )}
                     </Checkbox>
@@ -248,7 +264,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
 
       {/* Key Path Migration Modal */}
       <Modal
-        title="密钥文件路径已更改"
+        title={t('settings.keyPathChanged')}
         open={!!keyPathChangeState}
         onCancel={() => setKeyPathChangeState(null)}
         footer={null}
@@ -256,27 +272,27 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
       >
         {keyPathChangeState && (
           <div style={{ marginTop: 8 }}>
-            <p>检测到密钥文件路径已更改，请选择处理方式：</p>
+            <p>{t('settings.keyPathChangedDesc')}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
               <Button
                 type="primary"
                 block
                 onClick={() => handleKeyPathMigration('migrate')}
               >
-                迁移密钥文件
+                {t('settings.migrateKeyFile')}
               </Button>
               <div style={{ fontSize: 12, color: '#666', marginTop: -8 }}>
-                将旧位置的密钥文件复制到新位置，保留现有加密数据
+                {t('settings.migrateKeyFileDesc')}
               </div>
 
               <Button
                 block
                 onClick={() => handleKeyPathMigration('reencrypt')}
               >
-                使用新位置的密钥重新加密
+                {t('settings.reencryptWithNewKey')}
               </Button>
               <div style={{ fontSize: 12, color: '#666', marginTop: -8 }}>
-                新位置已有密钥，用它重新加密所有 Token
+                {t('settings.reencryptWithNewKeyDesc')}
               </div>
 
               <Button
@@ -284,19 +300,19 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
                 block
                 onClick={() => {
                   modal.confirm({
-                    title: '确认初始化新密钥',
-                    content: '这将生成新的随机密钥，所有现有 Token 将无法解密！',
-                    okText: '确认',
+                    title: t('settings.confirmInitNewKey'),
+                    content: t('settings.confirmInitNewKeyContent'),
+                    okText: t('common.confirm'),
                     okType: 'danger',
-                    cancelText: '取消',
+                    cancelText: t('common.cancel'),
                     onOk: () => handleKeyPathMigration('newKey')
                   })
                 }}
               >
-                初始化新密钥（丢弃旧数据）
+                {t('settings.initNewKey')}
               </Button>
               <div style={{ fontSize: 12, color: '#999', marginTop: -8 }}>
-                在新位置生成新密钥，旧数据将无法解密
+                {t('settings.initNewKeyDesc')}
               </div>
             </div>
           </div>

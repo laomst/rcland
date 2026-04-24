@@ -4,6 +4,7 @@ import { forwardRef, useImperativeHandle, useState, useCallback } from 'react'
 import { TempKeyModal } from './TempKeyModal'
 import type { ShellType } from '@shared/shell'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
+import { useTranslation } from 'react-i18next'
 
 export interface KeyModalsHandle {
   openTempKeyModal: () => void
@@ -17,6 +18,7 @@ export const KeyModals = forwardRef<KeyModalsHandle, KeyModalsProps>(function Ke
   { enabledShells },
   ref
 ) {
+  const { t } = useTranslation()
   const { message } = AntdApp.useApp()
 
   const keyModalOpen = useSettingsStore((s) => s.keyModalOpen)
@@ -43,9 +45,9 @@ export const KeyModals = forwardRef<KeyModalsHandle, KeyModalsProps>(function Ke
       await refreshKeyExists()
       closeKeyModal()
       setKeyInput('')
-      message.success(keyModalMode === 'init' ? '密钥已初始化' : '密钥已更换，所有 Token 已重新加密')
+      message.success(keyModalMode === 'init' ? t('crypto.keyInitialized') : t('crypto.keyReplaced'))
     } catch (err) {
-      message.error(`操作失败: ${err instanceof Error ? err.message : String(err)}`)
+      message.error(t('common.operationFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
@@ -61,9 +63,9 @@ export const KeyModals = forwardRef<KeyModalsHandle, KeyModalsProps>(function Ke
       await refreshKeyExists()
       setSaveKeyConfirmOpen(false)
       setLastSuccessfulTempKey('')
-      message.success('密钥已保存，所有 Token 已用新密钥重新加密')
+      message.success(t('crypto.keySaved'))
     } catch (err) {
-      message.error(`保存密钥失败: ${err instanceof Error ? err.message : String(err)}`)
+      message.error(t('crypto.saveKeyFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
@@ -71,24 +73,24 @@ export const KeyModals = forwardRef<KeyModalsHandle, KeyModalsProps>(function Ke
     <>
       {/* Key Modal */}
       <Modal
-        title={keyModalMode === 'init' ? '初始化密钥' : '更换密钥'}
+        title={keyModalMode === 'init' ? t('crypto.initKeyTitle') : t('crypto.replaceKeyTitle')}
         open={keyModalOpen}
         onOk={handleKeyModalOk}
         onCancel={() => closeKeyModal()}
-        okText="确定"
-        cancelText="取消"
+        okText={t('common.confirm')}
+        cancelText={t('common.cancel')}
         width={480}
       >
         <div style={{ marginTop: 8 }}>
           <Input.Password
             value={keyInput}
             onChange={(e) => setKeyInput(e.target.value)}
-            placeholder="输入自定义密钥（留空则随机生成）"
+            placeholder={t('crypto.customKeyPlaceholder')}
             style={{ marginBottom: 8 }}
           />
           <div style={{ fontSize: 12, color: '#999' }}>
-            {keyModalMode === 'replace' && '更换密钥后，已有加密数据需重新加密。'}
-            留空将自动生成 64 位随机密钥
+            {keyModalMode === 'replace' && t('crypto.replaceKeyWarning')}
+            {t('crypto.customKeyHint')}
           </div>
         </div>
       </Modal>
@@ -103,17 +105,17 @@ export const KeyModals = forwardRef<KeyModalsHandle, KeyModalsProps>(function Ke
 
       {/* Save Key Confirm Modal */}
       <Modal
-        title="保存密钥"
+        title={t('crypto.saveKeyTitle')}
         open={saveKeyConfirmOpen}
         onOk={handleSaveKeyConfirm}
         onCancel={() => setSaveKeyConfirmOpen(false)}
-        okText="保存"
-        cancelText="跳过"
+        okText={t('common.save')}
+        cancelText={t('crypto.saveKeySkip')}
         width={480}
       >
         <div style={{ marginTop: 8 }}>
-          <p>临时密钥使用成功！是否将其保存为默认密钥文件？</p>
-          <p style={{ fontSize: 12, color: '#999' }}>保存后将用此密钥重新加密所有 Token</p>
+          <p>{t('crypto.saveKeyPrompt')}</p>
+          <p style={{ fontSize: 12, color: '#999' }}>{t('crypto.saveKeyHint')}</p>
         </div>
       </Modal>
     </>

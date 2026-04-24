@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Tabs, Spin } from 'antd'
 import { ShopOutlined, SettingOutlined } from '@ant-design/icons'
 import { useAppStore } from '@renderer/stores/useAppStore'
@@ -6,6 +7,7 @@ import { ProviderTab } from '../components/ProviderTab'
 import { ConfigTab } from '../components/ConfigTab'
 
 export default function CCConfigPage(): React.ReactElement {
+  const { t } = useTranslation()
   const loadData = useAppStore((s) => s.loadData)
   const dataLoaded = useAppStore((s) => s.dataLoaded)
   const loading = useAppStore((s) => s.loading)
@@ -30,13 +32,13 @@ export default function CCConfigPage(): React.ReactElement {
       items={[
         {
           key: 'configs',
-          label: '配置管理',
+          label: t('ccLaunch.configTab'),
           icon: <SettingOutlined />,
           children: <ConfigTab />
         },
         {
           key: 'providers',
-          label: '供应商管理',
+          label: t('ccLaunch.providerTab'),
           icon: <ShopOutlined />,
           children: <ProviderTab />
         }

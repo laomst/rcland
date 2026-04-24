@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Space, Switch, Typography, Button, Tooltip, App, message } from 'antd'
 import { EditOutlined, DeleteOutlined, LockOutlined, CopyOutlined } from '@ant-design/icons'
 import type { Provider } from '@shared/types'
@@ -19,6 +20,7 @@ export function ProviderCard({
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }): React.ReactElement {
+  const { t } = useTranslation()
   const { modal } = App.useApp()
   const updateProvider = useAppStore((s) => s.updateProvider)
   const addProviderAfter = useAppStore((s) => s.addProviderAfter)
@@ -34,10 +36,10 @@ export function ProviderCard({
     const newProvider = {
       ...rest,
       id: crypto.randomUUID(),
-      name: provider.name + ' (副本)'
+      name: provider.name + ' ' + t('ccLaunch.copySuffix')
     }
     addProviderAfter(provider.id, newProvider)
-    message.success('已复制供应商')
+    message.success(t('ccLaunch.providerCopied'))
   }
 
   return (
@@ -63,28 +65,28 @@ export function ProviderCard({
           {keyCount > 0 && (
             <Text type="secondary" style={{ fontSize: 11 }}>
               <LockOutlined style={{ marginRight: 2 }} />
-              {keyCount} 个密钥
+              {t('ccLaunch.keyCount', { count: keyCount })}
             </Text>
           )}
 
-          <Text type="secondary" style={{ fontSize: 12 }}>({relatedConfigs.length} 个配置)</Text>
-          <Tooltip title="复制">
+          <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.relatedConfigs', { count: relatedConfigs.length })}</Text>
+          <Tooltip title={t('common.copy')}>
             <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy} />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t('common.edit')}>
             <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
           </Tooltip>
-          <Tooltip title="删除">
+          <Tooltip title={t('common.delete')}>
             <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => {
               const count = relatedConfigs.length
               modal.confirm({
-                title: '确认删除',
+                title: t('common.confirmDelete'),
                 content: count > 0
-                  ? `供应商 "${provider.name}" 下有 ${count} 个配置，删除后关联配置也将被移除，确定？`
-                  : `确定删除供应商 "${provider.name}" 吗？`,
-                okText: '删除',
+                  ? t('ccLaunch.deleteProviderWithConfigs', { name: provider.name, count })
+                  : t('ccLaunch.deleteProviderConfirm', { name: provider.name }),
+                okText: t('common.delete'),
                 okType: 'danger',
-                cancelText: '取消',
+                cancelText: t('common.cancel'),
                 onOk: () => useAppStore.getState().removeProvider(provider.id)
               })
             }} />
@@ -106,12 +108,12 @@ export function ProviderCard({
         {/* Name */}
         <Text strong style={{ fontSize: 14 }}>{provider.name}</Text>
 
-        {!provider.enabled && <Text type="secondary" style={{ fontSize: 12 }}>(已停用)</Text>}
+        {!provider.enabled && <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.providerDisabled')}</Text>}
       </ItemRow>
 
       <ProviderFormModal
         open={editOpen}
-        title={`编辑供应商: ${provider.name}`}
+        title={t('ccLaunch.editProviderTitle', { name: provider.name })}
         initialValues={{
           id: provider.id,
           name: provider.name,

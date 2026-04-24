@@ -1,4 +1,5 @@
 import { Space, Tooltip, Typography } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { LockOutlined } from '@ant-design/icons'
 import type { ShellVariable } from '@shared/shell-types'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
@@ -18,6 +19,7 @@ export function EnvVarCard({
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }): React.ReactElement {
+  const { t } = useTranslation()
   const updateVariable = useShellConfigStore((s) => s.updateVariable)
 
   return (
@@ -26,7 +28,7 @@ export function EnvVarCard({
       index={index}
       isDragging={isDragging}
       dragHandleProps={dragHandleProps}
-      deleteConfirmContent={`确定删除环境变量 "${variable.key}" 吗？`}
+      deleteConfirmContent={t('shellEnv.deleteConfirm', { name: variable.key })}
       onUpdate={updateVariable}
       onRemove={(id) => useShellConfigStore.getState().removeVariable(id)}
       onDuplicate={(variable) => {
@@ -46,18 +48,18 @@ export function EnvVarCard({
             {/* Key */}
             <Tooltip title={item.key}>
               <Text strong style={{ fontSize: 12, minWidth: 100, flexShrink: 0 }}>
-                {item.key || '(未设置)'}
+                {item.key || t('common.notSet')}
               </Text>
             </Tooltip>
 
             <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>=</Text>
 
             {/* Value */}
-            <Tooltip title={item.encrypted ? '已加密' : item.value}>
+            <Tooltip title={item.encrypted ? t('common.encrypted') : item.value}>
               <Space size={4} style={{ flex: 1, minWidth: 0 }}>
                 {item.encrypted && <LockOutlined style={{ fontSize: 12, color: '#999' }} />}
                 <Text style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {displayValue || '(空)'}
+                  {displayValue || t('common.empty')}
                 </Text>
               </Space>
             </Tooltip>
@@ -76,7 +78,7 @@ export function EnvVarCard({
       renderEditModal={(open, onClose) => (
         <EnvVarFormModal
           open={open}
-          title={`编辑: ${variable.key}`}
+          title={t('shellEnv.editItemTitle', { name: variable.key })}
           isEdit
           initialValues={{
             key: variable.key,
@@ -86,7 +88,7 @@ export function EnvVarCard({
             shells: variable.shells ?? [],
             localOnly: variable.localOnly ?? false
           }}
-          okText="保存"
+          okText={t('common.save')}
           onCancel={onClose}
           onOk={(values) => {
             updateVariable(variable.id, {

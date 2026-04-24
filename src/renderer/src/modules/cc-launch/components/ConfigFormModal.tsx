@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input, Modal, Form, Space, Select, Divider, Typography, Button, Switch } from 'antd'
 import { PlusOutlined, LockOutlined } from '@ant-design/icons'
 import type { ConfigSet, Provider, EnvVarSetting } from '@shared/types'
@@ -39,6 +40,7 @@ export function ConfigFormModal({
   onOk,
   onAddKey
 }: ConfigFormModalProps): React.ReactElement {
+  const { t } = useTranslation()
   const [form, setForm] = useState<FormValues>(initialValues)
 
   const handleOpen = () => setForm(initialValues)
@@ -76,7 +78,7 @@ export function ConfigFormModal({
       onOk={() => onOk(form)}
       onCancel={onCancel}
       okText={okText}
-      cancelText="取消"
+      cancelText={t('common.cancel')}
       okButtonProps={{ disabled: okDisabled ?? (!(form.name?.trim() || form.funcName?.trim()) || !form.providerId || !form.keyId) }}
       width={700}
     >
@@ -87,11 +89,11 @@ export function ConfigFormModal({
         colon={false}
         style={{ marginTop: 16 }}
       >
-        <Form.Item label="供应商">
+        <Form.Item label={t('ccLaunch.provider')}>
           <Select
             value={form.providerId}
             onChange={handleProviderChange}
-            placeholder="选择供应商"
+            placeholder={t('ccLaunch.selectProvider')}
             style={{ width: '100%' }}
             options={providers.map((p) => ({
               value: p.id,
@@ -104,11 +106,11 @@ export function ConfigFormModal({
             }))}
           />
         </Form.Item>
-        <Form.Item label="接入点">
+        <Form.Item label={t('ccLaunch.endpoint')}>
           <Select
             value={form.endpointId}
             onChange={(val) => setForm((f) => ({ ...f, endpointId: val }))}
-            placeholder="选择接入点"
+            placeholder={t('ccLaunch.selectEndpoint')}
             style={{ width: '100%' }}
             options={(provider?.endpoints ?? []).map((ep) => ({
               value: ep.id,
@@ -116,12 +118,12 @@ export function ConfigFormModal({
             }))}
           />
         </Form.Item>
-        <Form.Item label="密钥" required>
+        <Form.Item label={t('ccLaunch.key')} required>
           <Space.Compact style={{ width: '100%' }}>
             <Select
               value={form.keyId}
               onChange={(val) => setForm((f) => ({ ...f, keyId: val }))}
-              placeholder={hasNoKeys ? '暂无密钥，请先添加' : '选择密钥'}
+              placeholder={hasNoKeys ? t('ccLaunch.noKeyHint') : t('ccLaunch.selectKey')}
               style={{ flex: 1 }}
               status={!selectedKey && form.keyId ? 'error' : undefined}
               options={(provider?.keys ?? []).map((k) => ({
@@ -130,24 +132,24 @@ export function ConfigFormModal({
                   <Space>
                     <LockOutlined style={{ color: '#999' }} />
                     {k.label}
-                    {k.token && <Text type="success" style={{ fontSize: 11 }}>(已加密)</Text>}
+                    {k.token && <Text type="success" style={{ fontSize: 11 }}>{t('ccLaunch.keyEncrypted')}</Text>}
                   </Space>
                 )
               }))}
             />
             {onAddKey && (
               <Button icon={<PlusOutlined />} onClick={onAddKey}>
-                新建
+                {t('common.new')}
               </Button>
             )}
           </Space.Compact>
           {!selectedKey && form.keyId && (
             <Text type="danger" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
-              引用的密钥已被删除，请重新选择
+              {t('ccLaunch.keyDeletedError')}
             </Text>
           )}
         </Form.Item>
-        <Form.Item label="名称" required>
+        <Form.Item label={t('ccLaunch.configName')} required>
           <Input
             value={form.name ?? ''}
             onChange={(e) => {
@@ -161,18 +163,18 @@ export function ConfigFormModal({
                 return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
               })
             }}
-            placeholder="如: GLM-5.1 模型"
+            placeholder={t('ccLaunch.configNamePlaceholder')}
           />
         </Form.Item>
-        <Form.Item label="函数名" extra="默认根据名称自动生成，留空即可">
+        <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
           <Input
             value={form.funcName ?? ''}
             onChange={(e) => setForm((f) => ({ ...f, funcName: e.target.value }))}
-            placeholder="如: cc-glm5"
+            placeholder={t('ccLaunch.funcNamePlaceholder')}
             style={{ fontFamily: 'monospace' }}
           />
         </Form.Item>
-        <Form.Item label="仅本机">
+        <Form.Item label={t('common.localOnly')}>
           <Space>
             <Switch
               checked={form.localOnly ?? false}
@@ -180,12 +182,12 @@ export function ConfigFormModal({
             />
             {form.localOnly && (
               <Text type="secondary" style={{ fontSize: 12 }}>
-                此配置仅保存在本机，不会同步到其他设备
+                {t('common.localOnlyHint')}
               </Text>
             )}
           </Space>
         </Form.Item>
-        <Divider style={{ margin: '8px 0' }}>Claude 环境变量</Divider>
+        <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>
         <EnvVarEditor envVars={form.envVars} onChange={handleEnvVarChange} />
       </Form>
     </Modal>

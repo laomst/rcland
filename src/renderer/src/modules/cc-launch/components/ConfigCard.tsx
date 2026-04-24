@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button, Space, Switch, Typography, Tooltip, App, Select } from 'antd'
 import { EditOutlined, DeleteOutlined, WarningOutlined, CopyOutlined, LockOutlined } from '@ant-design/icons'
 import type { ConfigSet, Provider } from '@shared/types'
@@ -30,6 +31,7 @@ export function ConfigCard({
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }): React.ReactElement {
+  const { t } = useTranslation()
   const { modal } = App.useApp()
   const updateConfig = useAppStore((s) => s.updateConfig)
   const [editOpen, setEditOpen] = useState(false)
@@ -61,7 +63,7 @@ export function ConfigCard({
             onChange={(val) => updateConfig(config.id, { endpointId: val })}
             style={{ width: 140, textAlign: 'right' }}
             popupMatchSelectWidth={false}
-            placeholder="选择接入点"
+            placeholder={t('ccLaunch.selectEndpoint')}
             options={(provider?.endpoints ?? []).map((ep) => ({
               value: ep.id,
               label: <span style={{ fontSize: 12 }}>{ep.label || ep.url}</span>
@@ -76,7 +78,7 @@ export function ConfigCard({
             onChange={(val) => updateConfig(config.id, { keyId: val })}
             style={{ width: 90, textAlign: 'right' }}
             popupMatchSelectWidth={false}
-            placeholder="选择密钥"
+            placeholder={t('ccLaunch.selectKey')}
             status={keyMissing ? 'error' : undefined}
             suffixIcon={<LockOutlined style={{ fontSize: 10, color: keyMissing ? '#ff4d4f' : '#999' }} />}
             options={(provider?.keys ?? []).map((k) => ({
@@ -87,11 +89,11 @@ export function ConfigCard({
 
           {/* Warning */}
           {providerDisabled && (
-            <Text type="warning" style={{ fontSize: 12 }}><WarningOutlined /> 供应商已停用</Text>
+            <Text type="warning" style={{ fontSize: 12 }}><WarningOutlined /> {t('ccLaunch.providerDisabledWarning')}</Text>
           )}
 
           {/* Action Buttons */}
-          <Tooltip title="复制">
+          <Tooltip title={t('common.copy')}>
             <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => {
               const { id, ...rest } = config
               useAppStore.getState().addConfigAfter(config.id, {
@@ -101,17 +103,17 @@ export function ConfigCard({
               })
             }} />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t('common.edit')}>
             <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
           </Tooltip>
-          <Tooltip title="删除">
+          <Tooltip title={t('common.delete')}>
             <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => {
               modal.confirm({
-                title: '确认删除',
-                content: `确定删除配置 "${config.funcName}" 吗？`,
-                okText: '删除',
+                title: t('common.confirmDelete'),
+                content: t('ccLaunch.deleteConfigConfirm', { name: config.funcName }),
+                okText: t('common.delete'),
                 okType: 'danger',
-                cancelText: '取消',
+                cancelText: t('common.cancel'),
                 onOk: () => useAppStore.getState().removeConfig(config.id)
               })
             }} />
@@ -123,8 +125,8 @@ export function ConfigCard({
             onChange={(val) => updateConfig(config.id, { localOnly: val === 'local' })}
             style={{ width: 70 }}
             options={[
-              { value: 'sync', label: '同步' },
-              { value: 'local', label: '本机' }
+              { value: 'sync', label: t('common.synced') },
+              { value: 'local', label: t('common.local') }
             ]}
           />
           <Switch
@@ -135,10 +137,10 @@ export function ConfigCard({
         </>}
       >
         {/* 1. Provider - fixed */}
-        <Tooltip title={provider?.name ?? '未知'}>
+        <Tooltip title={provider?.name ?? t('ccLaunch.unknown')}>
           <Space size={4} style={{ width: 110, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, display: 'inline-block', flexShrink: 0 }} />
-            <Text style={{ fontSize: 12 }}>{provider?.name ?? '未知'}</Text>
+            <Text style={{ fontSize: 12 }}>{provider?.name ?? t('ccLaunch.unknown')}</Text>
           </Space>
         </Tooltip>
 
@@ -155,7 +157,7 @@ export function ConfigCard({
 
       <ConfigFormModal
         open={editOpen}
-        title={`编辑: ${configName}`}
+        title={t('ccLaunch.editConfigTitle', { name: configName })}
         providers={providers}
         initialValues={{
           providerId: config.providerId,
@@ -166,7 +168,7 @@ export function ConfigCard({
           envVars: { ...config.envVars },
           localOnly: config.localOnly ?? false
         }}
-        okText="保存"
+        okText={t('common.save')}
         onCancel={() => setEditOpen(false)}
         onOk={(values) => {
           updateConfig(config.id, {

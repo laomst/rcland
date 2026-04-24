@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input, Modal, App } from 'antd'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import type { ProviderKey } from '@shared/types'
@@ -16,6 +17,7 @@ export function KeyEditModal({
   onConfirm,
   onCancel
 }: KeyEditModalProps): React.ReactElement {
+  const { t } = useTranslation()
   const { message } = App.useApp()
   const encryptToken = useSettingsStore((s) => s.encryptToken)
   const keyExists = useSettingsStore((s) => s.keyExists)
@@ -40,7 +42,7 @@ export function KeyEditModal({
 
   const handleOk = async () => {
     if (!label.trim()) {
-      message.warning('请输入标签')
+      message.warning(t('ccLaunch.enterLabel'))
       return
     }
 
@@ -57,7 +59,7 @@ export function KeyEditModal({
     }
 
     if (!plainText.trim()) {
-      message.warning('请输入 Token')
+      message.warning(t('ccLaunch.enterToken'))
       return
     }
 
@@ -71,7 +73,7 @@ export function KeyEditModal({
       })
       setPlainText('')
     } catch (err) {
-      message.error('加密失败: ' + (err instanceof Error ? err.message : String(err)))
+      message.error(t('ccLaunch.encryptFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
@@ -82,41 +84,41 @@ export function KeyEditModal({
 
   return (
     <Modal
-      title={editingKey ? '编辑密钥' : '添加密钥'}
+      title={editingKey ? t('ccLaunch.editKey') : t('ccLaunch.addKeyTitle')}
       open={open}
       onOk={handleOk}
       onCancel={handleCancel}
-      okText="保存"
-      cancelText="取消"
+      okText={t('common.save')}
+      cancelText={t('common.cancel')}
       width={480}
     >
       <div style={{ marginTop: 8 }}>
         <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>标签 *</label>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>{t('ccLaunch.keyLabel')}</label>
           <Input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="如: 生产环境、测试账号"
+            placeholder={t('ccLaunch.keyLabelPlaceholder')}
           />
         </div>
         <div style={{ marginBottom: 12 }}>
           <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-            Token {editingKey && <span style={{ fontWeight: 400, color: '#999' }}>(留空保持不变)</span>}
+            {t('ccLaunch.tokenField')} {editingKey && <span style={{ fontWeight: 400, color: '#999' }}>{t('ccLaunch.leaveBlankKeep')}</span>}
           </label>
           <Input.TextArea
             value={plainText}
             onChange={(e) => setPlainText(e.target.value)}
-            placeholder={editingKey ? '输入新 Token 以更新（留空保持原值）' : '粘贴或输入 Token 明文'}
+            placeholder={editingKey ? t('ccLaunch.tokenUpdatePlaceholder') : t('ccLaunch.tokenNewPlaceholder')}
             autoSize={{ minRows: 2, maxRows: 4 }}
             style={{ fontFamily: 'monospace' }}
           />
         </div>
         <div>
-          <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>备注</label>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>{t('ccLaunch.remark')}</label>
           <Input
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="可选备注"
+            placeholder={t('ccLaunch.remarkPlaceholder')}
           />
         </div>
       </div>

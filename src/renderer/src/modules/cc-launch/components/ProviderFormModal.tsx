@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input, Modal, Form, ColorPicker, Divider, Button, Space, App } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
 import type { EnvVarSetting, EnvVarsMap, ProviderEndpoint, ProviderKey, ConfigSet } from '@shared/types'
@@ -42,6 +43,7 @@ export function ProviderFormModal({
   /** Existing configs to check key usage (for delete confirmation) */
   existingConfigs?: ConfigSet[]
 }): React.ReactElement {
+  const { t } = useTranslation()
   const { modal } = App.useApp()
   const [form, setForm] = useState<ProviderFormValues>(initialValues)
   const [keyEditOpen, setKeyEditOpen] = useState(false)
@@ -111,19 +113,19 @@ export function ProviderFormModal({
       // Key is in use, show confirmation dialog
       const configNames = usedConfigs.map((c) => c.funcName).join('、')
       modal.confirm({
-        title: '密钥正在使用中',
+        title: t('ccLaunch.keyInUse'),
         content: (
           <div>
-            <p>密钥「{keyLabel}」正被以下配置使用：</p>
+            <p>{t('ccLaunch.keyInUseDesc', { label: keyLabel })}</p>
             <p style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}>
               {configNames}
             </p>
-            <p>删除后，这些配置将无法正常工作。确定要强制删除吗？</p>
+            <p>{t('ccLaunch.keyInUseWarning')}</p>
           </div>
         ),
-        okText: '强制删除',
+        okText: t('ccLaunch.forceDelete'),
         okType: 'danger',
-        cancelText: '取消',
+        cancelText: t('common.cancel'),
         onOk: () => {
           setForm((f) => ({
             ...f,
@@ -150,8 +152,8 @@ export function ProviderFormModal({
         afterOpenChange={(vis) => { if (vis) handleOpen() }}
         onOk={() => onOk(form)}
         onCancel={onCancel}
-        okText="保存"
-        cancelText="取消"
+        okText={t('common.save')}
+        cancelText={t('common.cancel')}
         okButtonProps={{ disabled: !form.name.trim() || !hasValidEndpoint }}
         width={700}
       >
@@ -162,35 +164,35 @@ export function ProviderFormModal({
           colon={false}
           style={{ marginTop: 16 }}
         >
-          <Form.Item label="供应商名称" required style={{ marginBottom: 12 }}>
+          <Form.Item label={t('ccLaunch.providerName')} required style={{ marginBottom: 12 }}>
             <Space.Compact style={{ width: '100%' }}>
               <Input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="如: GLM (智谱 AI)"
+                placeholder={t('ccLaunch.providerNamePlaceholder')}
                 style={{ flex: 1 }}
               />
               <ColorPicker
                 value={form.color}
-                presets={[{ label: '预设', colors: PRESET_COLORS }]}
+                presets={[{ label: t('ccLaunch.presetColor'), colors: PRESET_COLORS }]}
                 onChangeComplete={(color) => setForm((f) => ({ ...f, color: color.toHexString() }))}
               />
             </Space.Compact>
           </Form.Item>
-          <Form.Item label="接入点 (URL)" required>
+          <Form.Item label={t('ccLaunch.endpointUrl')} required>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {form.endpoints.map((ep, idx) => (
                 <Space.Compact key={ep.id} style={{ width: '100%' }}>
                   <Input
                     value={ep.label}
                     onChange={(e) => updateEndpoint(idx, { label: e.target.value })}
-                    placeholder="标签，如: 默认"
+                    placeholder={t('ccLaunch.endpointLabelPlaceholder')}
                     style={{ width: 120, flexShrink: 0 }}
                   />
                   <Input
                     value={ep.url}
                     onChange={(e) => updateEndpoint(idx, { url: e.target.value })}
-                    placeholder="如: https://open.bigmodel.cn/api/anthropic"
+                    placeholder={t('ccLaunch.endpointUrlPlaceholder')}
                     style={{ fontFamily: 'monospace', flex: 1 }}
                   />
                   {form.endpoints.length > 1 && (
@@ -203,14 +205,14 @@ export function ProviderFormModal({
                 </Space.Compact>
               ))}
               <Button type="dashed" icon={<PlusOutlined />} onClick={addEndpoint} block>
-                添加接入点
+                {t('ccLaunch.addEndpoint')}
               </Button>
             </div>
           </Form.Item>
-          <Form.Item label="密钥 (Token)">
+          <Form.Item label={t('ccLaunch.tokenLabel')}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {form.keys.length === 0 && (
-                <div style={{ color: '#999', fontSize: 13 }}>暂无密钥，点击下方按钮添加</div>
+                <div style={{ color: '#999', fontSize: 13 }}>{t('ccLaunch.noKeys')}</div>
               )}
               {form.keys.map((key) => (
                 <Space.Compact key={key.id} style={{ width: '100%' }}>
@@ -220,7 +222,7 @@ export function ProviderFormModal({
                     style={{ width: 140, flexShrink: 0 }}
                   />
                   <Input
-                    value={key.token ? '•••••••••••• (已加密)' : '(未设置)'}
+                    value={key.token ? t('ccLaunch.encryptedToken') : t('common.notSet')}
                     disabled
                     style={{ fontFamily: 'monospace', flex: 1, color: key.token ? undefined : '#999' }}
                     prefix={<LockOutlined style={{ color: '#999', marginRight: 4 }} />}
@@ -237,11 +239,11 @@ export function ProviderFormModal({
                 </Space.Compact>
               ))}
               <Button type="dashed" icon={<PlusOutlined />} onClick={() => openKeyEdit(null)} block>
-                添加密钥
+                {t('ccLaunch.addKey')}
               </Button>
             </div>
           </Form.Item>
-          <Divider style={{ margin: '8px 0' }}>默认环境变量模板</Divider>
+          <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.defaultEnvTemplate')}</Divider>
           <EnvVarEditor envVars={form.template.envVars} onChange={handleEnvVarChange} />
         </Form>
       </Modal>

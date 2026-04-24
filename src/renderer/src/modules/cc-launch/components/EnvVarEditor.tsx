@@ -1,6 +1,7 @@
 import { Input, Switch, Typography } from 'antd'
 import type { EnvVarsMap, EnvVarSetting } from '@shared/types'
-import { CLAUDE_ENV_VAR_KEYS, CLAUDE_ENV_VAR_LABELS } from '@shared/types'
+import { CLAUDE_ENV_VAR_KEYS, getClaudeEnvVarLabels } from '@shared/types'
+import { useTranslation } from 'react-i18next'
 
 const { Text } = Typography
 
@@ -11,6 +12,8 @@ export function EnvVarEditor({
   envVars: EnvVarsMap
   onChange: (key: string, setting: EnvVarSetting) => void
 }): React.ReactElement {
+  const { t } = useTranslation()
+  const claudeEnvVarLabels = getClaudeEnvVarLabels(t)
   return (
     <div>
       {CLAUDE_ENV_VAR_KEYS.map((key) => {
@@ -36,7 +39,7 @@ export function EnvVarEditor({
             <Input
               size="small"
               value={setting.value}
-              placeholder={CLAUDE_ENV_VAR_LABELS[key]}
+              placeholder={claudeEnvVarLabels[key]}
               style={{ fontFamily: 'monospace', fontSize: 12 }}
               disabled={!setting.enabled}
               onChange={(e) => onChange(key, { ...setting, value: e.target.value })}

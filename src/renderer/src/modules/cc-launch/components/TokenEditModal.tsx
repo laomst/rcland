@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input, Modal, message } from 'antd'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 
@@ -11,6 +12,7 @@ export function TokenEditModal({
   onConfirm: (encrypted: string) => void
   onCancel: () => void
 }): React.ReactElement {
+  const { t } = useTranslation()
   const encryptToken = useSettingsStore((s) => s.encryptToken)
   const keyExists = useSettingsStore((s) => s.keyExists)
   const openKeyModal = useSettingsStore((s) => s.openKeyModal)
@@ -26,24 +28,24 @@ export function TokenEditModal({
       onConfirm(encrypted)
       setPlainText('')
     } catch (err) {
-      message.error('加密失败: ' + (err instanceof Error ? err.message : String(err)))
+      message.error(t('ccLaunch.encryptFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
   return (
     <Modal
-      title="输入 Token 明文"
+      title={t('ccLaunch.tokenEditTitle')}
       open={open}
       onOk={handleOk}
       onCancel={() => { setPlainText(''); onCancel() }}
-      okText="确定（自动加密）"
-      cancelText="取消"
+      okText={t('ccLaunch.tokenEditOk')}
+      cancelText={t('common.cancel')}
       width={480}
     >
       <Input.TextArea
         value={plainText}
         onChange={(e) => setPlainText(e.target.value)}
-        placeholder="粘贴或输入 Token 明文，确认后将自动加密"
+        placeholder={t('ccLaunch.tokenEditPlaceholder')}
         autoSize={{ minRows: 3, maxRows: 6 }}
         style={{ fontFamily: 'monospace', marginTop: 8 }}
       />

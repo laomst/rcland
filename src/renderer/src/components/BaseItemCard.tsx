@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Button, Switch, Tooltip, App, Select } from 'antd'
  import { EditOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons'
 import { ItemRow } from './ItemRow'
+import { useTranslation } from 'react-i18next'
 
 interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly?: boolean; order?: number }> {
   item: T
@@ -30,16 +31,17 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
   renderContent,
   renderEditModal
 }: BaseItemCardProps<T>): React.ReactElement {
+  const { t } = useTranslation()
   const { modal } = App.useApp()
   const [editOpen, setEditOpen] = useState(false)
 
   const handleDelete = (): void => {
     modal.confirm({
-      title: '确认删除',
+      title: t('common.confirmDelete'),
       content: deleteConfirmContent,
-      okText: '删除',
+      okText: t('common.delete'),
       okType: 'danger',
-      cancelText: '取消',
+      cancelText: t('common.cancel'),
       onOk: () => onRemove(item.id)
     })
   }
@@ -61,14 +63,14 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
         dragHandleProps={dragHandleProps}
         actions={<>
           {onDuplicate && (
-            <Tooltip title="复制">
+            <Tooltip title={t('common.copy')}>
               <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => onDuplicate(item)} />
             </Tooltip>
           )}
-          <Tooltip title="编辑">
+          <Tooltip title={t('common.edit')}>
             <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
           </Tooltip>
-          <Tooltip title="删除">
+          <Tooltip title={t('common.delete')}>
             <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={handleDelete} />
           </Tooltip>
           <Select
@@ -78,8 +80,8 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
             onChange={handleLocalOnlyChange}
             style={{ width: 70 }}
             options={[
-              { value: 'sync', label: '同步' },
-              { value: 'local', label: '本机' }
+              { value: 'sync', label: t('common.synced') },
+              { value: 'local', label: t('common.local') }
             ]}
           />
           <Switch

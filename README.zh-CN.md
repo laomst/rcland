@@ -5,8 +5,7 @@
 一款桌面应用，用于管理 [Claude Code](https://claude.ai/code) CLI 的 Shell 配置。通过可视化界面管理多个 API Provider、加密密钥、环境变量、PATH、Shell 函数和别名，支持多 Shell。
 
 <!-- 截图占位：主界面总览 -->
-<!-- ![CCland 总览](docs/images/overview.png) -->
-
+![overview-zh.png](docs/images/overview-zh.png)
 ## 功能特性
 
 - **多 Shell 支持** — Zsh、Bash、PowerShell，自动检测操作系统
@@ -23,18 +22,6 @@
 - **冲突检测** — 检测重复变量、别名-函数冲突、命令覆盖
 
 ## 安装
-
-### 预构建版本
-
-下载对应平台的安装包：
-
-| 平台 | 格式 |
-|------|------|
-| macOS | `.zip` |
-| Windows | `.exe`（NSIS 安装器） |
-| Linux | `.AppImage` / `.deb` |
-
-<!-- TODO: 发布后添加下载链接 -->
 
 ### 从源码构建
 
@@ -55,25 +42,23 @@ npm run dist    # 构建平台安装包
 - **PATH** — PATH 管理
 - **Functions** — Shell 函数
 - **Aliases** — Shell 别名
-- **CCLaunch** — Claude Code 启动配置
+- **CCLand** — Claude Code 启动配置
 
-<!-- 截图占位：侧边导航栏 -->
-<!-- ![侧边栏](docs/images/sidebar.png) -->
+![sidebar-zh.png](docs/images/sidebar-zh.png)
 
 ### 2. 配置 Shell Profile
 
-点击右上角 **齿轮图标** 打开设置：
+点击左下角 **齿轮图标** 打开设置：
 
 - 启用你使用的 Shell（macOS/Linux 上的 Zsh/Bash，Windows 上的 PowerShell）
 - 设置加密密钥文件路径
 - 选择默认页面
 
-<!-- 截图占位：设置弹窗 -->
-<!-- ![设置](docs/images/settings.png) -->
+![settings-zh.png](docs/images/settings-zh.png)
 
 ### 3. 添加 Provider
 
-进入 **CCLaunch** → **Providers** 子标签：
+进入 **CCLand** → **Providers** 子标签：
 
 1. 点击 **添加 Provider**
 2. 输入名称（如 "Anthropic"、"OpenRouter"、"GLM"）
@@ -81,8 +66,7 @@ npm run dist    # 构建平台安装包
 4. 添加 **API Key**（自动加密）
 5. 可选：配置 **Template** 设置默认环境变量
 
-<!-- 截图占位：Provider 表单 -->
-<!-- ![Provider 设置](docs/images/provider-setup.png) -->
+![cc-provider-zh.png](docs/images/cc-provider-zh.png)
 
 ### 4. 创建启动配置
 
@@ -97,15 +81,7 @@ npm run dist    # 构建平台安装包
    - `API_TIMEOUT_MS` — 请求超时
 5. 保存
 
-<!-- 截图占位：配置表单 -->
-<!-- ![配置设置](docs/images/config-setup.png) -->
-
-### 5. 启用选择器（可选）
-
-在 CCLaunch 页面顶部，开启 **选择器** 开关：
-
-- 设置 **函数名**（默认 `cc`）— 生成交互式菜单函数
-- 设置 **提示标题**（如 "选择启动器"）
+![cc-config-zh.png](cc-config-zh.png)
 
 生成的函数：
 

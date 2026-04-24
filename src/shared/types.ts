@@ -1,4 +1,5 @@
 import type { ShellType, ShellProfileConfig } from './shell'
+import type { TFunction } from 'i18next'
 
 // ============================================================
 // Fixed Claude environment variable definitions
@@ -16,15 +17,15 @@ export const CLAUDE_ENV_VAR_KEYS = [
 
 export type ClaudeEnvVarKey = (typeof CLAUDE_ENV_VAR_KEYS)[number]
 
-export const CLAUDE_ENV_VAR_LABELS: Record<ClaudeEnvVarKey, string> = {
-  ANTHROPIC_MODEL:                              '主模型',
-  ANTHROPIC_DEFAULT_OPUS_MODEL:                 'Opus 模型',
-  ANTHROPIC_DEFAULT_SONNET_MODEL:               'Sonnet 模型',
-  ANTHROPIC_DEFAULT_HAIKU_MODEL:                'Haiku 模型',
-  API_TIMEOUT_MS:                               'API 超时 (ms)',
-  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC:     '禁用非必要流量',
-  CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS:       '禁用实验性 Beta',
-}
+export const getClaudeEnvVarLabels = (t: TFunction): Record<ClaudeEnvVarKey, string> => ({
+  ANTHROPIC_MODEL:                              t('shellEnv.claudeLabels.model'),
+  ANTHROPIC_DEFAULT_OPUS_MODEL:                 t('shellEnv.claudeLabels.opusModel'),
+  ANTHROPIC_DEFAULT_SONNET_MODEL:               t('shellEnv.claudeLabels.sonnetModel'),
+  ANTHROPIC_DEFAULT_HAIKU_MODEL:                t('shellEnv.claudeLabels.haikuModel'),
+  API_TIMEOUT_MS:                               t('shellEnv.claudeLabels.apiTimeout'),
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC:     t('shellEnv.claudeLabels.disableNonessentialTraffic'),
+  CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS:       t('shellEnv.claudeLabels.disableExperimentalBetas'),
+})
 
 /** A single env var with value + enabled toggle */
 export interface EnvVarSetting {
@@ -41,19 +42,20 @@ export type EnvVarsMap = Partial<Record<ClaudeEnvVarKey, EnvVarSetting>>
 
 export type AppPage = '/env' | '/path' | '/functions' | '/aliases' | '/ccland'
 
-export const APP_PAGE_LABELS: Record<AppPage, string> = {
-  '/env': '环境变量',
-  '/path': 'PATH',
-  '/functions': '函数',
-  '/aliases': '别名',
-  '/ccland': 'CCLand',
-}
+export const getAppPageLabels = (t: TFunction): Record<AppPage, string> => ({
+  '/env': t('nav.env'),
+  '/path': t('nav.path'),
+  '/functions': t('nav.functions'),
+  '/aliases': t('nav.aliases'),
+  '/ccland': t('nav.ccland'),
+})
 
 export interface AppSettings {
   configDir: string
   keyFilePath: string
   shellProfiles: Partial<Record<ShellType, ShellProfileConfig>>
   defaultPage?: AppPage
+  language?: 'zh-CN' | 'en'
 }
 
 // ============================================================

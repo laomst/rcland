@@ -1,4 +1,5 @@
 import { Space, Tag, Tooltip, Typography } from 'antd'
+import { useTranslation } from 'react-i18next'
 import type { ShellAlias } from '@shared/shell-types'
 import type { ShellType } from '@shared/shell'
 import { SHELL_LABELS } from '@shared/shell'
@@ -19,6 +20,7 @@ export function AliasCard({
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }): React.ReactElement {
+  const { t } = useTranslation()
   const updateAlias = useShellConfigStore((s) => s.updateAlias)
 
   return (
@@ -27,7 +29,7 @@ export function AliasCard({
       index={index}
       isDragging={isDragging}
       dragHandleProps={dragHandleProps}
-      deleteConfirmContent={`确定删除别名 "${alias.alias}" 吗？`}
+      deleteConfirmContent={t('shellAliases.deleteConfirm', { name: alias.alias })}
       onUpdate={updateAlias}
       onRemove={(id) => useShellConfigStore.getState().removeAlias(id)}
       onDuplicate={(alias) => {
@@ -47,7 +49,7 @@ export function AliasCard({
             {/* Alias Name */}
             <Tooltip title={item.alias}>
               <Text strong style={{ fontSize: 12, minWidth: 80, flexShrink: 0, fontFamily: 'monospace' }}>
-                {item.alias || '(未设置)'}
+                {item.alias || t('common.notSet')}
               </Text>
             </Tooltip>
 
@@ -56,7 +58,7 @@ export function AliasCard({
             {/* Command */}
             <Tooltip title={item.command}>
               <Text style={{ fontSize: 12, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
-                {displayCommand || '(空)'}
+                {displayCommand || t('common.empty')}
               </Text>
             </Tooltip>
 
@@ -85,7 +87,7 @@ export function AliasCard({
       renderEditModal={(open, onClose) => (
         <AliasFormModal
           open={open}
-          title={`编辑: ${alias.alias}`}
+          title={t('shellAliases.editItemTitle', { name: alias.alias })}
           isEdit
           initialValues={{
             alias: alias.alias,
@@ -94,7 +96,7 @@ export function AliasCard({
             shells: alias.shells ?? [],
             localOnly: alias.localOnly ?? false
           }}
-          okText="保存"
+          okText={t('common.save')}
           onCancel={onClose}
           onOk={(values) => {
             updateAlias(alias.id, {

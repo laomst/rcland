@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Typography } from 'antd'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -14,6 +15,7 @@ import { useSortableList } from '@renderer/hooks/useSortableList'
 const { Title } = Typography
 
 export default function AliasPage(): React.ReactElement {
+  const { t } = useTranslation()
   const aliases = useShellConfigStore((s) => s.shellConfig.aliases)
   const reorderAliases = useShellConfigStore((s) => s.reorderAliases)
   const addAlias = useShellConfigStore((s) => s.addAlias)
@@ -48,9 +50,9 @@ export default function AliasPage(): React.ReactElement {
 
   return (
     <div style={{ padding: 24 }}>
-      <Title level={4} style={{ marginBottom: 16 }}>Shell 别名</Title>
+      <Title level={4} style={{ marginBottom: 16 }}>{t('shellAliases.title')}</Title>
 
-      <GroupHeader title="同步配置" count={syncItems.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+      <GroupHeader title={t('common.syncedConfig')} count={syncItems.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
       {!syncCollapsed && syncItems.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={syncItems.map((a) => a.id)} strategy={verticalListSortingStrategy}>
@@ -65,7 +67,7 @@ export default function AliasPage(): React.ReactElement {
         </DndContext>
       )}
 
-      <GroupHeader title="本机配置" count={localItems.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      <GroupHeader title={t('common.localConfig')} count={localItems.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
       {!localCollapsed && localItems.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={localItems.map((a) => a.id)} strategy={verticalListSortingStrategy}>
@@ -82,9 +84,9 @@ export default function AliasPage(): React.ReactElement {
 
       <AliasFormModal
         open={addModalOpen}
-        title={editingAliasId && aliases.find(a => a.id === editingAliasId)?.alias ? "编辑别名" : "添加别名"}
+        title={editingAliasId && aliases.find(a => a.id === editingAliasId)?.alias ? t('shellAliases.editTitle') : t('shellAliases.addTitle')}
         initialValues={initialFormValues}
-        okText="保存"
+        okText={t('common.save')}
         onCancel={() => {
           const editingAlias = editingAliasId ? aliases.find(a => a.id === editingAliasId) : null
           if (editingAlias && !editingAlias.alias) {

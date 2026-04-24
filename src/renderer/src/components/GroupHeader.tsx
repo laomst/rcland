@@ -1,5 +1,6 @@
 import { Button, Typography } from 'antd'
 import { PlusOutlined, DownOutlined, RightOutlined } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 
 const { Text } = Typography
 
@@ -13,6 +14,7 @@ interface GroupHeaderProps {
 }
 
 export function GroupHeader({ title, count, collapsed, onToggle, onAdd, style }: GroupHeaderProps): React.ReactElement {
+  const { t } = useTranslation()
   return (
     <div style={{ display: 'flex', alignItems: 'center', marginBottom: collapsed ? 0 : 8, ...style }}>
       <Text
@@ -25,7 +27,7 @@ export function GroupHeader({ title, count, collapsed, onToggle, onAdd, style }:
       </Text>
       {onAdd && !collapsed && (
         <Button type="link" size="small" icon={<PlusOutlined />} onClick={onAdd} style={{ marginLeft: 8 }}>
-          添加
+          {t('common.add')}
         </Button>
       )}
     </div>

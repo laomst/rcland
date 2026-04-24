@@ -1,5 +1,5 @@
-appId: com.ccland.app
-productName: CCland
+appId: com.rcland.app
+productName: RCLand
 directories:
   buildResources: build
 files:

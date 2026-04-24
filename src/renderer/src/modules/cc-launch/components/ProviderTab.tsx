@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button, Empty, Typography } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import {
@@ -57,6 +58,7 @@ function SortableProviderCard({ provider, index }: SortableProviderCardProps) {
 }
 
 export function ProviderTab(): React.ReactElement {
+  const { t } = useTranslation()
   const providers = useAppStore((s) => s.providers)
   const addProvider = useAppStore((s) => s.addProvider)
   const reorderProviders = useAppStore((s) => s.reorderProviders)
@@ -95,16 +97,16 @@ export function ProviderTab(): React.ReactElement {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <Text strong style={{ fontSize: 15 }}>供应商列表</Text>
+          <Text strong style={{ fontSize: 15 }}>{t('ccLaunch.providerList')}</Text>
           <Text type="secondary" style={{ marginLeft: 8 }}>({providers.length} 个)</Text>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
-          添加供应商
+          {t('ccLaunch.addProvider')}
         </Button>
       </div>
 
       {providers.length === 0
-        ? <Empty description="暂无供应商，点击右上角添加" />
+        ? <Empty description={t('ccLaunch.noProvider')} />
         : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={providers.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -118,11 +120,11 @@ export function ProviderTab(): React.ReactElement {
 
       <ProviderFormModal
         open={addOpen}
-        title="新建供应商"
+        title={t('ccLaunch.newProvider')}
         initialValues={{
           name: '',
           color: '#1677ff',
-          endpoints: [{ id: crypto.randomUUID(), label: '默认', url: '' }],
+          endpoints: [{ id: crypto.randomUUID(), label: t('ccLaunch.defaultEndpoint'), url: '' }],
           keys: [],
           template: { envVars: withDefaults() }
         }}

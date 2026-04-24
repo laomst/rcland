@@ -1,4 +1,6 @@
 import { ConfigProvider, App as AntdApp, Layout, Button, Tooltip } from 'antd'
+import zhCNAntd from 'antd/locale/zh_CN'
+import enUSAntd from 'antd/locale/en_US'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { EyeOutlined, ThunderboltOutlined, SettingOutlined } from '@ant-design/icons'
 import { ModuleNav, SettingsModal, PreviewModal, usePreview, KeyModals, type KeyModalsHandle } from './components'
@@ -10,6 +12,8 @@ import { AliasPage } from './modules/shell-aliases'
 import { SHELL_LABELS, SHELL_OS_SUPPORT, type ShellType } from '@shared/shell'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { extractIpcErrorMessage, isDecryptFailedError, isKeyNotFoundError } from './utils/ipc-error'
+import { useTranslation } from 'react-i18next'
+import i18n from './i18n'
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
@@ -32,13 +36,17 @@ function AppLayout(): React.ReactElement {
   const loadSettings = useSettingsStore((s) => s.loadSettings)
   const refreshKeyExists = useSettingsStore((s) => s.refreshKeyExists)
   const openKeyModal = useSettingsStore((s) => s.openKeyModal)
+  const { t, i18n } = useTranslation()
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const keyModalsRef = useRef<KeyModalsHandle>(null)
   const { previewShell, previewContent, handlePreview, closePreview } = usePreview()
 
   useEffect(() => {
-    loadSettings()
+    loadSettings().then(() => {
+      const lang = useSettingsStore.getState().settings?.language
+      if (lang) i18n.changeLanguage(lang)
+    })
     refreshKeyExists()
   }, [loadSettings, refreshKeyExists])
 
@@ -47,7 +55,7 @@ function AppLayout(): React.ReactElement {
 
   const handleApply = async () => {
     if (enabledShells.length === 0) {
-      message.warning('请先在设置中启用至少一个 Shell')
+      message.warning(t('app.noShellEnabled'))
       return
     }
     await refreshKeyExists()
@@ -58,11 +66,11 @@ function AppLayout(): React.ReactElement {
     }
     try {
       const result = await window.electronAPI.applyAllConfig(enabledShells)
-      const shellNames = result.appliedShells.map((s) => SHELL_LABELS[s]).join('、')
+      const shellNames = result.appliedShells.map((s) => SHELL_LABELS[s]).join(i18n.language === 'zh-CN' ? '、' : ', ')
       if (result.count > 0) {
-        message.success(`已应用配置到: ${shellNames}`)
+        message.success(t('app.applySuccess', { shells: shellNames }))
       } else {
-        message.warning('没有应用任何 Shell 配置')
+        message.warning(t('app.applyNone'))
       }
     } catch (err) {
       if (isDecryptFailedError(err)) {
@@ -70,7 +78,7 @@ function AppLayout(): React.ReactElement {
       } else if (isKeyNotFoundError(err)) {
         openKeyModal('init')
       } else {
-        message.error({ content: <>应用失败<br />{extractIpcErrorMessage(err)}</>, duration: 8 })
+        message.error({ content: <>{t('app.applyFailed')}<br />{extractIpcErrorMessage(err)}</>, duration: 8 })
       }
     }
   }
@@ -107,7 +115,7 @@ function AppLayout(): React.ReactElement {
             <div className="action-bar-left" />
             <div className="action-bar-right">
               {enabledShells.map((shell) => (
-                <Tooltip key={shell} title={`预览 ${SHELL_LABELS[shell]} 配置`}>
+                <Tooltip key={shell} title={t('app.previewShell', { shell: SHELL_LABELS[shell] })}>
                   <Button
                     type="text"
                     size="small"
@@ -119,7 +127,7 @@ function AppLayout(): React.ReactElement {
                 </Tooltip>
               ))}
               <Button type="primary" icon={<ThunderboltOutlined />} onClick={handleApply}>
-                应用
+                {t('app.apply')}
               </Button>
             </div>
           </Footer>
@@ -134,8 +142,11 @@ function AppLayout(): React.ReactElement {
 }
 
 export default function App(): React.ReactElement {
+  const { i18n } = useTranslation()
+  const antdLocale = i18n.language === 'zh-CN' ? zhCNAntd : enUSAntd
+
   return (
-    <ConfigProvider>
+    <ConfigProvider locale={antdLocale}>
       <AntdApp>
         <HashRouter>
           <AppLayout />

@@ -1,4 +1,5 @@
 import { Input, Modal, Form, Switch, Checkbox, Typography, Space } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { LockOutlined } from '@ant-design/icons'
 import type { ShellType } from '@shared/shell'
 import { ALL_SHELL_TYPES, SHELL_LABELS } from '@shared/shell'
@@ -44,6 +45,7 @@ export function EnvVarFormModal({
   onCancel,
   onOk
 }: EnvVarFormModalProps): React.ReactElement {
+  const { t } = useTranslation()
   const { formState, setField, toggleShell } = useFormModal({
     initialState: ENVVAR_INITIAL_STATE,
     editingValues: open ? initialValues : undefined,
@@ -57,7 +59,7 @@ export function EnvVarFormModal({
       onOk={() => onOk(formState)}
       onCancel={onCancel}
       okText={okText}
-      cancelText="取消"
+      cancelText={t('common.cancel')}
       okButtonProps={{ disabled: okDisabled ?? !formState.key.trim() }}
       width={560}
     >
@@ -68,32 +70,32 @@ export function EnvVarFormModal({
         colon={false}
         style={{ marginTop: 16 }}
       >
-        <Form.Item label="变量名" required>
+        <Form.Item label={t('shellEnv.varName')} required>
           <Input
             value={formState.key}
             onChange={(e) => setField('key', e.target.value)}
-            placeholder="如: MY_API_KEY"
+            placeholder={t('shellEnv.varNamePlaceholder')}
             style={{ fontFamily: 'monospace' }}
           />
         </Form.Item>
-        <Form.Item label="变量值" required>
+        <Form.Item label={t('shellEnv.varValue')} required>
           {formState.encrypted ? (
             <Input.Password
               value={formState.value}
               onChange={(e) => setField('value', e.target.value)}
-              placeholder="输入加密值"
+              placeholder={t('shellEnv.encryptedPlaceholder')}
               style={{ fontFamily: 'monospace' }}
             />
           ) : (
             <Input
               value={formState.value}
               onChange={(e) => setField('value', e.target.value)}
-              placeholder="输入变量值"
+              placeholder={t('shellEnv.valuePlaceholder')}
               style={{ fontFamily: 'monospace' }}
             />
           )}
         </Form.Item>
-        <Form.Item label="加密存储">
+        <Form.Item label={t('shellEnv.encryptStorage')}>
           <Space>
             <Switch
               checked={formState.encrypted}
@@ -102,19 +104,19 @@ export function EnvVarFormModal({
             {formState.encrypted && (
               <Text type="secondary" style={{ fontSize: 12 }}>
                 <LockOutlined style={{ marginRight: 4 }} />
-                值将被加密存储
+                {t('shellEnv.encryptStorageHint')}
               </Text>
             )}
           </Space>
         </Form.Item>
-        <Form.Item label="描述">
+        <Form.Item label={t('common.description')}>
           <Input
             value={formState.description}
             onChange={(e) => setField('description', e.target.value)}
-            placeholder="可选描述"
+            placeholder={t('common.descriptionPlaceholder')}
           />
         </Form.Item>
-        <Form.Item label="仅本机">
+        <Form.Item label={t('common.localOnly')}>
           <Space>
             <Switch
               checked={formState.localOnly}
@@ -122,12 +124,12 @@ export function EnvVarFormModal({
             />
             {formState.localOnly && (
               <Text type="secondary" style={{ fontSize: 12 }}>
-                此配置仅保存在本机，不会同步到其他设备
+                {t('common.localOnlyHint')}
               </Text>
             )}
           </Space>
         </Form.Item>
-        <Form.Item label="适用 Shell">
+        <Form.Item label={t('common.applicableShells')}>
           <Space size={8}>
             {ALL_SHELL_TYPES.map((shell) => (
               <Checkbox

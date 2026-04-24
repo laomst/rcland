@@ -1,25 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input, Modal, Form, Select, Tabs, Switch, Space, Typography, message } from 'antd'
 import { SHELL_LABELS, ALL_SHELL_TYPES, type ShellType } from '@shared/shell'
 import type { ShellFunction } from '@shared/shell-types'
 
 const { TextArea } = Input
-
-/** Category options for user-created functions */
-const USER_CATEGORY_OPTIONS = [
-  { value: 'git', label: 'Git' },
-  { value: 'fs', label: '文件系统' },
-  { value: 'network', label: '网络' },
-  { value: 'dev', label: '开发' },
-  { value: 'system', label: '系统' },
-  { value: 'archive', label: '归档' },
-  { value: 'search', label: '搜索' },
-  { value: 'process', label: '进程' },
-  { value: 'custom', label: '自定义' }
-]
-
-/** Built-in category (not selectable by users) */
-const BUILTIN_CATEGORY_OPTION = { value: 'builtin', label: '内置' }
 
 /**
  * 从 shell 函数代码中提取函数名
@@ -85,11 +70,12 @@ function FunctionBodyEditor({
   readOnly?: boolean
   onChange: (value: string) => void
 }): React.ReactElement {
+  const { t } = useTranslation()
   return (
     <div style={{ paddingTop: 8 }}>
       {!readOnly && (
         <div style={{ marginBottom: 8, fontSize: 12, color: '#666' }}>
-          输入 {SHELL_LABELS[shell]} 完整函数代码（包含函数头和尾）
+          {t('shellFunctions.codePlaceholder', { shell: SHELL_LABELS[shell] })}
         </div>
       )}
       <TextArea
@@ -109,9 +95,9 @@ function FunctionBodyEditor({
       {!readOnly && value && (
         <div style={{ marginTop: 8, fontSize: 12 }}>
           {extractedName ? (
-            <span style={{ color: '#52c41a' }}>✓ 检测到函数名: <code>{extractedName}</code></span>
+            <span style={{ color: '#52c41a' }}>{t('shellFunctions.nameDetected', { name: extractedName })}</span>
           ) : (
-            <span style={{ color: '#ff4d4f' }}>✗ 未能检测到函数名，请检查代码格式</span>
+            <span style={{ color: '#ff4d4f' }}>{t('shellFunctions.nameNotDetected')}</span>
           )}
         </div>
       )}
@@ -129,6 +115,21 @@ export function FunctionFormModal({
   onCancel,
   onOk
 }: FunctionFormModalProps): React.ReactElement {
+  const { t } = useTranslation()
+
+  const userCategoryOptions = [
+    { value: 'git', label: 'Git' },
+    { value: 'filesystem', label: t('shellFunctions.categories.filesystem') },
+    { value: 'network', label: t('shellFunctions.categories.network') },
+    { value: 'dev', label: t('shellFunctions.categories.dev') },
+    { value: 'system', label: t('shellFunctions.categories.system') },
+    { value: 'archive', label: t('shellFunctions.categories.archive') },
+    { value: 'search', label: t('shellFunctions.categories.search') },
+    { value: 'process', label: t('shellFunctions.categories.process') },
+    { value: 'custom', label: t('shellFunctions.categories.custom') },
+  ]
+  const builtinCategoryOption = { value: 'builtin', label: t('shellFunctions.categories.builtin') }
+
   const [form, setForm] = useState<FormValues>(initialValues)
   const [extractedNames, setExtractedNames] = useState<Map<ShellType, string | null>>(new Map())
 
@@ -172,7 +173,7 @@ export function FunctionFormModal({
 
       const name = extractFunctionName(code)
       if (!name) {
-        message.error(`${SHELL_LABELS[shell]} 代码格式有误，无法提取函数名`)
+        message.error(t('shellFunctions.codeFormatError', { shell: SHELL_LABELS[shell] }))
         hasError = true
       } else {
         funcNames[shell] = name
@@ -183,7 +184,7 @@ export function FunctionFormModal({
 
     // 如果没有填写任何函数代码
     if (Object.keys(funcNames).length === 0) {
-      message.error('请至少为一个 shell 类型输入函数代码')
+      message.error(t('shellFunctions.noCodeError'))
       return
     }
 
@@ -220,8 +221,8 @@ export function FunctionFormModal({
       open={open}
       onOk={readOnly ? onCancel : handleOk}
       onCancel={onCancel}
-      okText={readOnly ? '关闭' : okText}
-      cancelText="取消"
+      okText={readOnly ? t('common.close') : okText}
+      cancelText={t('common.cancel')}
       okButtonProps={{ disabled: okDisabled }}
       cancelButtonProps={readOnly ? { style: { display: 'none' } } : undefined}
       width={720}
@@ -234,38 +235,38 @@ export function FunctionFormModal({
         colon={false}
         style={{ marginTop: 16 }}
       >
-        <Form.Item label="标识名称" extra={readOnly ? undefined : "用于内部识别，不影响生成的脚本"}>
+        <Form.Item label={t('shellFunctions.identifierName')} extra={readOnly ? undefined : t('shellFunctions.identifierNameHint')}>
           <Input
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            placeholder="如: my-git-helper, disk-tool"
+            placeholder={t('shellFunctions.identifierNamePlaceholder')}
             disabled={readOnly}
           />
         </Form.Item>
 
-        <Form.Item label="分类">
+        <Form.Item label={t('shellFunctions.category')}>
           <Select
             value={form.category}
             onChange={(val) => setForm((f) => ({ ...f, category: val }))}
             options={readOnly && form.category === 'builtin'
-              ? [BUILTIN_CATEGORY_OPTION]
-              : USER_CATEGORY_OPTIONS}
+              ? [builtinCategoryOption]
+              : userCategoryOptions}
             style={{ width: '100%' }}
             disabled={readOnly}
           />
         </Form.Item>
 
-        <Form.Item label="描述">
+        <Form.Item label={t('common.description')}>
           <Input
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            placeholder="简短描述函数用途"
+            placeholder={t('shellFunctions.descriptionPlaceholder')}
             disabled={readOnly}
           />
         </Form.Item>
 
         {!readOnly && (
-          <Form.Item label="仅本机">
+          <Form.Item label={t('common.localOnly')}>
             <Space>
               <Switch
                 checked={form.localOnly}
@@ -273,14 +274,14 @@ export function FunctionFormModal({
               />
               {form.localOnly && (
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  此配置仅保存在本机，不会同步到其他设备
+                  {t('common.localOnlyHint')}
                 </Text>
               )}
             </Space>
           </Form.Item>
         )}
 
-        <Form.Item label="函数代码" style={{ marginBottom: 0 }}>
+        <Form.Item label={t('shellFunctions.functionCode')} style={{ marginBottom: 0 }}>
           <div style={{ marginTop: 4 }}>
             <Tabs
               defaultActiveKey="zsh"

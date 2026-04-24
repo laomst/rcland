@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Empty } from 'antd'
 import {
   DndContext,
@@ -57,6 +58,7 @@ function SortableConfigCard({ config, providers, index }: SortableConfigCardProp
 }
 
 export function ConfigTab(): React.ReactElement {
+  const { t } = useTranslation()
   const configs = useAppStore((s) => s.configs)
   const providers = useAppStore((s) => s.providers)
   const addConfig = useAppStore((s) => s.addConfig)
@@ -125,11 +127,11 @@ export function ConfigTab(): React.ReactElement {
   return (
     <div>
       {providers.length === 0
-        ? <Empty description="请先在「供应商管理」中添加供应商" />
+        ? <Empty description={t('ccLaunch.noProviderHint')} />
         : (
           <>
             {/* 同步配置 */}
-            <GroupHeader title="同步配置" count={syncedConfigs.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+            <GroupHeader title={t('common.syncedConfig')} count={syncedConfigs.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
             {!syncCollapsed && syncedConfigs.length > 0 && (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
@@ -141,7 +143,7 @@ export function ConfigTab(): React.ReactElement {
             )}
 
             {/* 本机配置 */}
-            <GroupHeader title="本机配置" count={localConfigs.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+            <GroupHeader title={t('common.localConfig')} count={localConfigs.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
             {!localCollapsed && localConfigs.length > 0 && (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
@@ -157,7 +159,7 @@ export function ConfigTab(): React.ReactElement {
 
       <ConfigFormModal
         open={addOpen}
-        title="新建配置"
+        title={t('ccLaunch.newConfig')}
         providers={providers}
         initialValues={{
           providerId: firstProvider?.id ?? '',
@@ -168,7 +170,7 @@ export function ConfigTab(): React.ReactElement {
           envVars: firstTemplateEnvVars,
           localOnly: addLocalOnly
         }}
-        okText="添加"
+        okText={t('common.add')}
         onCancel={() => setAddOpen(false)}
         onOk={handleConfirmAdd}
         onAddKey={handleAddKey}
