@@ -4,7 +4,7 @@ import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
 import { createTopLevelCrud } from './crud-helpers'
 import { createPersistQueue, toErrorMessage } from './persist'
 
-const DEFAULT_SELECTOR = { enabled: false, funcName: 'cc', promptTitle: '选择启动器' }
+const DEFAULT_SELECTOR = { enabled: true, funcName: 'cc', promptTitle: '选择启动器' }
 const persistQueue = createPersistQueue()
 
 interface AppState {
@@ -37,6 +37,9 @@ interface AppState {
   updateConfig: (configId: string, patch: Partial<ConfigSet>) => void
   removeConfig: (configId: string) => void
   reorderConfigs: (activeId: string, overId: string) => void
+
+  // Selector
+  updateSelector: (patch: Partial<CCLaunchData['selector']>) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -133,7 +136,13 @@ export const useAppStore = create<AppState>((set, get) => {
   addConfigAfter: configCrud.addAfter,
   updateConfig: configCrud.update,
   removeConfig: configCrud.remove,
-  reorderConfigs: configCrud.reorder
+  reorderConfigs: configCrud.reorder,
+
+  // ---- Selector ----
+  updateSelector: (patch) => {
+    set((s) => ({ selector: { ...s.selector, ...patch } }))
+    void get().saveData().catch(() => undefined)
+  }
   }
 })
 

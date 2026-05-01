@@ -1,83 +1,149 @@
-import {
-  getSystemProxyEnvNames,
-  SYSTEM_PROXY_ENV_NAMES,
-  type SystemProxyConfig,
-  type SystemProxyEnvVar,
-} from '@shared/system-proxy'
-import { quoteBashLikeLiteral, quotePowerShellLiteral } from '../../shell-syntax'
+import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
 
-function getConfiguredItems(data: SystemProxyConfig): SystemProxyEnvVar[] {
-  return data.proxyEnvVars.filter((item) => item.value.trim())
+const UNSET_NAMES = SYSTEM_PROXY_ENV_NAMES.join(' ')
+
+export function buildBashLikeSystemProxyFunctions(names: { proxyOn: string; proxyOff: string; proxyStatus: string }): string {
+  const statusLines = SYSTEM_PROXY_ENV_NAMES.map(
+    (key) => `  printf '%-12s %s\\n' '${key}' "\${${key}:-(empty)}"`
+  ).join('\n')
+
+  return [
+    '',
+    '_rcland_read_os_proxy() {',
+    '  case "$(uname -s)" in',
+    '    Darwin)',
+    '      local output',
+    '      output="$(scutil --proxy 2>/dev/null)" || return',
+    '      local enabled host port',
+    '      enabled="$(echo "$output" | awk \'/ProxyEnable/ { print $3 }\')"',
+    '      host="$(echo "$output" | awk \'/ProxyServer/ { print $3 }\')"',
+    '      if [[ "$enabled" == "1" && -n "$host" ]]; then',
+    '        port="$(echo "$output" | awk \'/ProxyPort/ { print $3 }\')"',
+    '        echo "http_proxy=http://${host}${port:+:$port}"',
+    '        echo "HTTP_PROXY=http://${host}${port:+:$port}"',
+    '        echo "https_proxy=http://${host}${port:+:$port}"',
+    '        echo "HTTPS_PROXY=http://${host}${port:+:$port}"',
+    '      fi',
+    '      ;;',
+    '    Linux)',
+    '      local mode',
+    '      mode="$(gsettings get org.gnome.system.proxy mode 2>/dev/null)" || return',
+    '      if [[ "$mode" == *"\'manual\'"* ]]; then',
+    '        local h p',
+    '        h="$(gsettings get org.gnome.system.proxy.http host 2>/dev/null | tr -d "\'")"',
+    '        p="$(gsettings get org.gnome.system.proxy.http port 2>/dev/null | tr -d "\'")"',
+    '        if [[ -n "$h" && "$h" != "none" ]]; then',
+    '          echo "http_proxy=http://${h}${p:+:$p}"',
+    '          echo "HTTP_PROXY=http://${h}${p:+:$p}"',
+    '        fi',
+    '        h="$(gsettings get org.gnome.system.proxy.https host 2>/dev/null | tr -d "\'")"',
+    '        p="$(gsettings get org.gnome.system.proxy.https port 2>/dev/null | tr -d "\'")"',
+    '        if [[ -n "$h" && "$h" != "none" ]]; then',
+    '          echo "https_proxy=http://${h}${p:+:$p}"',
+    '          echo "HTTPS_PROXY=http://${h}${p:+:$p}"',
+    '        fi',
+    '        h="$(gsettings get org.gnome.system.proxy.socks host 2>/dev/null | tr -d "\'")"',
+    '        p="$(gsettings get org.gnome.system.proxy.socks port 2>/dev/null | tr -d "\'")"',
+    '        if [[ -n "$h" && "$h" != "none" ]]; then',
+    '          echo "all_proxy=socks5://${h}${p:+:$p}"',
+    '          echo "ALL_PROXY=socks5://${h}${p:+:$p}"',
+    '        fi',
+    '      fi',
+    '      ;;',
+    '  esac',
+    '}',
+    '',
+    `${names.proxyOn}() {`,
+    '  local lines',
+    '  lines="$(_rcland_read_os_proxy)"',
+    '  if [[ -z "$lines" ]]; then',
+    '    echo "No system proxy detected" >&2',
+    '    return 1',
+    '  fi',
+    '  while IFS= read -r line; do',
+    '    [[ -z "$line" ]] && continue',
+    '    export "$line"',
+    '  done <<< "$lines"',
+    '}',
+    '',
+    `${names.proxyOff}() {`,
+    `  unset ${UNSET_NAMES}`,
+    '}',
+    '',
+    `${names.proxyStatus}() {`,
+    '  echo "=== OS Proxy ==="',
+    '  _rcland_read_os_proxy || echo "(none)"',
+    '  echo ""',
+    '  echo "=== Current Env ==="',
+    statusLines,
+    '}',
+  ].join('\n')
 }
 
-export function buildBashLikeSystemProxyFunctions(data: SystemProxyConfig): string {
-  const items = getConfiguredItems(data)
-  const lines: string[] = ['', 'proxy-on() {']
+export function buildPowerShellSystemProxyFunctions(names: { proxyOn: string; proxyOff: string; proxyStatus: string }): string {
+  const offLines = SYSTEM_PROXY_ENV_NAMES.map(
+    (key) => `    Remove-Item "Env:${key}" -ErrorAction SilentlyContinue`
+  ).join('\n')
 
-  if (items.length === 0) {
-    lines.push('  echo "未配置系统代理" >&2')
-  } else {
-    for (const { type, value } of items) {
-      for (const key of getSystemProxyEnvNames(type)) {
-        lines.push(`  export ${key}=${quoteBashLikeLiteral(value)}`)
-      }
-    }
-  }
+  const envStatusLines = SYSTEM_PROXY_ENV_NAMES.map((key) => {
+    const padded = key.padEnd(12, ' ')
+    return [
+      `    $value = $env:${key}`,
+      '    if ([string]::IsNullOrEmpty($value)) { $value = "(empty)" }',
+      `    Write-Host ("${padded}: " + $value)`,
+    ].join('\n')
+  }).join('\n')
 
-  lines.push(
+  return [
+    '',
+    'function _rcland_ReadOsProxy {',
+    "  $regPath = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'",
+    '  $enabled = Get-ItemProperty -Path $regPath -Name ProxyEnable -ErrorAction SilentlyContinue',
+    '  if ($null -eq $enabled -or $enabled.ProxyEnable -ne 1) {',
+    '    return',
+    '  }',
+    '  $server = (Get-ItemProperty -Path $regPath -Name ProxyServer -ErrorAction SilentlyContinue).ProxyServer',
+    '  if ([string]::IsNullOrEmpty($server)) { return }',
+    '',
+    "  if ($server -notmatch '://') {",
+    '    $server = "http://$server"',
+    '  }',
+    '  @{',
+    '    http_proxy   = $server',
+    '    HTTP_PROXY   = $server',
+    '    https_proxy  = $server',
+    '    HTTPS_PROXY  = $server',
+    '  }',
     '}',
     '',
-    'proxy-off() {',
-    `  unset ${SYSTEM_PROXY_ENV_NAMES.join(' ')}`,
+    `function ${names.proxyOn} {`,
+    '  $entries = _rcland_ReadOsProxy',
+    '  if ($null -eq $entries) {',
+    '    Write-Error "No system proxy detected"',
+    '    return',
+    '  }',
+    '  foreach ($key in $entries.Keys) {',
+    '    Set-Item "Env:$key" $entries[$key]',
+    '  }',
     '}',
     '',
-    'proxy-status() {'
-  )
-
-  for (const key of SYSTEM_PROXY_ENV_NAMES) {
-    lines.push(`  printf '%-12s %s\\n' '${key}' "\${${key}:-(empty)}"`)
-  }
-
-  lines.push('}')
-  return lines.join('\n')
-}
-
-export function buildPowerShellSystemProxyFunctions(data: SystemProxyConfig): string {
-  const items = getConfiguredItems(data)
-  const lines = ['', 'function proxy-on {']
-
-  if (items.length === 0) {
-    lines.push('    Write-Error "未配置系统代理"')
-  } else {
-    for (const { type, value } of items) {
-      for (const key of getSystemProxyEnvNames(type)) {
-        lines.push(`    $env:${key} = ${quotePowerShellLiteral(value)}`)
-      }
-    }
-  }
-
-  lines.push(
+    `function ${names.proxyOff} {`,
+    offLines,
     '}',
     '',
-    'function proxy-off {'
-  )
-
-  for (const key of SYSTEM_PROXY_ENV_NAMES) {
-    lines.push(`    Remove-Item "Env:${key}" -ErrorAction SilentlyContinue`)
-  }
-
-  lines.push(
+    `function ${names.proxyStatus} {`,
+    '  Write-Host "=== OS Proxy ==="',
+    '  $entries = _rcland_ReadOsProxy',
+    '  if ($null -eq $entries) {',
+    '    Write-Host "(none)"',
+    '  } else {',
+    '    foreach ($key in $entries.Keys) {',
+    '      Write-Host ("  $key = " + $entries[$key])',
+    '    }',
+    '  }',
+    '  Write-Host ""',
+    '  Write-Host "=== Current Env ==="',
+    envStatusLines,
     '}',
-    '',
-    'function proxy-status {'
-  )
-
-  for (const key of SYSTEM_PROXY_ENV_NAMES) {
-    lines.push(`    $value = $env:${key}`)
-    lines.push('    if ([string]::IsNullOrEmpty($value)) { $value = "(empty)" }')
-    lines.push(`    Write-Host ("${key.padEnd(12, ' ')}: " + $value)`)
-  }
-
-  lines.push('}')
-  return lines.join('\n')
+  ].join('\n')
 }

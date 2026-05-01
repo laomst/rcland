@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { generateConfigWithKey } from '../src/main/services/shell-apply'
 import { createEmptyCXLandData, type CCLaunchData } from '../src/shared/types'
-import { createEmptySystemProxyConfig } from '../src/shared/system-proxy'
+
 import type { ShellConfigData } from '../src/shared/shell-types'
 
 const ccData: CCLaunchData = {
@@ -40,7 +40,6 @@ const shellConfig: ShellConfigData = {
   pathEntries: [],
   functions: [],
   aliases: [],
-  systemProxy: createEmptySystemProxyConfig(),
   prompt: { type: 'simple' },
   output: { profiles: {} }
 }

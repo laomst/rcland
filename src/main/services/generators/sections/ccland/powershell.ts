@@ -4,11 +4,7 @@ import { getEndpointUrl, CLAUDE_ENV_VAR_KEYS } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import type { CCLandSectionData } from './zsh'
 import { assertSafeEnvName, assertSafeShellName, quotePowerShellLiteral } from '../../shell-syntax'
-import {
-  getSystemProxyEnvNames,
-  SYSTEM_PROXY_ENV_NAMES,
-  type SystemProxyConfig,
-} from '@shared/system-proxy'
+import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
 
 export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSectionData> {
   readonly sectionName = 'ccland'
@@ -27,7 +23,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
     for (const config of enabledConfigs) {
       const provider = providerMap.get(config.providerId)
       if (!provider) continue
-      this.writeFunction(lines, provider, config, decryptedTokens, data.systemProxy)
+      this.writeFunction(lines, provider, config, decryptedTokens)
     }
 
     if (ccConfig.selector.enabled) {
@@ -39,7 +35,8 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
         const selectorFuncName = assertSafeShellName(ccConfig.selector.funcName, 'selector')
         this.writeSelectorFunction(lines, selectorFuncName, ccConfig.selector.promptTitle, entries)
         lines.push('')
-        lines.push(`function ccd { ${selectorFuncName} --dangerously-skip-permissions @args }`)
+        const aliasName = assertSafeShellName(ccConfig.selector.aliasName || 'ccd', 'ccd-alias')
+        lines.push(`function ${aliasName} { ${selectorFuncName} --dangerously-skip-permissions @args }`)
       }
 
       // ccl: local-only selector
@@ -109,8 +106,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
     lines: string[],
     provider: Provider,
     config: ConfigSet,
-    tokens: Map<string, string>,
-    systemProxy: SystemProxyConfig
+    tokens: Map<string, string>
   ): void {
     lines.push('')
 
@@ -132,35 +128,20 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
       ...CLAUDE_ENV_VAR_KEYS
     ]
     lines.push(`function ${funcName} {`)
-    lines.push('    $sn = ""; $ra = @(); $i = 0')
-    lines.push('    while ($i -lt $args.Count) {')
-    lines.push('        if ($args[$i] -eq \'-n\') {')
-    lines.push('            if ($i + 1 -ge $args.Count -or [string]::IsNullOrEmpty($args[$i + 1])) {')
-    lines.push('                Write-Host \'错误: -n 需要提供会话名称\' -ForegroundColor Red; return 1')
-    lines.push('            }')
-    lines.push('            $sn = $args[$i + 1]; $i += 2')
-    lines.push('        } elseif ($args[$i] -match \'^-n(.+)$\') {')
-    lines.push('            $sn = $Matches[1]; $i++')
-    lines.push('        } else {')
-    lines.push('            $ra += $args[$i]; $i++')
-    lines.push('        }')
-    lines.push('    }')
-    lines.push('    if ([string]::IsNullOrEmpty($sn)) {')
-    lines.push('        Write-Host \'错误: 必须使用 -n 指定会话名称\' -ForegroundColor Red; return 1')
-    lines.push('    }')
-    lines.push('    set_main_task_name "CC 🔸 $sn"')
-    lines.push('')
     lines.push(`    $scopedEnvKeys = @(${[...new Set(scopedKeys)].map((key) => quotePowerShellLiteral(key)).join(', ')})`)
     lines.push('    $previous = @{}')
     lines.push('    foreach ($key in $scopedEnvKeys) { $previous[$key] = [Environment]::GetEnvironmentVariable($key, "Process") }')
     lines.push('    try {')
 
     if (endpoint?.useSystemProxy) {
-      for (const { type, value } of systemProxy.proxyEnvVars.filter((item) => item.value.trim())) {
-        for (const key of getSystemProxyEnvNames(type)) {
-          lines.push(`        $env:${key} = ${quotePowerShellLiteral(value)}`)
-        }
-      }
+      lines.push('        $proxyEntries = _rcland_ReadOsProxy')
+      lines.push('        if ($null -eq $proxyEntries) {')
+      lines.push(`            Write-Error ${quotePowerShellLiteral(`配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
+      lines.push('            return')
+      lines.push('        }')
+      lines.push('        foreach ($key in $proxyEntries.Keys) {')
+      lines.push('            Set-Item "Env:$key" $proxyEntries[$key]')
+      lines.push('        }')
     } else {
       lines.push('        foreach ($key in @(' + SYSTEM_PROXY_ENV_NAMES.map((key) => quotePowerShellLiteral(key)).join(', ') + ')) { Remove-Item "Env:$key" -ErrorAction SilentlyContinue }')
     }
@@ -175,7 +156,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
       }
     }
 
-    lines.push('        claude -n $sn @ra')
+    lines.push('        claude @args')
     lines.push('    } finally {')
     lines.push('        foreach ($key in $scopedEnvKeys) {')
     lines.push('            if ($null -eq $previous[$key]) {')

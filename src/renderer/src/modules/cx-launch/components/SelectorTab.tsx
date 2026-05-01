@@ -22,6 +22,13 @@ export function SelectorTab(): React.ReactElement {
             <Text type="secondary">{t('cxLaunch.selector.enabledHint')}</Text>
           </Space>
         </Form.Item>
+        <Form.Item label={t('cxLaunch.selector.requireSessionName')} extra={t('cxLaunch.selector.requireSessionNameHint')}>
+          <Switch
+            checked={selector.requireSessionName !== false}
+            onChange={(checked) => updateCXSelector({ requireSessionName: checked })}
+            disabled={!selector.enabled}
+          />
+        </Form.Item>
         <Form.Item label={t('cxLaunch.selector.funcName')}>
           <Input
             value={selector.funcName}
@@ -35,6 +42,14 @@ export function SelectorTab(): React.ReactElement {
             value={selector.promptTitle}
             onChange={(e) => updateCXSelector({ promptTitle: e.target.value })}
             placeholder="选择 Codex 供应商"
+            disabled={!selector.enabled}
+          />
+        </Form.Item>
+        <Form.Item label={t('cxLaunch.selector.aliasName')} extra={t('cxLaunch.selector.aliasNameHint')}>
+          <Input
+            value={selector.aliasName || ''}
+            onChange={(e) => updateCXSelector({ aliasName: e.target.value })}
+            placeholder="cxd"
             disabled={!selector.enabled}
           />
         </Form.Item>

@@ -17,7 +17,7 @@ test('createEmptyCXLandData returns v3 with empty arrays and default selector', 
   assert.equal(data.version, 3)
   assert.deepEqual(data.providers, [])
   assert.deepEqual(data.configs, [])
-  assert.deepEqual(data.selector, { enabled: false, funcName: 'cx', promptTitle: '选择 Codex 供应商' })
+  assert.deepEqual(data.selector, { enabled: true, funcName: 'cx', promptTitle: '选择 Codex 供应商' })
 })
 
 test('normalizeCXLandData discards v2 data and returns empty v3', () => {

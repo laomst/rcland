@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { ShellType } from '@shared/shell'
 import type { AppSettings, CCLaunchData, CXLandData } from '@shared/types'
 import type { BackupEntry, ConflictCheckResult, ShellConfigData } from '@shared/shell-types'
+import type { SystemProxyConfig } from '@shared/system-proxy'
 
 export interface ElectronAPI {
   // Config
@@ -52,6 +53,9 @@ export interface ElectronAPI {
   showOpenDialog: (options: { title: string; defaultPath?: string; properties?: string[] }) => Promise<string | null>
   showSaveDialog: (options: { title: string; defaultPath?: string }) => Promise<string | null>
 
+  // System Proxy
+  readOsProxy: () => Promise<SystemProxyConfig>
+
   // Events
   on: (channel: string, callback: (...args: unknown[]) => void) => void
 }
@@ -87,6 +91,7 @@ const api: ElectronAPI = {
   applyAllConfig: (shellTypes) => ipcRenderer.invoke('shell:applyAll', shellTypes),
   showOpenDialog: (options) => ipcRenderer.invoke('dialog:open', options),
   showSaveDialog: (options) => ipcRenderer.invoke('dialog:save', options),
+  readOsProxy: () => ipcRenderer.invoke('system-proxy:read-os'),
   on: (channel, callback) => {
     ipcRenderer.on(channel, (_event, ...args) => callback(...args))
   }

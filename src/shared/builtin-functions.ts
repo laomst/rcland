@@ -6,7 +6,6 @@ import type {
   ShellAlias,
   LocalShellConfigData
 } from './shell-types'
-import { createEmptySystemProxyConfig } from './system-proxy'
 
 // ============================================================
 // Factory Helpers
@@ -33,7 +32,6 @@ export function createEmptyShellConfig(): ShellConfigData {
     pathEntries: [],
     functions: [],
     aliases: [],
-    systemProxy: createEmptySystemProxyConfig(),
     prompt: { type: 'simple' },
     output: { profiles: {} }
   }

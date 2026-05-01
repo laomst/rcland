@@ -9,8 +9,6 @@ import type {
   OutputConfig,
   ConflictCheckResult
 } from '@shared/shell-types'
-import type { SystemProxyEnvVar } from '@shared/system-proxy'
-import { mergeSystemProxyEnvVars } from '@shared/system-proxy'
 import { createEmptyShellConfig, BUILTIN_FUNCTIONS } from '@shared/builtin-functions'
 import { createShellConfigCrud } from './crud-helpers'
 import { createPersistQueue, toErrorMessage } from './persist'
@@ -60,10 +58,6 @@ export interface ShellConfigState {
 
   // Output
   updateOutput: (config: OutputConfig) => void
-
-  // System proxy
-  updateSystemProxyEnvVar: (index: number, value: string) => void
-  importSystemProxyEnvVars: (items: SystemProxyEnvVar[]) => void
 
   // Conflict check
   checkConflicts: () => Promise<ConflictCheckResult>
@@ -172,33 +166,6 @@ export const useShellConfigStore = create<ShellConfigState>((set, get) => {
     // Output
     updateOutput: (config) => {
       set((s) => ({ shellConfig: { ...s.shellConfig, output: config } }))
-      void get().saveShellConfig().catch(() => undefined)
-    },
-
-    updateSystemProxyEnvVar: (index, value) => {
-      set((s) => ({
-        shellConfig: {
-          ...s.shellConfig,
-          systemProxy: {
-            ...s.shellConfig.systemProxy,
-            proxyEnvVars: s.shellConfig.systemProxy.proxyEnvVars.map((item, itemIndex) =>
-              itemIndex === index ? { ...item, value } : item
-            )
-          }
-        }
-      }))
-      void get().saveShellConfig().catch(() => undefined)
-    },
-
-    importSystemProxyEnvVars: (items) => {
-      set((s) => ({
-        shellConfig: {
-          ...s.shellConfig,
-          systemProxy: {
-            proxyEnvVars: mergeSystemProxyEnvVars(s.shellConfig.systemProxy.proxyEnvVars, items)
-          }
-        }
-      }))
       void get().saveShellConfig().catch(() => undefined)
     },
 

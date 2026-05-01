@@ -30,7 +30,8 @@ export function escapeForPowerShell(value: string): string {
 /** Create a GenerateContext for a specific shell type */
 export function createGenerateContext(
   shellType: ShellType,
-  keyPassphrase: string
+  keyPassphrase: string,
+  proxyFunctionNames: { proxyOn: string; proxyOff: string; proxyStatus: string }
 ): GenerateContext {
   const escapeFn = shellType === 'powershell' ? escapeForPowerShell : escapeForBashLike
 
@@ -45,6 +46,7 @@ export function createGenerateContext(
     escapeValue(value: string): string {
       return escapeFn(value)
     },
-    timestamp: new Date().toLocaleString('zh-CN')
+    timestamp: new Date().toLocaleString('zh-CN'),
+    proxyFunctionNames
   }
 }

@@ -36,8 +36,6 @@ export function assertShellConfigData(value: unknown): asserts value is ShellCon
   assertArray(value.pathEntries, 'pathEntries')
   assertArray(value.functions, 'functions')
   assertArray(value.aliases, 'aliases')
-  assertObject(value.systemProxy, 'systemProxy')
-  assertArray(value.systemProxy.proxyEnvVars, 'systemProxy.proxyEnvVars')
   assertObject(value.prompt, 'prompt')
   assertObject(value.output, 'output')
 }

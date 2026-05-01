@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tabs, Spin } from 'antd'
-import { ShopOutlined, SettingOutlined } from '@ant-design/icons'
+import { ShopOutlined, SettingOutlined, MenuOutlined } from '@ant-design/icons'
 import { useAppStore } from '@renderer/stores/useAppStore'
 import { ProviderTab } from '../components/ProviderTab'
 import { ConfigTab } from '../components/ConfigTab'
+import { SelectorTab } from '../components/SelectorTab'
 
 export default function CCConfigPage(): React.ReactElement {
   const { t } = useTranslation()
@@ -41,6 +42,12 @@ export default function CCConfigPage(): React.ReactElement {
           label: t('ccLaunch.providerTab'),
           icon: <ShopOutlined />,
           children: <ProviderTab />
+        },
+        {
+          key: 'selector',
+          label: t('ccLaunch.selectorTab'),
+          icon: <MenuOutlined />,
+          children: <SelectorTab />
         }
       ]}
     />

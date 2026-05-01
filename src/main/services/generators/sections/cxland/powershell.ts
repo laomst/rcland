@@ -8,6 +8,6 @@ export class CXLandPowerShellGenerator implements SectionGenerator<CXLandSection
   readonly shellType: ShellType = 'powershell'
 
   generate(data: CXLandSectionData): string {
-    return buildPowerShellCXContent(data.cxConfig, data.decryptedTokens, data.systemProxy)
+    return buildPowerShellCXContent(data.cxConfig, data.decryptedTokens)
   }
 }

@@ -6,6 +6,7 @@ export interface GenerateContext {
   decrypt(value: string): string
   escapeValue(value: string): string
   timestamp: string
+  proxyFunctionNames: { proxyOn: string; proxyOff: string; proxyStatus: string }
 }
 
 /** Interface for a module's section generator */

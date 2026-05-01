@@ -9,7 +9,7 @@ import { detectShell } from '../services/shell-detector'
 import { quoteBashLikeLiteral, quotePowerShellLiteral } from '../services/generators/shell-syntax'
 import { applyConfigWithKey, generateConfigWithKey } from '../services/shell-apply'
 import { resolveHomePath } from '../services/path-utils'
-import type { CCLaunchData } from '@shared/types'
+import { DEFAULT_PROXY_FUNCTION_NAMES, type CCLaunchData } from '@shared/types'
 import type { ShellConfigData } from '@shared/shell-types'
 import { getShellProfilePath, type ShellType } from '@shared/shell'
 
@@ -96,11 +96,19 @@ function injectGeneratedSource(shellType: ShellType, outputPath: string): void {
   injectSourceBlock(profilePath, outputPath, shellType)
 }
 
+function validateProxyFunctionNames(names: { proxyOn: string; proxyOff: string; proxyStatus: string }): void {
+  if (!names.proxyOn.trim() || !names.proxyOff.trim() || !names.proxyStatus.trim()) {
+    throw new Error('PROXY_FUNC_NAME_EMPTY')
+  }
+}
+
 export function registerShellHandlers(): void {
   ipcMain.handle('shell:detect', () => detectShell())
 
   ipcMain.handle('shell:tryApplyWithKey', async (_e, shellTypes: ShellType[], tempKey: string) => {
     const settings = configService.loadSettings()
+    const proxyFunctionNames = settings.proxyFunctionNames ?? DEFAULT_PROXY_FUNCTION_NAMES
+    validateProxyFunctionNames(proxyFunctionNames)
     try {
       const result = applyConfigWithKey({
         shellTypes,
@@ -108,6 +116,7 @@ export function registerShellHandlers(): void {
         cxData: loadCXData(),
         shellConfig: loadShellConfigData(),
         keyPassphrase: tempKey,
+        proxyFunctionNames,
         enabledShells: settings.shellProfiles,
         injectSourceBlock: injectGeneratedSource,
         createBackup: backupService.createBackup,
@@ -115,8 +124,8 @@ export function registerShellHandlers(): void {
       })
       return { success: true, ...result }
     } catch (err) {
-      if (err instanceof Error && err.message === 'DECRYPT_FAILED') {
-        return { success: false, error: 'DECRYPT_FAILED' }
+      if (err instanceof Error && (err.message === 'DECRYPT_FAILED' || err.message === 'PROXY_FUNC_NAME_EMPTY')) {
+        return { success: false, error: err.message }
       }
       throw err
     }
@@ -127,12 +136,15 @@ export function registerShellHandlers(): void {
     const settings = configService.loadSettings()
     const key = cryptoService.loadKey(settings.keyFilePath)
     if (!key) throw new Error('Key file not found')
+    const proxyFunctionNames = settings.proxyFunctionNames ?? DEFAULT_PROXY_FUNCTION_NAMES
+    validateProxyFunctionNames(proxyFunctionNames)
     return generateConfigWithKey({
       shellType,
       ccData: loadCCDataOrDefault(),
       cxData: loadCXData(),
       shellConfig: loadShellConfigData(),
-      keyPassphrase: key
+      keyPassphrase: key,
+      proxyFunctionNames
     })
   })
 
@@ -140,12 +152,15 @@ export function registerShellHandlers(): void {
     const settings = configService.loadSettings()
     const key = cryptoService.loadKey(settings.keyFilePath)
     if (!key) throw new Error('Key file not found')
+    const proxyFunctionNames = settings.proxyFunctionNames ?? DEFAULT_PROXY_FUNCTION_NAMES
+    validateProxyFunctionNames(proxyFunctionNames)
     return applyConfigWithKey({
       shellTypes,
       ccData: loadCCDataOrDefault(),
       cxData: loadCXData(),
       shellConfig: loadShellConfigData(),
       keyPassphrase: key,
+      proxyFunctionNames,
       enabledShells: settings.shellProfiles,
       injectSourceBlock: injectGeneratedSource,
       createBackup: backupService.createBackup,

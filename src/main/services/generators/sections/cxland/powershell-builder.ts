@@ -1,10 +1,6 @@
 import type { CXLandData, CXProvider, CXConfigSet, CXEndpoint } from '@shared/types'
 import { getCXEndpointUrl } from '@shared/types'
-import {
-  getSystemProxyEnvNames,
-  SYSTEM_PROXY_ENV_NAMES,
-  type SystemProxyConfig
-} from '@shared/system-proxy'
+import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
 import { quotePowerShellLiteral, assertSafeShellName } from '../../shell-syntax'
 import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg } from './codex-args'
 
@@ -16,13 +12,13 @@ import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg } from './codex-
  * - `$env:OPENAI_API_KEY = 'token'` instead of env prefix
  * - try/finally to save/restore env vars
  * - Backtick for line continuation
- * - `@args` instead of `"${_ra[@]}"`
+ * - `@filtered` instead of `"${_filtered[@]}"`
  * - `Write-Error` instead of `echo ... >&2`
+ * - `-n` parsed for OSC terminal title (`` `e]0;...`a ``)
  */
 export function buildPowerShellCXContent(
   data: CXLandData,
-  decryptedTokens: Map<string, string>,
-  systemProxy: SystemProxyConfig
+  decryptedTokens: Map<string, string>
 ): string {
   const lines: string[] = []
 
@@ -38,14 +34,15 @@ export function buildPowerShellCXContent(
     if (!provider.enabled) {
       continue
     }
-    writeFunction(lines, provider, config, decryptedTokens, systemProxy)
+    writeFunction(lines, provider, config, decryptedTokens)
   }
 
   if (data.selector.enabled && enabledConfigs.length > 0) {
     const selectorFuncName = assertSafeShellName(data.selector.funcName, 'selector')
-    writeSelectorFunction(lines, selectorFuncName, data.selector.promptTitle, enabledConfigs)
+    writeSelectorFunction(lines, selectorFuncName, data.selector.promptTitle, enabledConfigs, data.selector.requireSessionName !== false)
     lines.push('')
-    lines.push(`Set-Alias cxd ${selectorFuncName} -Scope Global -Force`)
+    const aliasName = assertSafeShellName(data.selector.aliasName || 'cxd', 'cxd-alias')
+    lines.push(`function ${aliasName} { ${selectorFuncName} --dangerously-bypass-approvals-and-sandbox @args }`)
   }
 
   return lines.join('\n')
@@ -61,8 +58,7 @@ function writeFunction(
   lines: string[],
   provider: CXProvider,
   config: CXConfigSet,
-  tokens: Map<string, string>,
-  systemProxy: SystemProxyConfig
+  tokens: Map<string, string>
 ): void {
   const funcName = assertSafeShellName(config.funcName, config.name || config.id)
   const tokenKey = `cx-token:${config.id}`
@@ -90,6 +86,24 @@ function writeFunction(
 
   lines.push('')
   lines.push(`function ${funcName} {`)
+  lines.push('    $sn = ""; $filtered = @(); $i = 0')
+  lines.push('    while ($i -lt $args.Count) {')
+  lines.push('        if ($args[$i] -eq \'-n\') {')
+  lines.push('            if ($i + 1 -lt $args.Count -and -not [string]::IsNullOrEmpty($args[$i + 1])) {')
+  lines.push('                $sn = $args[$i + 1]; $i += 2')
+  lines.push('            } else {')
+  lines.push('                $i++')
+  lines.push('            }')
+  lines.push('        } elseif ($args[$i] -match \'^-n(.+)$\') {')
+  lines.push('            $sn = $Matches[1]; $i++')
+  lines.push('        } else {')
+  lines.push('            $filtered += $args[$i]; $i++')
+  lines.push('        }')
+  lines.push('    }')
+  lines.push('    if (-not [string]::IsNullOrEmpty($sn)) {')
+  lines.push('        Write-Host "`e]0;CX 🔸 $sn`a" -NoNewline')
+  lines.push('    }')
+  lines.push('')
   lines.push(`    $previous_key = [Environment]::GetEnvironmentVariable('OPENAI_API_KEY', 'Process')`)
 
   // Save proxy vars if endpoint uses system proxy
@@ -104,11 +118,14 @@ function writeFunction(
 
   // Set proxy env vars if endpoint uses system proxy
   if (endpoint?.useSystemProxy) {
-    for (const { type, value } of systemProxy.proxyEnvVars.filter((item) => item.value.trim())) {
-      for (const key of getSystemProxyEnvNames(type)) {
-        lines.push(`        $env:${key} = ${quotePowerShellLiteral(value)}`)
-      }
-    }
+    lines.push('        $proxyEntries = _rcland_ReadOsProxy')
+    lines.push('        if ($null -eq $proxyEntries) {')
+    lines.push(`            Write-Error ${quotePowerShellLiteral(`配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
+    lines.push('            return')
+    lines.push('        }')
+    lines.push('        foreach ($key in $proxyEntries.Keys) {')
+    lines.push('            Set-Item "Env:$key" $proxyEntries[$key]')
+    lines.push('        }')
   } else {
     // Clear proxy vars
     lines.push(`        foreach ($key in @(${SYSTEM_PROXY_ENV_NAMES.map((k) => quotePowerShellLiteral(k)).join(', ')})) { Remove-Item "Env:\$key" -ErrorAction SilentlyContinue }`)
@@ -130,7 +147,7 @@ function writeFunction(
     lines.push(`            -c ${buildPowerShellCodexConfigArg('model', config.model)} \``)
   }
 
-  lines.push('            @args')
+  lines.push('            @filtered')
   lines.push('    } finally {')
 
   // Restore OPENAI_API_KEY
@@ -159,10 +176,40 @@ function writeSelectorFunction(
   lines: string[],
   funcName: string,
   promptTitle: string,
-  entries: CXConfigSet[]
+  entries: CXConfigSet[],
+  requireN: boolean
 ): void {
   lines.push('')
   lines.push(`function ${funcName} {`)
+  lines.push('    $session_name = ""')
+  lines.push('    $remaining = @()')
+  lines.push('    $i = 0')
+  lines.push('    while ($i -lt $args.Count) {')
+  lines.push('        if ($args[$i] -eq \'-n\') {')
+  if (requireN) {
+  lines.push('            if ($i + 1 -ge $args.Count -or [string]::IsNullOrEmpty($args[$i + 1])) {')
+  lines.push('                Write-Host \'错误: -n 需要提供会话名称\' -ForegroundColor Red')
+  lines.push('                return 1')
+  lines.push('            }')
+  }
+  lines.push('            $session_name = $args[$i + 1]; $i += 2')
+  lines.push('        } elseif ($args[$i] -match \'^-n(.+)$\') {')
+  lines.push('            $session_name = $Matches[1]; $i++')
+  lines.push('        } else {')
+  lines.push('            $remaining += $args[$i]; $i++')
+  lines.push('        }')
+  lines.push('    }')
+  if (requireN) {
+  lines.push('    if ([string]::IsNullOrEmpty($session_name)) {')
+  lines.push('        Write-Host \'错误: 必须使用 -n 指定会话名称\' -ForegroundColor Red')
+  lines.push('        return 1')
+  lines.push('    }')
+  }
+  lines.push('')
+  lines.push('    if (-not [string]::IsNullOrEmpty($session_name)) {')
+  lines.push('        Write-Host "`e]0;CX 🔸 $session_name`a" -NoNewline')
+  lines.push('    }')
+  lines.push('')
   lines.push('    $opts = @(')
   for (const entry of entries) {
     const name = assertSafeShellName(entry.funcName, entry.name || entry.id)
@@ -174,7 +221,7 @@ function writeSelectorFunction(
   lines.push('    switch ($REPLY) {')
   for (const entry of entries) {
     const name = assertSafeShellName(entry.funcName, entry.name || entry.id)
-    lines.push(`        '${name}'  { ${name} @args; break }`)
+    lines.push(`        '${name}'  { ${name} @remaining; break }`)
   }
   lines.push("        default { Write-Error '无效选择'; return }")
   lines.push('    }')

@@ -1,13 +1,12 @@
-import type { SectionGenerator } from '../../section-types'
+import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { ShellType } from '@shared/shell'
-import type { SystemProxyConfig } from '@shared/system-proxy'
 import { buildPowerShellSystemProxyFunctions } from './proxy-functions'
 
-export class SystemProxyPowerShellGenerator implements SectionGenerator<SystemProxyConfig> {
+export class SystemProxyPowerShellGenerator implements SectionGenerator<void> {
   readonly sectionName = 'systemProxy'
   readonly shellType: ShellType = 'powershell'
 
-  generate(data: SystemProxyConfig): string {
-    return buildPowerShellSystemProxyFunctions(data)
+  generate(_data: void, ctx: GenerateContext): string {
+    return buildPowerShellSystemProxyFunctions(ctx.proxyFunctionNames)
   }
 }

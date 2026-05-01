@@ -8,6 +8,6 @@ export class CXLandBashGenerator implements SectionGenerator<CXLandSectionData> 
   readonly shellType: ShellType = 'bash'
 
   generate(data: CXLandSectionData): string {
-    return buildBashLikeCXContent(data.cxConfig, data.decryptedTokens, data.systemProxy)
+    return buildBashLikeCXContent(data.cxConfig, data.decryptedTokens)
   }
 }

@@ -3,7 +3,7 @@ import type { SectionGenerator } from './section-types'
 import type { GenerateContext } from './section-types'
 import type { ShellConfigData } from '@shared/shell-types'
 import type { CCLaunchData, CXLandData } from '@shared/types'
-import { createEmptySystemProxyConfig } from '@shared/system-proxy'
+
 import type { CCLandSectionData } from './sections/ccland/zsh'
 import type { CXLandSectionData } from './sections/cxland/zsh'
 
@@ -97,13 +97,12 @@ function getSectionData(
     case 'path': return shellConfig.pathEntries
     case 'functions': return shellConfig.functions
     case 'aliases': return shellConfig.aliases
-    case 'systemProxy': return shellConfig.systemProxy ?? createEmptySystemProxyConfig()
+    case 'systemProxy': return undefined
     case 'ccland': return cclandData
     case 'cxland': {
       const result: CXLandSectionData = {
         cxConfig: cxlandData,
         decryptedTokens,
-        systemProxy: shellConfig.systemProxy ?? createEmptySystemProxyConfig()
       }
       return result
     }
@@ -125,7 +124,6 @@ export function generateFullConfig(
   const cclandData: CCLandSectionData = {
     ccConfig,
     decryptedTokens,
-    systemProxy: shellConfig.systemProxy ?? createEmptySystemProxyConfig()
   }
   const parts: string[] = [generateHeader(shellType, ctx.timestamp)]
 

@@ -16,6 +16,7 @@ export interface GenerateConfigInput {
   shellConfig: ShellConfigData
   keyPassphrase: string
   decryptedTokens?: Map<string, string>
+  proxyFunctionNames?: { proxyOn: string; proxyOff: string; proxyStatus: string }
 }
 
 export interface ApplyConfigInput {
@@ -24,6 +25,7 @@ export interface ApplyConfigInput {
   cxData: CXLandData
   shellConfig: ShellConfigData
   keyPassphrase: string
+  proxyFunctionNames?: { proxyOn: string; proxyOff: string; proxyStatus: string }
   enabledShells: Partial<Record<ShellType, { enabled: boolean }>>
   injectSourceBlock: (shellType: ShellType, outputPath: string) => void
   createBackup?: (shellType: ShellType, outputPath: string) => void
@@ -45,7 +47,7 @@ export function getDecryptedTokensOrThrow(ccData: CCLaunchData, cxData: CXLandDa
 export function generateConfigWithKey(input: GenerateConfigInput): string {
   const decryptedTokens = input.decryptedTokens ?? getDecryptedTokensOrThrow(input.ccData, input.cxData, input.keyPassphrase)
   const decryptedShellConfig = decryptShellVariables(input.shellConfig, input.keyPassphrase)
-  const ctx = createGenerateContext(input.shellType, input.keyPassphrase)
+  const ctx = createGenerateContext(input.shellType, input.keyPassphrase, input.proxyFunctionNames ?? { proxyOn: 'proxy-on', proxyOff: 'proxy-off', proxyStatus: 'proxy-status' })
   return generateFullConfig(input.shellType, decryptedShellConfig, input.ccData, input.cxData, decryptedTokens, ctx)
 }
 

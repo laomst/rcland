@@ -1,5 +1,4 @@
 import type { ShellType } from './shell'
-import type { SystemProxyConfig } from './system-proxy'
 
 // ============================================================
 // Shell Configuration Data (stored in rcland.config.shell.json)
@@ -11,7 +10,6 @@ export interface ShellConfigData {
   pathEntries: PathEntry[]
   functions: ShellFunction[]
   aliases: ShellAlias[]
-  systemProxy: SystemProxyConfig
   prompt: PromptConfig
   output: OutputConfig
 }

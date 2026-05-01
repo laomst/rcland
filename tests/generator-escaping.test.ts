@@ -9,7 +9,6 @@ import { FunctionsZshGenerator } from '../src/main/services/generators/sections/
 import { FunctionsBashGenerator } from '../src/main/services/generators/sections/functions/bash'
 import { FunctionsPowerShellGenerator } from '../src/main/services/generators/sections/functions/powershell'
 import { createGenerateContext } from '../src/main/services/generators/context'
-import { createEmptySystemProxyConfig, type SystemProxyConfig } from '../src/shared/system-proxy'
 import { BUILTIN_FUNCTIONS } from '../src/shared/builtin-functions'
 
 const systemProxy: SystemProxyConfig = {
@@ -67,7 +66,6 @@ function sampleData(
     decryptedTokens: new Map([
       ['token:cfg-1', 'tok"$(touch /tmp/rcland-token)"']
     ]),
-    systemProxy: createEmptySystemProxyConfig()
   }
 }
 
@@ -115,42 +113,39 @@ test('bash ccland selector requires session name and forwards remaining args', (
 
 test('zsh ccland generator injects system proxy for endpoint when enabled', () => {
   const output = new CCLandZshGenerator().generate(
-    { ...sampleData({}, { useSystemProxy: true }), systemProxy },
+    sampleData({}, { useSystemProxy: true }),
     createGenerateContext('zsh', 'unused')
   )
 
-  assert.match(output, /env http_proxy='http:\/\/127\.0\.0\.1:7897' HTTP_PROXY='http:\/\/127\.0\.0\.1:7897'/)
-  assert.match(output, /https_proxy='http:\/\/127\.0\.0\.1:7897' HTTPS_PROXY='http:\/\/127\.0\.0\.1:7897'/)
-  assert.match(output, /all_proxy='socks5:\/\/127\.0\.0\.1:7897' ALL_PROXY='socks5:\/\/127\.0\.0\.1:7897'/)
+  assert.match(output, /_proxy_lines="\$\(_rcland_read_os_proxy\)"/)
+  assert.match(output, /eval "\$_proxy_lines"/)
   assert.match(output, /ANTHROPIC_AUTH_TOKEN='tok"\$\(touch \/tmp\/rcland-token\)"'/)
   assert.doesNotMatch(output, /export http_proxy=/)
 })
 
 test('zsh ccland generator disables inherited proxy for endpoint when disabled', () => {
   const output = new CCLandZshGenerator().generate(
-    { ...sampleData({}, { useSystemProxy: false }), systemProxy },
+    sampleData({}, { useSystemProxy: false }),
     createGenerateContext('zsh', 'unused')
   )
 
-  assert.match(output, /env -u http_proxy -u HTTP_PROXY -u https_proxy -u HTTPS_PROXY -u all_proxy -u ALL_PROXY -u no_proxy -u NO_PROXY/)
-  assert.match(output, /claude -n "\$_sn" "\$\{_ra\[@\]\}"/)
+  assert.match(output, /unset http_proxy HTTP_PROXY https_proxy HTTPS_PROXY all_proxy ALL_PROXY no_proxy NO_PROXY/)
+  assert.match(output, /claude "\$@"/)
 })
 
 test('powershell ccland generator restores process environment after scoped proxy run', () => {
   const output = new CCLandPowerShellGenerator().generate(
-    { ...sampleData({}, { useSystemProxy: true }), systemProxy },
+    sampleData({}, { useSystemProxy: true }),
     createGenerateContext('powershell', 'unused')
   )
 
-  assert.match(output, /\$env:http_proxy = 'http:\/\/127\.0\.0\.1:7897'/)
-  assert.match(output, /\$env:HTTP_PROXY = 'http:\/\/127\.0\.0\.1:7897'/)
+  assert.match(output, /\$proxyEntries = _rcland_ReadOsProxy/)
   assert.match(output, /\$env:ANTHROPIC_AUTH_TOKEN = 'tok"\$\(touch \/tmp\/rcland-token\)"'/)
   assert.match(output, /try \{/)
   assert.match(output, /finally \{/)
   assert.match(output, /Set-Item "Env:\$key" \$previous\[\$key\]/)
-  // Real function parses -n and calls set_main_task_name
-  assert.match(output, /\$sn = ""/)
-  assert.match(output, /claude -n \$sn @ra/)
+  // Real function just passes all args to claude
+  assert.match(output, /claude @args/)
   // Selector function also parses -n
   assert.match(output, /\$session_name = ""/)
   assert.match(output, /set_main_task_name "CC 🔸 \$session_name"/)

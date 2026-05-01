@@ -52,12 +52,25 @@ export const getAppPageLabels = (t: TFunction): Record<AppPage, string> => ({
   '/cxland': t('nav.cxland'),
 })
 
+export interface ProxyFunctionNames {
+  proxyOn: string
+  proxyOff: string
+  proxyStatus: string
+}
+
+export const DEFAULT_PROXY_FUNCTION_NAMES: ProxyFunctionNames = {
+  proxyOn: 'proxy-on',
+  proxyOff: 'proxy-off',
+  proxyStatus: 'proxy-status'
+}
+
 export interface AppSettings {
   configDir: string
   keyFilePath: string
   shellProfiles: Partial<Record<ShellType, ShellProfileConfig>>
   defaultPage?: AppPage
   language?: 'zh-CN' | 'en'
+  proxyFunctionNames?: ProxyFunctionNames
 }
 
 // ============================================================
@@ -89,6 +102,9 @@ export interface CCLaunchData {
     enabled: boolean
     funcName: string
     promptTitle: string
+    aliasName?: string
+    /** Whether to require -n session name in selector function. Default: true */
+    requireSessionName?: boolean
   }
 }
 
@@ -149,6 +165,9 @@ export interface CXSelector {
   enabled: boolean
   funcName: string
   promptTitle: string
+  aliasName?: string
+  /** Whether to require -n session name in selector function. Default: true */
+  requireSessionName?: boolean
 }
 
 export interface CXLandData {
@@ -169,7 +188,7 @@ export function createEmptyCXLandData(): CXLandData {
     version: 3,
     providers: [],
     configs: [],
-    selector: { enabled: false, funcName: 'cx', promptTitle: '选择 Codex 供应商' }
+    selector: { enabled: true, funcName: 'cx', promptTitle: '选择 Codex 供应商' }
   }
 }
 
