@@ -1,6 +1,7 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { ShellVariable } from '@shared/shell-types'
 import type { ShellType } from '@shared/shell'
+import { assertSafeEnvName } from '../../shell-syntax'
 
 export class VariablesZshGenerator implements SectionGenerator<ShellVariable[]> {
   readonly sectionName = 'variables'
@@ -16,7 +17,7 @@ export class VariablesZshGenerator implements SectionGenerator<ShellVariable[]> 
     for (const v of items) {
       const raw = v.encrypted ? ctx.decrypt(v.value) : v.value
       const escaped = ctx.escapeValue(raw)
-      lines.push(`export ${v.key}="${escaped}"`)
+      lines.push(`export ${assertSafeEnvName(v.key, v.description || v.id)}="${escaped}"`)
     }
     return lines.join('\n')
   }

@@ -22,7 +22,7 @@ export function createShellConfigCrud<T extends { id: string }>(
       set((s: any) => ({
         shellConfig: { ...s.shellConfig, [field]: [...s.shellConfig[field], item] }
       }))
-      get().saveShellConfig()
+      void get().saveShellConfig().catch(() => undefined)
     },
     addAfter: (afterId: string, item: T) => {
       set((s: any) => {
@@ -31,7 +31,7 @@ export function createShellConfigCrud<T extends { id: string }>(
         arr.splice(idx + 1, 0, item)
         return { shellConfig: { ...s.shellConfig, [field]: arr } }
       })
-      get().saveShellConfig()
+      void get().saveShellConfig().catch(() => undefined)
     },
     update: (id: string, patch: Partial<T>) => {
       set((s: any) => ({
@@ -40,19 +40,19 @@ export function createShellConfigCrud<T extends { id: string }>(
           [field]: s.shellConfig[field].map((x: T) => (x.id === id ? { ...x, ...patch } : x))
         }
       }))
-      get().saveShellConfig()
+      void get().saveShellConfig().catch(() => undefined)
     },
     remove: (id: string) => {
       set((s: any) => ({
         shellConfig: { ...s.shellConfig, [field]: s.shellConfig[field].filter((x: T) => x.id !== id) }
       }))
-      get().saveShellConfig()
+      void get().saveShellConfig().catch(() => undefined)
     },
     reorder: (activeId: string, overId: string) => {
       set((s: any) => ({
         shellConfig: { ...s.shellConfig, [field]: reorder(s.shellConfig[field], activeId, overId) }
       }))
-      get().saveShellConfig()
+      void get().saveShellConfig().catch(() => undefined)
     }
   }
 }
@@ -69,7 +69,7 @@ export function createTopLevelCrud<T extends { id: string }>(
   return {
     add: (item: T) => {
       set((s: any) => ({ [field]: [...s[field], item] }))
-      get().saveData()
+      void get().saveData().catch(() => undefined)
     },
     addAfter: (afterId: string, item: T) => {
       set((s: any) => {
@@ -78,17 +78,17 @@ export function createTopLevelCrud<T extends { id: string }>(
         arr.splice(idx + 1, 0, item)
         return { [field]: arr }
       })
-      get().saveData()
+      void get().saveData().catch(() => undefined)
     },
     update: (id: string, patch: Partial<T>) => {
       set((s: any) => ({
         [field]: s[field].map((x: T) => (x.id === id ? { ...x, ...patch } : x))
       }))
-      get().saveData()
+      void get().saveData().catch(() => undefined)
     },
     remove: (id: string) => {
       set((s: any) => ({ [field]: s[field].filter((x: T) => x.id !== id) }))
-      get().saveData()
+      void get().saveData().catch(() => undefined)
     },
     reorder: (activeId: string, overId: string) => {
       if (activeId === overId) return
@@ -101,7 +101,7 @@ export function createTopLevelCrud<T extends { id: string }>(
         arr.splice(newIdx, 0, removed)
         return { [field]: arr }
       })
-      get().saveData()
+      void get().saveData().catch(() => undefined)
     }
   }
 }

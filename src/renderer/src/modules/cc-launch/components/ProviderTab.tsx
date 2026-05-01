@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { Provider } from '@shared/types'
+import type { EnvVarsMap, Provider, ProviderEndpoint, ProviderKey } from '@shared/types'
 import { useAppStore } from '@renderer/stores/useAppStore'
 import { ProviderCard } from './ProviderCard'
 import { ProviderFormModal, withDefaults } from './ProviderFormModal'
@@ -73,7 +73,7 @@ export function ProviderTab(): React.ReactElement {
     })
   )
 
-  const handleAdd = (values: { name: string; color: string; endpoints: { id: string; label: string; url: string }[]; keys: { id: string; label: string; token: string; comment?: string }[]; template: { envVars: any } }) => {
+  const handleAdd = (values: { name: string; color: string; endpoints: ProviderEndpoint[]; keys: ProviderKey[]; template: { envVars: EnvVarsMap } }) => {
     addProvider({
       id: crypto.randomUUID(),
       name: values.name.trim(),
@@ -124,7 +124,7 @@ export function ProviderTab(): React.ReactElement {
         initialValues={{
           name: '',
           color: '#1677ff',
-          endpoints: [{ id: crypto.randomUUID(), label: t('ccLaunch.defaultEndpoint'), url: '' }],
+          endpoints: [{ id: crypto.randomUUID(), label: t('ccLaunch.defaultEndpoint'), url: '', useSystemProxy: false }],
           keys: [],
           template: { envVars: withDefaults() }
         }}

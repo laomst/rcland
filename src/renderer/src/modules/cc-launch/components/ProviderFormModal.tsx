@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Input, Modal, Form, ColorPicker, Divider, Button, Space, App } from 'antd'
+import { Input, Modal, Form, ColorPicker, Divider, Button, Space, App, Switch, Typography } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
 import type { EnvVarSetting, EnvVarsMap, ProviderEndpoint, ProviderKey, ConfigSet } from '@shared/types'
 import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
@@ -8,6 +8,7 @@ import { EnvVarEditor } from './EnvVarEditor'
 import { KeyEditModal } from './KeyEditModal'
 
 const PRESET_COLORS = ['#1677ff', '#52c41a', '#fa8c16', '#722ed1', '#eb2f96', '#13c2c2', '#faad14', '#f5222d']
+const { Text } = Typography
 
 /** Ensure all env var keys have a setting entry so EnvVarEditor renders them */
 function withDefaults(envVars?: EnvVarsMap): EnvVarsMap {
@@ -72,7 +73,7 @@ export function ProviderFormModal({
   const addEndpoint = () => {
     setForm((f) => ({
       ...f,
-      endpoints: [...f.endpoints, { id: crypto.randomUUID(), label: '', url: '' }]
+      endpoints: [...f.endpoints, { id: crypto.randomUUID(), label: '', url: '', useSystemProxy: false }]
     }))
   }
 
@@ -182,12 +183,19 @@ export function ProviderFormModal({
           <Form.Item label={t('ccLaunch.endpointUrl')} required>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {form.endpoints.map((ep, idx) => (
-                <Space.Compact key={ep.id} style={{ width: '100%' }}>
+                <div
+                  key={ep.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: form.endpoints.length > 1 ? '120px minmax(0, 1fr) auto auto' : '120px minmax(0, 1fr) auto',
+                    gap: 8,
+                    alignItems: 'center'
+                  }}
+                >
                   <Input
                     value={ep.label}
                     onChange={(e) => updateEndpoint(idx, { label: e.target.value })}
                     placeholder={t('ccLaunch.endpointLabelPlaceholder')}
-                    style={{ width: 120, flexShrink: 0 }}
                   />
                   <Input
                     value={ep.url}
@@ -195,6 +203,14 @@ export function ProviderFormModal({
                     placeholder={t('ccLaunch.endpointUrlPlaceholder')}
                     style={{ fontFamily: 'monospace', flex: 1 }}
                   />
+                  <Space size={6} style={{ whiteSpace: 'nowrap' }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.useSystemProxy')}</Text>
+                    <Switch
+                      size="small"
+                      checked={Boolean(ep.useSystemProxy)}
+                      onChange={(checked) => updateEndpoint(idx, { useSystemProxy: checked })}
+                    />
+                  </Space>
                   {form.endpoints.length > 1 && (
                     <Button
                       danger
@@ -202,7 +218,7 @@ export function ProviderFormModal({
                       onClick={() => removeEndpoint(idx)}
                     />
                   )}
-                </Space.Compact>
+                </div>
               ))}
               <Button type="dashed" icon={<PlusOutlined />} onClick={addEndpoint} block>
                 {t('ccLaunch.addEndpoint')}

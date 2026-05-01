@@ -4,18 +4,11 @@ import { Input, Modal, Form, Space, Select, Divider, Typography, Button, Switch 
 import { PlusOutlined, LockOutlined } from '@ant-design/icons'
 import type { ConfigSet, Provider, EnvVarSetting } from '@shared/types'
 import { EnvVarEditor } from './EnvVarEditor'
+import type { ConfigFormValues } from './config-update'
 
 const { Text } = Typography
 
-interface FormValues {
-  providerId: string
-  endpointId: string
-  keyId: string
-  name: string
-  funcName: string
-  envVars: ConfigSet['envVars']
-  localOnly?: boolean
-}
+type FormValues = ConfigFormValues
 
 interface ConfigFormModalProps {
   open: boolean

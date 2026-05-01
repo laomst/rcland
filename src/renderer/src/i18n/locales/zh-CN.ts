@@ -30,7 +30,9 @@ const zhCN = {
     path: 'PATH',
     functions: '函数',
     aliases: '别名',
+    systemProxy: '系统代理',
     ccland: 'CCLand',
+    cxland: 'CXLand',
   },
 
   app: {
@@ -40,6 +42,9 @@ const zhCN = {
     applySuccess: '已应用配置到: {{shells}}',
     applyNone: '没有应用任何 Shell 配置',
     applyFailed: '应用失败',
+    copyScript: '复制脚本',
+    copyScriptSuccess: '{{shell}} 脚本已复制到剪贴板',
+    copyScriptFailed: '复制失败: {{error}}',
   },
 
   settings: {
@@ -217,6 +222,8 @@ const zhCN = {
     endpointLabelPlaceholder: '标签，如: 默认',
     endpointUrlPlaceholder: '如: https://open.bigmodel.cn/api/anthropic',
     addEndpoint: '添加接入点',
+    useSystemProxy: '使用系统代理',
+    systemProxyShort: '代理',
     tokenLabel: '密钥 (Token)',
     noKeys: '暂无密钥，点击下方按钮添加',
     encryptedToken: '•••••••••••• (已加密)',
@@ -268,6 +275,38 @@ const zhCN = {
     enterToken: '请输入 Token',
     remark: '备注',
     remarkPlaceholder: '可选备注',
+  },
+
+  cxLaunch: {
+    configTab: '配置管理',
+    providerTab: '供应商管理',
+    selectorTab: '选择器',
+    newConfig: '新建配置',
+    model: '模型',
+    wireApiHint: 'chat 适用于大多数第三方 API；responses 适用于 OpenAI 官方 API',
+    endpointUrlPlaceholder: '如: https://api.openai.com/v1',
+    selector: {
+      enabled: '启用选择器',
+      enabledHint: '启用后生成 cx 交互式选择函数，可在多个配置间快速切换',
+      funcName: '选择器函数名',
+      promptTitle: '选择提示标题',
+    },
+  },
+
+  systemProxy: {
+    title: '系统代理',
+    hint: '配置 shell 会话中的代理环境变量。应用后会生成 proxy-on、proxy-off、proxy-status 三个函数。',
+    importTitle: '从 export 语句导入',
+    importExports: '解析并导入',
+    proxyItems: '代理环境变量',
+    exportPlaceholder: 'export HTTP_PROXY=http://127.0.0.1:7890\nexport HTTPS_PROXY=http://127.0.0.1:7890\nexport ALL_PROXY=socks5://127.0.0.1:7890\nexport NO_PROXY=localhost,127.0.0.1',
+    valuePlaceholder: '如: http://127.0.0.1:7890 或 socks5://127.0.0.1:7890',
+    proxyTypes: {
+      http: 'HTTP 代理',
+      https: 'HTTPS 代理',
+      all: '全部协议代理',
+      no: '不走代理的地址',
+    },
   },
 }
 

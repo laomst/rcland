@@ -1,16 +1,17 @@
-import { ipcMain } from 'electron'
-import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { app, ipcMain } from 'electron'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { dirname, join } from 'path'
 import * as configService from '../services/config'
 import * as cryptoService from '../services/crypto'
 import * as backupService from '../services/backup'
 import * as shellConfigService from '../services/shell-config'
-import { buildDecryptedMap, decryptShellVariables } from '../services/crypto-utils'
 import { detectShell } from '../services/shell-detector'
-import { getGenerator } from '../services/generators'
-import { generateFullConfig } from '../services/generators/orchestrator'
-import { createGenerateContext } from '../services/generators/context'
+import { quoteBashLikeLiteral, quotePowerShellLiteral } from '../services/generators/shell-syntax'
+import { applyConfigWithKey, generateConfigWithKey } from '../services/shell-apply'
+import { resolveHomePath } from '../services/path-utils'
 import type { CCLaunchData } from '@shared/types'
-import { getShellOutputPath, getShellProfilePath, type ShellType } from '@shared/shell'
+import type { ShellConfigData } from '@shared/shell-types'
+import { getShellProfilePath, type ShellType } from '@shared/shell'
 
 /**
  * Remove a marker block (begin/end markers + one source line between them) from shell profile content.
@@ -46,105 +47,79 @@ function injectSourceBlock(profilePath: string, outputPath: string, shellType: S
   content = removeMarkerBlock(content, '# >>> CCland >>>', '# <<< CCland <<<', profilePath)
   content = removeMarkerBlock(content, '# >>> RCLand >>>', '# <<< RCLand <<<', profilePath)
   // PowerShell uses dot-sourcing (. "path"), others use source
-  const sourceLine = shellType === 'powershell' ? `. "${outputPath}"` : `source ${outputPath}`
+  const sourceLine = shellType === 'powershell'
+    ? `. ${quotePowerShellLiteral(outputPath)}`
+    : `source ${quoteBashLikeLiteral(outputPath)}`
   const sourceBlock = `# >>> RCLand >>>\n${sourceLine}\n# <<< RCLand <<<`
   writeFileSync(profilePath, sourceBlock + '\n\n' + content.trimStart(), 'utf-8')
+}
+
+function getResolvedProfilePath(shellType: ShellType): string {
+  if (shellType === 'powershell') {
+    const documents = app.getPath('documents')
+    const candidates = [
+      join(documents, 'PowerShell', 'Microsoft.PowerShell_profile.ps1'),
+      join(documents, 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1')
+    ]
+    return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
+  }
+  return resolveHomePath(getShellProfilePath(shellType))
+}
+
+function defaultCCData(): CCLaunchData {
+  return {
+    version: 5,
+    providers: [],
+    configs: [],
+    selector: { enabled: false, funcName: 'cc', promptTitle: '' }
+  }
+}
+
+function loadCCDataOrDefault(): CCLaunchData {
+  return configService.loadCCData() ?? defaultCCData()
+}
+
+function loadCXData(): ReturnType<typeof configService.loadCXLandData> {
+  return configService.loadCXLandData()
+}
+
+function loadShellConfigData(): ShellConfigData {
+  return shellConfigService.loadShellConfigData()
+}
+
+function injectGeneratedSource(shellType: ShellType, outputPath: string): void {
+  const profilePath = getResolvedProfilePath(shellType)
+  if (!existsSync(profilePath)) {
+    mkdirSync(dirname(profilePath), { recursive: true })
+    writeFileSync(profilePath, '', 'utf-8')
+  }
+  injectSourceBlock(profilePath, outputPath, shellType)
 }
 
 export function registerShellHandlers(): void {
   ipcMain.handle('shell:detect', () => detectShell())
 
-  ipcMain.handle('shell:generate', (_e, shellType: ShellType) => {
-    const settings = configService.loadSettings()
-    const dataJson = configService.loadData()
-    if (!dataJson) throw new Error('No data file found')
-    const data: CCLaunchData = JSON.parse(dataJson)
-
-    const key = cryptoService.loadKey(settings.keyFilePath)
-    if (!key) throw new Error('Key file not found')
-
-    const { map: decryptedMap, decryptFailed } = buildDecryptedMap(data, key)
-    if (decryptFailed) {
-      throw new Error('DECRYPT_FAILED')
-    }
-    const gen = getGenerator(shellType)
-    const values = { get: (k: string) => decryptedMap.get(k) ?? '' }
-    return gen.generate(data, values)
-  })
-
-  ipcMain.handle('shell:apply', async (_e, shellTypes: ShellType[]) => {
-    const settings = configService.loadSettings()
-    const dataJson = configService.loadData()
-    if (!dataJson) throw new Error('No data file found')
-    const data: CCLaunchData = JSON.parse(dataJson)
-
-    const key = cryptoService.loadKey(settings.keyFilePath)
-    if (!key) throw new Error('Key file not found')
-
-    const { map: decryptedMap, decryptFailed } = buildDecryptedMap(data, key)
-    if (decryptFailed) {
-      throw new Error('DECRYPT_FAILED')
-    }
-
-    const appliedShells: string[] = []
-    for (const shellType of shellTypes) {
-      const profile = settings.shellProfiles[shellType]
-      if (!profile) continue
-
-      const gen = getGenerator(shellType)
-      const values = { get: (k: string) => decryptedMap.get(k) ?? '' }
-      const generated = gen.generate(data, values)
-
-      // Write output
-      const outputPath = getShellOutputPath(shellType).replace(/^~/, process.env.HOME || '~')
-      writeFileSync(outputPath, generated, 'utf-8')
-
-      // Auto source into profile
-      {
-        const profilePath = getShellProfilePath(shellType).replace(/^~/, process.env.HOME || '~')
-        if (existsSync(profilePath)) {
-          injectSourceBlock(profilePath, outputPath, shellType)
-        }
-      }
-      appliedShells.push(shellType)
-    }
-    return { appliedShells, count: appliedShells.length }
-  })
-
   ipcMain.handle('shell:tryApplyWithKey', async (_e, shellTypes: ShellType[], tempKey: string) => {
     const settings = configService.loadSettings()
-    const dataJson = configService.loadData()
-    if (!dataJson) {
-      throw new Error('No data file found')
-    }
-    const data: CCLaunchData = JSON.parse(dataJson)
-
-    const { map: decryptedMap, decryptFailed } = buildDecryptedMap(data, tempKey)
-    if (decryptFailed) {
-      return { success: false, error: 'DECRYPT_FAILED' }
-    }
-
-    const appliedShells: ShellType[] = []
-    for (const shellType of shellTypes) {
-      const profile = settings.shellProfiles[shellType]
-      if (!profile) continue
-
-      const gen = getGenerator(shellType)
-      const values = { get: (k: string) => decryptedMap.get(k) ?? '' }
-      const generated = gen.generate(data, values)
-
-      const outputPath = getShellOutputPath(shellType).replace(/^~/, process.env.HOME || '~')
-      writeFileSync(outputPath, generated, 'utf-8')
-
-      {
-        const profilePath = getShellProfilePath(shellType).replace(/^~/, process.env.HOME || '~')
-        if (existsSync(profilePath)) {
-          injectSourceBlock(profilePath, outputPath, shellType)
-        }
+    try {
+      const result = applyConfigWithKey({
+        shellTypes,
+        ccData: loadCCDataOrDefault(),
+        cxData: loadCXData(),
+        shellConfig: loadShellConfigData(),
+        keyPassphrase: tempKey,
+        enabledShells: settings.shellProfiles,
+        injectSourceBlock: injectGeneratedSource,
+        createBackup: backupService.createBackup,
+        pruneBackups: backupService.pruneBackups
+      })
+      return { success: true, ...result }
+    } catch (err) {
+      if (err instanceof Error && err.message === 'DECRYPT_FAILED') {
+        return { success: false, error: 'DECRYPT_FAILED' }
       }
-      appliedShells.push(shellType)
+      throw err
     }
-    return { success: true, appliedShells, count: appliedShells.length }
   })
 
   // ---- Unified Generate (shell config + CC config merged) ----
@@ -152,55 +127,29 @@ export function registerShellHandlers(): void {
     const settings = configService.loadSettings()
     const key = cryptoService.loadKey(settings.keyFilePath)
     if (!key) throw new Error('Key file not found')
-    // Load CC data
-    const ccDataJson = configService.loadData()
-    const ccData: CCLaunchData = ccDataJson ? JSON.parse(ccDataJson) : { version: 5, providers: [], configs: [], selector: { enabled: false, funcName: 'cc', promptTitle: '' } }
-    // Load Shell config
-    const shellConfigJson = shellConfigService.loadShellConfig()
-    const shellConfig: import('../../shared/shell-types').ShellConfigData = JSON.parse(shellConfigJson)
-    // Build decrypted tokens
-    const { map: decryptedTokens, decryptFailed } = buildDecryptedMap(ccData, key)
-    if (decryptFailed) throw new Error('DECRYPT_FAILED')
-    // Decrypt encrypted shell variables (in-memory only)
-    const decryptedShellConfig = decryptShellVariables(shellConfig, key)
-    const ctx = createGenerateContext(shellType, key)
-    return generateFullConfig(shellType, decryptedShellConfig, ccData, decryptedTokens, ctx)
+    return generateConfigWithKey({
+      shellType,
+      ccData: loadCCDataOrDefault(),
+      cxData: loadCXData(),
+      shellConfig: loadShellConfigData(),
+      keyPassphrase: key
+    })
   })
 
   ipcMain.handle('shell:applyAll', async (_e, shellTypes: ShellType[]) => {
     const settings = configService.loadSettings()
     const key = cryptoService.loadKey(settings.keyFilePath)
     if (!key) throw new Error('Key file not found')
-    const ccDataJson = configService.loadData()
-    const ccData: CCLaunchData = ccDataJson ? JSON.parse(ccDataJson) : { version: 5, providers: [], configs: [], selector: { enabled: false, funcName: 'cc', promptTitle: '' } }
-    const shellConfigJson = shellConfigService.loadShellConfig()
-    const shellConfig: import('../../shared/shell-types').ShellConfigData = JSON.parse(shellConfigJson)
-    const { map: decryptedTokens, decryptFailed } = buildDecryptedMap(ccData, key)
-    if (decryptFailed) throw new Error('DECRYPT_FAILED')
-    // Decrypt encrypted shell variables (in-memory only)
-    const decryptedShellConfig = decryptShellVariables(shellConfig, key)
-    const appliedShells: string[] = []
-    const home = process.env.HOME || '~'
-    for (const shellType of shellTypes) {
-      const profile = settings.shellProfiles[shellType]
-      if (!profile) continue
-      const outputPath = getShellOutputPath(shellType).replace(/^~/, home)
-      const profilePath = getShellProfilePath(shellType).replace(/^~/, home)
-      // Backup current output file
-      backupService.createBackup(shellType, getShellOutputPath(shellType))
-      // Generate
-      const ctx = createGenerateContext(shellType, key)
-      const generated = generateFullConfig(shellType, decryptedShellConfig, ccData, decryptedTokens, ctx)
-      // Write output
-      writeFileSync(outputPath, generated, 'utf-8')
-      // Auto source into shell profile
-      if (existsSync(profilePath)) {
-        injectSourceBlock(profilePath, outputPath)
-      }
-      // Prune old backups
-      backupService.pruneBackups(shellType, 10)
-      appliedShells.push(shellType)
-    }
-    return { appliedShells, count: appliedShells.length }
+    return applyConfigWithKey({
+      shellTypes,
+      ccData: loadCCDataOrDefault(),
+      cxData: loadCXData(),
+      shellConfig: loadShellConfigData(),
+      keyPassphrase: key,
+      enabledShells: settings.shellProfiles,
+      injectSourceBlock: injectGeneratedSource,
+      createBackup: backupService.createBackup,
+      pruneBackups: backupService.pruneBackups
+    })
   })
 }

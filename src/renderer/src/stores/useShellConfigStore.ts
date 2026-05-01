@@ -9,16 +9,23 @@ import type {
   OutputConfig,
   ConflictCheckResult
 } from '@shared/shell-types'
+import type { SystemProxyEnvVar } from '@shared/system-proxy'
+import { mergeSystemProxyEnvVars } from '@shared/system-proxy'
 import { createEmptyShellConfig, BUILTIN_FUNCTIONS } from '@shared/builtin-functions'
 import { createShellConfigCrud } from './crud-helpers'
+import { createPersistQueue, toErrorMessage } from './persist'
+
+const persistQueue = createPersistQueue()
 
 export interface ShellConfigState {
   shellConfig: ShellConfigData
   dataLoaded: boolean
+  saveError: string | null
 
   // Load / Save
-  loadShellConfig: () => Promise<void>
+  loadShellConfig: (force?: boolean) => Promise<void>
   saveShellConfig: () => Promise<void>
+  clearSaveError: () => void
 
   // Variables CRUD
   addVariable: (v: ShellVariable) => void
@@ -54,6 +61,10 @@ export interface ShellConfigState {
   // Output
   updateOutput: (config: OutputConfig) => void
 
+  // System proxy
+  updateSystemProxyEnvVar: (index: number, value: string) => void
+  importSystemProxyEnvVars: (items: SystemProxyEnvVar[]) => void
+
   // Conflict check
   checkConflicts: () => Promise<ConflictCheckResult>
 }
@@ -67,10 +78,10 @@ export const useShellConfigStore = create<ShellConfigState>((set, get) => {
   return {
     shellConfig: createEmptyShellConfig(),
     dataLoaded: false,
+    saveError: null,
 
-    loadShellConfig: async () => {
-      const json = await window.electronAPI.loadShellConfig()
-      const data: ShellConfigData = JSON.parse(json)
+    loadShellConfig: async (_force = false) => {
+      const data = await window.electronAPI.loadShellConfig()
       // 合并内置函数：保留用户的 enabled 状态，其余用内置定义覆盖
       const userFunctions = data.functions.filter((f) => !f.builtIn)
       const mergedBuiltIns = BUILTIN_FUNCTIONS.map((bi) => {
@@ -83,14 +94,19 @@ export const useShellConfigStore = create<ShellConfigState>((set, get) => {
 
     saveShellConfig: async () => {
       const { shellConfig } = get()
-      // 内置函数只保存 id 和 enabled，body 等字段从代码定义加载
-      const dataToSave = {
-        ...shellConfig,
-        functions: shellConfig.functions.map((f) =>
-          f.builtIn ? { id: f.id, enabled: f.enabled, builtIn: true } : f
-        )
-      }
-      await window.electronAPI.saveShellConfig(JSON.stringify(dataToSave))
+      await persistQueue.enqueue(async () => {
+        await window.electronAPI.saveShellConfig(shellConfig)
+      }).then(() => {
+        set({ saveError: null })
+      }).catch((err) => {
+        set({ saveError: toErrorMessage(err) })
+        throw err
+      })
+    },
+
+    clearSaveError: () => {
+      persistQueue.clearLastError()
+      set({ saveError: null })
     },
 
     // Variables
@@ -126,7 +142,7 @@ export const useShellConfigStore = create<ShellConfigState>((set, get) => {
           })
         }
       }))
-      get().saveShellConfig()
+      void get().saveShellConfig().catch(() => undefined)
     },
 
     removeFunction: (id) => {
@@ -135,7 +151,7 @@ export const useShellConfigStore = create<ShellConfigState>((set, get) => {
       set((s) => ({
         shellConfig: { ...s.shellConfig, functions: s.shellConfig.functions.filter((f) => f.id !== id) }
       }))
-      get().saveShellConfig()
+      void get().saveShellConfig().catch(() => undefined)
     },
 
     reorderFunctions: functionsCrud.reorder,
@@ -150,19 +166,46 @@ export const useShellConfigStore = create<ShellConfigState>((set, get) => {
     // Prompt
     updatePrompt: (config) => {
       set((s) => ({ shellConfig: { ...s.shellConfig, prompt: config } }))
-      get().saveShellConfig()
+      void get().saveShellConfig().catch(() => undefined)
     },
 
     // Output
     updateOutput: (config) => {
       set((s) => ({ shellConfig: { ...s.shellConfig, output: config } }))
-      get().saveShellConfig()
+      void get().saveShellConfig().catch(() => undefined)
+    },
+
+    updateSystemProxyEnvVar: (index, value) => {
+      set((s) => ({
+        shellConfig: {
+          ...s.shellConfig,
+          systemProxy: {
+            ...s.shellConfig.systemProxy,
+            proxyEnvVars: s.shellConfig.systemProxy.proxyEnvVars.map((item, itemIndex) =>
+              itemIndex === index ? { ...item, value } : item
+            )
+          }
+        }
+      }))
+      void get().saveShellConfig().catch(() => undefined)
+    },
+
+    importSystemProxyEnvVars: (items) => {
+      set((s) => ({
+        shellConfig: {
+          ...s.shellConfig,
+          systemProxy: {
+            proxyEnvVars: mergeSystemProxyEnvVars(s.shellConfig.systemProxy.proxyEnvVars, items)
+          }
+        }
+      }))
+      void get().saveShellConfig().catch(() => undefined)
     },
 
     // Conflict check
     checkConflicts: async () => {
       const { shellConfig } = get()
-      return window.electronAPI.checkConflicts(JSON.stringify(shellConfig))
+      return window.electronAPI.checkConflicts(shellConfig)
     }
   }
 })

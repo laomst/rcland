@@ -1,5 +1,6 @@
 import type { ShellConfigData } from './shell-types'
 import { createEmptyShellConfig } from './builtin-functions'
+import { normalizeSystemProxyConfig } from './system-proxy'
 
 /**
  * Migrate shell config data from any version to latest.
@@ -20,5 +21,17 @@ export function migrateShellConfig(data: unknown): ShellConfigData {
   // Future migrations:
   // if (version < 2) data = migrateShellV1ToV2(data)
 
-  return data as ShellConfigData
+  const config = data as ShellConfigData
+  const defaults = createEmptyShellConfig()
+  return {
+    ...defaults,
+    ...config,
+    variables: Array.isArray(config.variables) ? config.variables : [],
+    pathEntries: Array.isArray(config.pathEntries) ? config.pathEntries : [],
+    functions: Array.isArray(config.functions) ? config.functions : [],
+    aliases: Array.isArray(config.aliases) ? config.aliases : [],
+    systemProxy: normalizeSystemProxyConfig((obj as { systemProxy?: unknown }).systemProxy),
+    prompt: config.prompt ?? defaults.prompt,
+    output: config.output ?? defaults.output,
+  }
 }

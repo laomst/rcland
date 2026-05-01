@@ -31,9 +31,10 @@ export function getShellProfilePath(shell: ShellType): string {
   return SHELL_PROFILE_PATHS[shell]
 }
 
-/** Get the RCLand output path for a shell: ~/.rcland/{shell}rc */
+/** Get the RCLand output path for a shell: ~/.rcland/{shell}rc[.ps1] */
 export function getShellOutputPath(shell: ShellType): string {
-  return `~/.rcland/${shell}rc`
+  const base = `~/.rcland/${shell}rc`
+  return shell === 'powershell' ? `${base}.ps1` : base
 }
 
 /** 获取当前操作系统支持的 shell 类型（renderer 环境） */

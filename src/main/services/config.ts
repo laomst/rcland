@@ -1,13 +1,18 @@
 import { app, dialog } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import type { AppSettings, CCLaunchData, Provider, ConfigSet, LocalCCLaunchData } from '@shared/types'
+import type { AppSettings, CCLaunchData, CXLandData, Provider, ConfigSet, LocalCCLaunchData, CXProvider, CXConfigSet, LocalCXLandData } from '@shared/types'
+import { createEmptyCXLandData, normalizeCXLandData } from '@shared/types'
 import type { ShellType } from '@shared/shell'
+import { assertAppSettings, assertCCLaunchData, assertCXLandData } from '@shared/ipc-contracts'
 import { platform } from 'os'
 import { loadLocalCCConfig, saveLocalCCConfig } from './local-cc-config'
+import { loadLocalCXConfig, saveLocalCXConfig } from './local-cx-config'
+import { markLocalItems, splitLocalItems } from './local-sync'
 
 const SETTINGS_FILENAME = 'settings.json'
 const DATA_FILENAME = 'rcland.config.claudecode.json'
+const CX_DATA_FILENAME = 'rcland.config.codex.json'
 
 function getUserDataDir(): string {
   return app.getPath('userData')
@@ -49,6 +54,7 @@ export function loadSettings(): AppSettings {
 }
 
 export function saveSettings(settings: AppSettings): void {
+  assertAppSettings(settings)
   const dir = getUserDataDir()
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   writeFileSync(getSettingsPath(), JSON.stringify(settings, null, 2), 'utf-8')
@@ -91,8 +97,8 @@ export function loadData(): string | null {
   const localData = loadLocalCCConfig()
 
   // Merge: local items get localOnly=true
-  const localProviders = localData.providers.map(p => ({ ...p, localOnly: true }))
-  const localConfigs = localData.configs.map(c => ({ ...c, localOnly: true }))
+  const localProviders = markLocalItems(localData.providers)
+  const localConfigs = markLocalItems(localData.configs)
 
   // Combine synced + local
   const merged: CCLaunchData = {
@@ -110,21 +116,6 @@ export function loadData(): string | null {
   return JSON.stringify(merged)
 }
 
-/** Split items by localOnly flag, stripping localOnly from synced items */
-function splitByLocal<T extends { localOnly?: boolean }>(items: T[]): { synced: Omit<T, 'localOnly'>[]; local: T[] } {
-  const synced: Omit<T, 'localOnly'>[] = []
-  const local: T[] = []
-  for (const item of items) {
-    if (item.localOnly) {
-      local.push(item)
-    } else {
-      const { localOnly: _, ...rest } = item as T & { localOnly?: boolean }
-      synced.push(rest as Omit<T, 'localOnly'>)
-    }
-  }
-  return { synced, local }
-}
-
 export function saveData(json: string): void {
   const settings = loadSettings()
   ensureConfigDir(settings.configDir)
@@ -132,10 +123,10 @@ export function saveData(json: string): void {
   const data: CCLaunchData = JSON.parse(json)
 
   // Split providers
-  const { synced: syncedProviders, local: localProviders } = splitByLocal(data.providers)
+  const { synced: syncedProviders, local: localProviders } = splitLocalItems(data.providers)
 
   // Split configs
-  const { synced: syncedConfigs, local: localConfigs } = splitByLocal(data.configs)
+  const { synced: syncedConfigs, local: localConfigs } = splitLocalItems(data.configs)
 
   // Save synced data (without localOnly field)
   const syncedData: CCLaunchData = {
@@ -153,6 +144,78 @@ export function saveData(json: string): void {
     configs: localConfigs.map(c => { const { localOnly: _, ...rest } = c; return rest }) as ConfigSet[]
   }
   saveLocalCCConfig(localData)
+}
+
+export function loadCCData(): CCLaunchData | null {
+  const json = loadData()
+  if (!json) return null
+  const data = JSON.parse(json)
+  assertCCLaunchData(data)
+  return data
+}
+
+export function saveCCData(data: CCLaunchData): void {
+  assertCCLaunchData(data)
+  saveData(JSON.stringify(data))
+}
+
+// ============================================================
+// CXLand Data (v3, syncable + local split)
+// ============================================================
+
+export function loadCXLandData(): CXLandData {
+  const settings = loadSettings()
+  const p = join(settings.configDir, CX_DATA_FILENAME)
+
+  let syncedData: CXLandData | null = null
+  if (existsSync(p)) {
+    try {
+      const parsed = JSON.parse(readFileSync(p, 'utf-8'))
+      const normalized = normalizeCXLandData(parsed)
+      if (normalized.version === 3) syncedData = normalized
+    } catch {
+      // Discard malformed file
+    }
+  }
+
+  const localData = loadLocalCXConfig()
+  const localProviders = markLocalItems(localData.providers)
+  const localConfigs = markLocalItems(localData.configs)
+
+  const empty = createEmptyCXLandData()
+  const merged: CXLandData = {
+    version: 3,
+    providers: [...(syncedData?.providers ?? []), ...localProviders],
+    configs: [...(syncedData?.configs ?? []), ...localConfigs],
+    selector: syncedData?.selector ?? empty.selector
+  }
+
+  assertCXLandData(merged)
+  return merged
+}
+
+export function saveCXLandData(data: CXLandData): void {
+  assertCXLandData(data)
+  const settings = loadSettings()
+  ensureConfigDir(settings.configDir)
+
+  const { synced: syncedProviders, local: localProviders } = splitLocalItems(data.providers)
+  const { synced: syncedConfigs, local: localConfigs } = splitLocalItems(data.configs)
+
+  const syncedData: CXLandData = {
+    version: 3,
+    providers: syncedProviders as CXProvider[],
+    configs: syncedConfigs as CXConfigSet[],
+    selector: data.selector
+  }
+  writeFileSync(join(settings.configDir, CX_DATA_FILENAME), JSON.stringify(syncedData, null, 2), 'utf-8')
+
+  const localData: LocalCXLandData = {
+    version: 1,
+    providers: localProviders.map(p => { const { localOnly: _, ...rest } = p; return rest }) as CXProvider[],
+    configs: localConfigs.map(c => { const { localOnly: _, ...rest } = c; return rest }) as CXConfigSet[]
+  }
+  saveLocalCXConfig(localData)
 }
 
 // ============================================================

@@ -17,7 +17,7 @@ export class PathZshGenerator implements SectionGenerator<PathEntry[]> {
     lines.push('CUSTOM_PATHS=(')
 
     for (const e of items) {
-      lines.push(`  "${e.path}"`)
+      lines.push(`  "${ctx.escapeValue(e.path)}"`)
     }
 
     lines.push(')')

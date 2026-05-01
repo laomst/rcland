@@ -19,17 +19,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: null,
 
   loadSettings: async () => {
-    const json = await window.electronAPI.loadSettings()
-    if (json) {
-      set({ settings: JSON.parse(json) })
-    }
+    const settings = await window.electronAPI.loadSettings()
+    set({ settings })
   },
 
   updateSettings: async (patch) => {
     const { settings } = get()
     if (!settings) return
     const updated = { ...settings, ...patch }
-    await window.electronAPI.saveSettings(JSON.stringify(updated))
+    await window.electronAPI.saveSettings(updated)
     set({ settings: updated })
   },
 

@@ -2,8 +2,10 @@ import type { ShellType } from '@shared/shell'
 import type { SectionGenerator } from './section-types'
 import type { GenerateContext } from './section-types'
 import type { ShellConfigData } from '@shared/shell-types'
-import type { CCLaunchData } from '@shared/types'
+import type { CCLaunchData, CXLandData } from '@shared/types'
+import { createEmptySystemProxyConfig } from '@shared/system-proxy'
 import type { CCLandSectionData } from './sections/ccland/zsh'
+import type { CXLandSectionData } from './sections/cxland/zsh'
 
 // Section generators
 import { VariablesZshGenerator } from './sections/variables/zsh'
@@ -21,9 +23,15 @@ import { AliasesPowerShellGenerator } from './sections/aliases/powershell'
 import { CCLandZshGenerator } from './sections/ccland/zsh'
 import { CCLandBashGenerator } from './sections/ccland/bash'
 import { CCLandPowerShellGenerator } from './sections/ccland/powershell'
+import { CXLandZshGenerator } from './sections/cxland/zsh'
+import { CXLandBashGenerator } from './sections/cxland/bash'
+import { CXLandPowerShellGenerator } from './sections/cxland/powershell'
+import { SystemProxyZshGenerator } from './sections/system-proxy/zsh'
+import { SystemProxyBashGenerator } from './sections/system-proxy/bash'
+import { SystemProxyPowerShellGenerator } from './sections/system-proxy/powershell'
 
 /** Fixed generation order */
-const SECTION_ORDER = ['variables', 'path', 'functions', 'aliases', 'ccland'] as const
+const SECTION_ORDER = ['variables', 'path', 'functions', 'aliases', 'systemProxy', 'ccland', 'cxland'] as const
 
 type SectionName = (typeof SECTION_ORDER)[number]
 
@@ -51,6 +59,12 @@ reg(new AliasesPowerShellGenerator())
 reg(new CCLandZshGenerator())
 reg(new CCLandBashGenerator())
 reg(new CCLandPowerShellGenerator())
+reg(new CXLandZshGenerator())
+reg(new CXLandBashGenerator())
+reg(new CXLandPowerShellGenerator())
+reg(new SystemProxyZshGenerator())
+reg(new SystemProxyBashGenerator())
+reg(new SystemProxyPowerShellGenerator())
 
 function getSection(name: string, shellType: ShellType): SectionGenerator | undefined {
   return registry.get(name)?.get(shellType)
@@ -74,14 +88,25 @@ function generateHeader(shellType: ShellType, timestamp: string): string {
 function getSectionData(
   name: SectionName,
   shellConfig: ShellConfigData,
-  cclandData: CCLandSectionData
+  cclandData: CCLandSectionData,
+  cxlandData: CXLandData,
+  decryptedTokens: Map<string, string>
 ): unknown {
   switch (name) {
     case 'variables': return shellConfig.variables
     case 'path': return shellConfig.pathEntries
     case 'functions': return shellConfig.functions
     case 'aliases': return shellConfig.aliases
+    case 'systemProxy': return shellConfig.systemProxy ?? createEmptySystemProxyConfig()
     case 'ccland': return cclandData
+    case 'cxland': {
+      const result: CXLandSectionData = {
+        cxConfig: cxlandData,
+        decryptedTokens,
+        systemProxy: shellConfig.systemProxy ?? createEmptySystemProxyConfig()
+      }
+      return result
+    }
   }
 }
 
@@ -93,17 +118,22 @@ export function generateFullConfig(
   shellType: ShellType,
   shellConfig: ShellConfigData,
   ccConfig: CCLaunchData,
+  cxConfig: CXLandData,
   decryptedTokens: Map<string, string>,
   ctx: GenerateContext
 ): string {
-  const cclandData: CCLandSectionData = { ccConfig, decryptedTokens }
+  const cclandData: CCLandSectionData = {
+    ccConfig,
+    decryptedTokens,
+    systemProxy: shellConfig.systemProxy ?? createEmptySystemProxyConfig()
+  }
   const parts: string[] = [generateHeader(shellType, ctx.timestamp)]
 
   for (const sectionName of SECTION_ORDER) {
     const gen = getSection(sectionName, shellType)
     if (!gen) continue
 
-    const data = getSectionData(sectionName, shellConfig, cclandData)
+    const data = getSectionData(sectionName, shellConfig, cclandData, cxConfig, decryptedTokens)
     const output = gen.generate(data, ctx)
     if (output) {
       parts.push(output)

@@ -1,6 +1,7 @@
 import { join } from 'path'
 import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync, copyFileSync } from 'fs'
 import { loadSettings } from './config'
+import { resolveHomePath } from './path-utils'
 import type { ShellType } from '@shared/shell'
 import type { BackupEntry } from '@shared/shell-types'
 
@@ -17,7 +18,7 @@ function ensureBackupDir(shellType: ShellType): string {
 
 /** Create a backup of the current output file before applying */
 export function createBackup(shellType: ShellType, outputPath: string): string | null {
-  const resolved = outputPath.replace(/^~/, process.env.HOME || '~')
+  const resolved = resolveHomePath(outputPath)
   if (!existsSync(resolved)) return null
 
   const dir = ensureBackupDir(shellType)
@@ -55,7 +56,7 @@ export function restoreBackup(shellType: ShellType, backupId: string, outputPath
   const dir = getBackupDir(shellType)
   const backupPath = join(dir, backupId)
   if (!existsSync(backupPath)) throw new Error(`Backup not found: ${backupId}`)
-  const resolved = outputPath.replace(/^~/, process.env.HOME || '~')
+  const resolved = resolveHomePath(outputPath)
   copyFileSync(backupPath, resolved)
 }
 

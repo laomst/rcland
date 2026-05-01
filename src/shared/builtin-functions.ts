@@ -6,6 +6,7 @@ import type {
   ShellAlias,
   LocalShellConfigData
 } from './shell-types'
+import { createEmptySystemProxyConfig } from './system-proxy'
 
 // ============================================================
 // Factory Helpers
@@ -32,6 +33,7 @@ export function createEmptyShellConfig(): ShellConfigData {
     pathEntries: [],
     functions: [],
     aliases: [],
+    systemProxy: createEmptySystemProxyConfig(),
     prompt: { type: 'simple' },
     output: { profiles: {} }
   }
@@ -87,6 +89,37 @@ export function createEmptyAlias(): ShellAlias {
 // ============================================================
 
 export const BUILTIN_FUNCTIONS: ShellFunction[] = [
+  {
+    id: 'builtin:set-main-task-name',
+    name: 'set_main_task_name',
+    category: 'builtin',
+    description: '设置终端标签页/窗口标题。iTerm2 使用 OSC 1337 SetUserVar，其他终端使用标准 OSC 0',
+    body: {
+      zsh: `set_main_task_name() {
+  if [[ "\$TERM_PROGRAM" == "iTerm.app" ]]; then
+    command -v base64 >/dev/null 2>&1 || return 0
+    printf "\\033]1337;SetUserVar=mainTask=%s\\007" "\$(printf '%s' "\$*" | base64 | tr -d '\\n')"
+  else
+    printf '\\033]0;%s\\007' "\$*"
+  fi
+}`,
+      bash: `set_main_task_name() {
+  if [[ "\$TERM_PROGRAM" == "iTerm.app" ]]; then
+    command -v base64 >/dev/null 2>&1 || return 0
+    printf "\\033]1337;SetUserVar=mainTask=%s\\007" "\$(printf '%s' "\$*" | base64 | tr -d '\\n')"
+  else
+    printf '\\033]0;%s\\007' "\$*"
+  fi
+}`,
+      powershell: `function set_main_task_name {
+    [Console]::Write([char]27 + "]0;\$args" + [char]7)
+}`
+    },
+    funcNames: { zsh: 'set_main_task_name', bash: 'set_main_task_name', powershell: 'set_main_task_name' },
+    enabled: true,
+    order: -3,
+    builtIn: true
+  },
   {
     id: 'builtin:pathls',
     name: 'pathls',
@@ -385,7 +418,7 @@ export const BUILTIN_FUNCTIONS: ShellFunction[] = [
       powershell: `function prompt-select {
   param(
     [Parameter(Mandatory)][string]\$Title,
-    [Parameter(ValueFromRemainingArguments)][string[]]\$Options
+    [string[]]\$Options
   )
   \$Options = @(\$Options) + @("quit:退出")
   \$keys = @(); \$descs = @()
@@ -393,23 +426,23 @@ export const BUILTIN_FUNCTIONS: ShellFunction[] = [
     \$parts = \$opt -split ':', 2
     \$keys += \$parts[0]; \$descs += \$parts[1]
   }
-  \$selected = 0; \$numOptions = \$Options.Count; \$numBuf = ""
+  \$script:_ps_selected = 0; \$numOptions = \$Options.Count; \$script:_ps_numBuf = ""
   [Console]::CursorVisible = \$false
-  \$menuDrawn = \$false
+  \$script:_ps_menuDrawn = \$false
   function Draw-Menu{
-    if(\$script:menuDrawn){[Console]::SetCursorPosition(0,[Console]::CursorTop-(\$numOptions+3))}
-    \$script:menuDrawn=\$true
+    if(\$script:_ps_menuDrawn){[Console]::SetCursorPosition(0,[Console]::CursorTop-(\$numOptions+3))}
+    \$script:_ps_menuDrawn=\$true
     Write-Host ""
     Write-Host "  === \$Title ===" -ForegroundColor Cyan
-    if(\$script:numBuf -ne ""){
-      if([int]\$script:numBuf -ge 1 -and [int]\$script:numBuf -le \$numOptions){
-        Write-Host "  [跳转到: \$(\$script:numBuf) | 回车跳转 | 退格修改 | Esc清空]" -ForegroundColor DarkCyan
+    if(\$script:_ps_numBuf -ne ""){
+      if([int]\$script:_ps_numBuf -ge 1 -and [int]\$script:_ps_numBuf -le \$numOptions){
+        Write-Host "  [跳转到: \$(\$script:_ps_numBuf) | 回车跳转 | 退格修改 | Esc清空]" -ForegroundColor DarkCyan
       }else{
-        Write-Host "  [跳转到: \$(\$script:numBuf) (无效，范围 1-\$numOptions) | 退格修改 | Esc清空]" -ForegroundColor DarkCyan
+        Write-Host "  [跳转到: \$(\$script:_ps_numBuf) (无效，范围 1-\$numOptions) | 退格修改 | Esc清空]" -ForegroundColor DarkCyan
       }
     }else{Write-Host "  [↑↓ 选择 | 数字快选 | 回车确认 | Esc退出]" -ForegroundColor DarkCyan}
     for(\$i=0;\$i -lt \$numOptions;\$i++){
-      if(\$i -eq \$script:selected){Write-Host "> \$(\$i+1). \$(\$descs[\$i])" -ForegroundColor Blue}
+      if(\$i -eq \$script:_ps_selected){Write-Host "> \$(\$i+1). \$(\$descs[\$i])" -ForegroundColor Blue}
       else{Write-Host "  \$(\$i+1). \$(\$descs[\$i])" -ForegroundColor DarkGray}
     }
   }
@@ -418,24 +451,32 @@ export const BUILTIN_FUNCTIONS: ShellFunction[] = [
     while(\$true){
       \$key = [Console]::ReadKey(\$true)
       switch(\$key.Key){
-        'UpArrow'{if(\$numBuf -eq ""){\$script:selected=(\$script:selected-1+\$numOptions)%\$numOptions;Draw-Menu}}
-        'DownArrow'{if(\$numBuf -eq ""){\$script:selected=(\$script:selected+1)%\$numOptions;Draw-Menu}}
+        'UpArrow'{if(\$script:_ps_numBuf -eq ""){\$script:_ps_selected=(\$script:_ps_selected-1+\$numOptions)%\$numOptions;Draw-Menu}}
+        'DownArrow'{if(\$script:_ps_numBuf -eq ""){\$script:_ps_selected=(\$script:_ps_selected+1)%\$numOptions;Draw-Menu}}
         'Enter'{
-          if(\$numBuf -ne ""){
-            \$n=[int]\$numBuf
-            if(\$n -ge 1 -and \$n -le \$numOptions){\$script:selected=\$n-1}
-            \$script:numBuf="";Draw-Menu
-          }else{\$selectedKey=\$keys[\$script:selected];break}
+          if(\$script:_ps_numBuf -ne ""){
+            \$n=[int]\$script:_ps_numBuf
+            if(\$n -ge 1 -and \$n -le \$numOptions){\$script:_ps_selected=\$n-1}
+            \$script:_ps_numBuf="";Draw-Menu
+          }else{\$selectedKey=\$keys[\$script:_ps_selected];break}
         }
-        'Escape'{if(\$numBuf -ne ""){\$script:numBuf="";Draw-Menu}else{\$selectedKey="quit";break}}
-        'Backspace'{if(\$numBuf.Length -gt 0){\$script:numBuf=\$numBuf.Substring(0,\$numBuf.Length-1);Draw-Menu}}
-        default{\$ch=\$key.KeyChar;if(\$ch -match '[0-9]'){\$script:numBuf+=\$ch;Draw-Menu}}
+        'Escape'{if(\$script:_ps_numBuf -ne ""){\$script:_ps_numBuf="";Draw-Menu}else{\$selectedKey="quit";break}}
+        'Backspace'{if(\$script:_ps_numBuf.Length -gt 0){\$script:_ps_numBuf=\$script:_ps_numBuf.Substring(0,\$script:_ps_numBuf.Length-1);Draw-Menu}}
+        default{\$ch=\$key.KeyChar;if(\$ch -match '[0-9]'){\$script:_ps_numBuf+=\$ch;Draw-Menu}}
       }
       if(\$null -ne \$selectedKey){break}
     }
-  }finally{[Console]::CursorVisible=\$true}
+  }finally{
+    [Console]::CursorVisible=\$true
+    if(\$script:_ps_menuDrawn){
+      [Console]::Write([char]27 + "[\$(\$numOptions+3)A" + [char]27 + "[J")
+    }
+    \$script:_ps_numBuf=""
+    \$script:_ps_selected=0
+    \$script:_ps_menuDrawn=\$false
+  }
   if(\$selectedKey -eq "quit"){Write-Host "已取消选择" -ForegroundColor Red;return \$false}
-  Write-Host "已选择 => \$(\$descs[\$script:selected])" -ForegroundColor Green
+  Write-Host "已选择 => \$(\$descs[\$script:_ps_selected])" -ForegroundColor Green
   \$global:REPLY = \$selectedKey
   return \$true
 }`

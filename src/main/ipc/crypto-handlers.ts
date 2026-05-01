@@ -1,7 +1,6 @@
 import { ipcMain } from 'electron'
 import * as configService from '../services/config'
 import * as cryptoService from '../services/crypto'
-import type { CCLaunchData } from '@shared/types'
 
 export function registerCryptoHandlers(): void {
   ipcMain.handle('crypto:initKey', (_e, passphrase?: string) => {
@@ -10,6 +9,14 @@ export function registerCryptoHandlers(): void {
       cryptoService.saveKey(settings.keyFilePath, passphrase)
     } else {
       cryptoService.initKey(settings.keyFilePath)
+    }
+  })
+
+  ipcMain.handle('crypto:initKeyAtPath', (_e, keyFilePath: string, passphrase?: string) => {
+    if (passphrase) {
+      cryptoService.saveKey(keyFilePath, passphrase)
+    } else {
+      cryptoService.initKey(keyFilePath)
     }
   })
 
@@ -28,9 +35,8 @@ export function registerCryptoHandlers(): void {
     if (!oldKey || !newKey) return
 
     // Re-encrypt all keys in providers
-    const dataJson = configService.loadData()
-    if (!dataJson) return
-    const data: CCLaunchData = JSON.parse(dataJson)
+    const data = configService.loadCCData()
+    if (!data) return
 
     for (const provider of data.providers) {
       for (const key of provider.keys) {
@@ -45,7 +51,7 @@ export function registerCryptoHandlers(): void {
       }
     }
 
-    configService.saveData(JSON.stringify(data))
+    configService.saveCCData(data)
   })
 
   ipcMain.handle('crypto:keyExists', () => {
@@ -93,10 +99,8 @@ export function registerCryptoHandlers(): void {
     if (!newKey) throw new Error('无法创建新密钥文件')
 
     // Re-encrypt all keys in providers
-    const dataJson = configService.loadData()
-    if (!dataJson) return { success: true, reencryptedCount: 0 }
-
-    const data: CCLaunchData = JSON.parse(dataJson)
+    const data = configService.loadCCData()
+    if (!data) return { success: true, reencryptedCount: 0 }
     let reencryptedCount = 0
     let failedCount = 0
 
@@ -114,7 +118,7 @@ export function registerCryptoHandlers(): void {
       }
     }
 
-    configService.saveData(JSON.stringify(data))
+    configService.saveCCData(data)
     return { success: true, reencryptedCount, failedCount }
   })
 }

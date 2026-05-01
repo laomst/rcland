@@ -2,8 +2,10 @@ import { create } from 'zustand'
 import type { Provider, ConfigSet, CCLaunchData, ProviderKey } from '@shared/types'
 import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
 import { createTopLevelCrud } from './crud-helpers'
+import { createPersistQueue, toErrorMessage } from './persist'
 
 const DEFAULT_SELECTOR = { enabled: false, funcName: 'cc', promptTitle: '选择启动器' }
+const persistQueue = createPersistQueue()
 
 interface AppState {
   // Data
@@ -12,8 +14,10 @@ interface AppState {
   selector: CCLaunchData['selector']
   dataLoaded: boolean
   loading: boolean
-  loadData: () => Promise<void>
+  saveError: string | null
+  loadData: (force?: boolean) => Promise<void>
   saveData: () => Promise<void>
+  clearSaveError: () => void
 
   // Provider CRUD
   addProvider: (provider: Provider) => void
@@ -46,13 +50,13 @@ export const useAppStore = create<AppState>((set, get) => {
   selector: DEFAULT_SELECTOR,
   dataLoaded: false,
   loading: false,
+  saveError: null,
 
-  loadData: async () => {
-    if (get().loading || get().dataLoaded) return // 避免重复加载
+  loadData: async (force = false) => {
+    if (get().loading || (!force && get().dataLoaded)) return // 避免重复加载
     set({ loading: true })
-    const json = await window.electronAPI.loadData()
-    if (json) {
-      const data: CCLaunchData = JSON.parse(json)
+    const data = await window.electronAPI.loadData()
+    if (data) {
       set({ providers: data.providers, configs: data.configs, selector: data.selector ?? DEFAULT_SELECTOR, dataLoaded: true, loading: false })
     } else {
       set({ providers: [], configs: [], selector: DEFAULT_SELECTOR, dataLoaded: true, loading: false })
@@ -62,7 +66,19 @@ export const useAppStore = create<AppState>((set, get) => {
   saveData: async () => {
     const { providers, configs, selector } = get()
     const data: CCLaunchData = { version: 5, providers, configs, selector }
-    await window.electronAPI.saveData(JSON.stringify(data))
+    await persistQueue.enqueue(async () => {
+      await window.electronAPI.saveData(data)
+    }).then(() => {
+      set({ saveError: null })
+    }).catch((err) => {
+      set({ saveError: toErrorMessage(err) })
+      throw err
+    })
+  },
+
+  clearSaveError: () => {
+    persistQueue.clearLastError()
+    set({ saveError: null })
   },
 
   // ---- Provider CRUD ----
@@ -75,7 +91,7 @@ export const useAppStore = create<AppState>((set, get) => {
       providers: s.providers.filter((p) => p.id !== id),
       configs: s.configs.filter((c) => c.providerId !== id)
     }))
-    get().saveData()
+    void get().saveData().catch(() => undefined)
   },
 
   reorderProviders: providerCrud.reorder,
@@ -87,7 +103,7 @@ export const useAppStore = create<AppState>((set, get) => {
         p.id === providerId ? { ...p, keys: [...p.keys, key] } : p
       )
     }))
-    get().saveData()
+    void get().saveData().catch(() => undefined)
   },
 
   updateKey: (providerId, keyId, patch) => {
@@ -98,7 +114,7 @@ export const useAppStore = create<AppState>((set, get) => {
           : p
       )
     }))
-    get().saveData()
+    void get().saveData().catch(() => undefined)
   },
 
   removeKey: (providerId, keyId) => {
@@ -109,7 +125,7 @@ export const useAppStore = create<AppState>((set, get) => {
           : p
       )
     }))
-    get().saveData()
+    void get().saveData().catch(() => undefined)
   },
 
   // ---- Config CRUD ----

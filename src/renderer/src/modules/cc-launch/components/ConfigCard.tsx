@@ -6,6 +6,7 @@ import type { ConfigSet, Provider } from '@shared/types'
 import { useAppStore } from '@renderer/stores/useAppStore'
 import { ConfigFormModal } from './ConfigFormModal'
 import { ItemRow } from '@renderer/components/ItemRow'
+import { createConfigUpdatePatch } from './config-update'
 
 const { Text } = Typography
 
@@ -171,13 +172,7 @@ export function ConfigCard({
         okText={t('common.save')}
         onCancel={() => setEditOpen(false)}
         onOk={(values) => {
-          updateConfig(config.id, {
-            endpointId: values.endpointId,
-            keyId: values.keyId,
-            name: values.name,
-            funcName: values.funcName,
-            envVars: values.envVars
-          })
+          updateConfig(config.id, createConfigUpdatePatch(values))
           setEditOpen(false)
         }}
       />

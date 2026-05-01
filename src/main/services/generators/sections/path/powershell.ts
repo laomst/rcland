@@ -1,6 +1,7 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { PathEntry } from '@shared/shell-types'
 import type { ShellType } from '@shared/shell'
+import { quotePowerShellLiteral } from '../../shell-syntax'
 
 export class PathPowerShellGenerator implements SectionGenerator<PathEntry[]> {
   readonly sectionName = 'path'
@@ -21,9 +22,9 @@ export class PathPowerShellGenerator implements SectionGenerator<PathEntry[]> {
       if (varMatch) {
         // PowerShell 变量直接展开，需要检查是否为空
         const firstVar = varMatch[0].substring(1) // 去掉 $ 符号
-        lines.push(`    @{Path='${e.path}'; Condition='$${firstVar}'}`)
+        lines.push(`    @{Path=${quotePowerShellLiteral(e.path)}; Condition='$${firstVar}'}`)
       } else {
-        lines.push(`    @{Path='${e.path}'; Condition=''}`)
+        lines.push(`    @{Path=${quotePowerShellLiteral(e.path)}; Condition=''}`)
       }
     }
 

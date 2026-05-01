@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Typography, Spin } from 'antd'
-import { DndContext, closestCenter } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { createEmptyVariable } from '@shared/builtin-functions'
 import { ALL_SHELL_TYPES } from '@shared/shell'
 import { EnvVarCard } from '../components/EnvVarCard'
 import { EnvVarFormModal, type EnvVarFormValues } from '../components/EnvVarFormModal'
-import { SortableWrapper } from '@renderer/components/SortableWrapper'
-import { GroupHeader } from '@renderer/components/GroupHeader'
-import { useSortableList } from '@renderer/hooks/useSortableList'
+import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
 
 const { Title } = Typography
 
@@ -41,11 +37,6 @@ export function EnvVarPage(): React.ReactElement {
       loadShellConfig()
     }
   }, [dataLoaded, loadShellConfig])
-
-  const { sensors, handleDragEnd, syncItems: syncedVars, localItems: localVars } = useSortableList(
-    variables,
-    reorderVariables
-  )
 
   const handleAdd = (localOnly: boolean) => {
     const newVar = createEmptyVariable()
@@ -78,43 +69,21 @@ export function EnvVarPage(): React.ReactElement {
     <div>
       <Title level={4} style={{ marginBottom: 16 }}>{t('shellEnv.title')}</Title>
 
-      <GroupHeader title={t('common.syncedConfig')} count={syncedVars.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
-      {!syncCollapsed && syncedVars.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={syncedVars.map((v) => v.id)} strategy={verticalListSortingStrategy}>
-            {syncedVars.map((v, idx) => (
-              <SortableWrapper key={v.id} id={v.id}>
-                {(dragHandleProps) => (
-                  <EnvVarCard
-                    variable={v}
-                    index={idx + 1}
-                    dragHandleProps={dragHandleProps as any}
-                  />
-                )}
-              </SortableWrapper>
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
-
-      <GroupHeader title={t('common.localConfig')} count={localVars.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
-      {!localCollapsed && localVars.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={localVars.map((v) => v.id)} strategy={verticalListSortingStrategy}>
-            {localVars.map((v, idx) => (
-              <SortableWrapper key={v.id} id={v.id}>
-                {(dragHandleProps) => (
-                  <EnvVarCard
-                    variable={v}
-                    index={syncedVars.length + idx + 1}
-                    dragHandleProps={dragHandleProps as any}
-                  />
-                )}
-              </SortableWrapper>
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
+      <GroupedSortableList
+        titleSynced={t('common.syncedConfig')}
+        titleLocal={t('common.localConfig')}
+        items={variables}
+        syncCollapsed={syncCollapsed}
+        localCollapsed={localCollapsed}
+        onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
+        onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
+        onAddSync={() => handleAdd(false)}
+        onAddLocal={() => handleAdd(true)}
+        onReorder={reorderVariables}
+        renderItem={(variable, index, dragHandleProps) => (
+          <EnvVarCard variable={variable} index={index} dragHandleProps={dragHandleProps} />
+        )}
+      />
 
       <EnvVarFormModal
         open={addOpen}

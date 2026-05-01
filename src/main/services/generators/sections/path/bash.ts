@@ -16,7 +16,7 @@ export class PathBashGenerator implements SectionGenerator<PathEntry[]> {
     lines.push('CUSTOM_PATHS=()')
 
     for (const e of items) {
-      lines.push(`CUSTOM_PATHS+=("${e.path}")`)
+      lines.push(`CUSTOM_PATHS+=("${ctx.escapeValue(e.path)}")`)
     }
 
     lines.push('')

@@ -4,6 +4,8 @@ import * as shellConfigService from '../services/shell-config'
 import * as backupService from '../services/backup'
 import * as conflictChecker from '../services/conflict-checker'
 import type { ShellType } from '@shared/shell'
+import type { AppSettings, CCLaunchData, CXLandData } from '@shared/types'
+import type { ShellConfigData } from '@shared/shell-types'
 
 export function registerConfigHandlers(): void {
   // ---- Config ----
@@ -12,15 +14,17 @@ export function registerConfigHandlers(): void {
 
   // ---- Settings ----
   ipcMain.handle('settings:load', () => {
-    return JSON.stringify(configService.loadSettings())
+    return configService.loadSettings()
   })
-  ipcMain.handle('settings:save', (_e, json: string) => {
-    configService.saveSettings(JSON.parse(json))
+  ipcMain.handle('settings:save', (_e, settings: AppSettings) => {
+    configService.saveSettings(settings)
   })
 
   // ---- Data ----
-  ipcMain.handle('data:load', () => configService.loadData())
-  ipcMain.handle('data:save', (_e, json: string) => configService.saveData(json))
+  ipcMain.handle('data:load', () => configService.loadCCData())
+  ipcMain.handle('data:save', (_e, data: CCLaunchData) => configService.saveCCData(data))
+  ipcMain.handle('cxland:load', () => configService.loadCXLandData())
+  ipcMain.handle('cxland:save', (_e, data: CXLandData) => configService.saveCXLandData(data))
 
   // ---- File Dialogs ----
   ipcMain.handle('dialog:open', (_e, options: Electron.OpenDialogOptions) =>
@@ -31,12 +35,11 @@ export function registerConfigHandlers(): void {
   )
 
   // ---- Shell Config ----
-  ipcMain.handle('shell-config:load', () => shellConfigService.loadShellConfig())
-  ipcMain.handle('shell-config:save', (_e, json: string) => shellConfigService.saveShellConfig(json))
+  ipcMain.handle('shell-config:load', () => shellConfigService.loadShellConfigData())
+  ipcMain.handle('shell-config:save', (_e, data: ShellConfigData) => shellConfigService.saveShellConfigData(data))
 
   // ---- Conflict Check ----
-  ipcMain.handle('shell-config:checkConflicts', (_e, json: string) => {
-    const config: import('../../shared/shell-types').ShellConfigData = JSON.parse(json)
+  ipcMain.handle('shell-config:checkConflicts', (_e, config: ShellConfigData) => {
     return conflictChecker.checkConflicts(config)
   })
 

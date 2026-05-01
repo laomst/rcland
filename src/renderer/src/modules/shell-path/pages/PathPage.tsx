@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Typography, Spin } from 'antd'
-import { DndContext, closestCenter } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { createEmptyPathEntry } from '@shared/builtin-functions'
 import { getOsSupportedShells } from '@shared/shell'
 import { PathCard } from '../components/PathCard'
 import { PathFormModal, type PathFormValues } from '../components/PathFormModal'
-import { SortableWrapper } from '@renderer/components/SortableWrapper'
-import { GroupHeader } from '@renderer/components/GroupHeader'
-import { useSortableList } from '@renderer/hooks/useSortableList'
+import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
 
 const { Title } = Typography
 
@@ -32,11 +28,6 @@ export function PathPage(): React.ReactElement {
       loadShellConfig()
     }
   }, [dataLoaded, loadShellConfig])
-
-  const { sensors, handleDragEnd, syncItems: syncedPaths, localItems: localPaths } = useSortableList(
-    pathEntries,
-    reorderPathEntries
-  )
 
   const handleAdd = (localOnly: boolean) => {
     setAddLocalOnly(localOnly)
@@ -68,43 +59,21 @@ export function PathPage(): React.ReactElement {
     <div>
       <Title level={4} style={{ marginBottom: 16 }}>{t('shellPath.title')}</Title>
 
-      <GroupHeader title={t('common.syncedConfig')} count={syncedPaths.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
-      {!syncCollapsed && syncedPaths.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={syncedPaths.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-            {syncedPaths.map((p, idx) => (
-              <SortableWrapper key={p.id} id={p.id}>
-                {(dragHandleProps) => (
-                  <PathCard
-                    pathEntry={p}
-                    index={idx + 1}
-                    dragHandleProps={dragHandleProps as any}
-                  />
-                )}
-              </SortableWrapper>
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
-
-      <GroupHeader title={t('common.localConfig')} count={localPaths.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
-      {!localCollapsed && localPaths.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={localPaths.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-            {localPaths.map((p, idx) => (
-              <SortableWrapper key={p.id} id={p.id}>
-                {(dragHandleProps) => (
-                  <PathCard
-                    pathEntry={p}
-                    index={syncedPaths.length + idx + 1}
-                    dragHandleProps={dragHandleProps as any}
-                  />
-                )}
-              </SortableWrapper>
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
+      <GroupedSortableList
+        titleSynced={t('common.syncedConfig')}
+        titleLocal={t('common.localConfig')}
+        items={pathEntries}
+        syncCollapsed={syncCollapsed}
+        localCollapsed={localCollapsed}
+        onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
+        onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
+        onAddSync={() => handleAdd(false)}
+        onAddLocal={() => handleAdd(true)}
+        onReorder={reorderPathEntries}
+        renderItem={(pathEntry, index, dragHandleProps) => (
+          <PathCard pathEntry={pathEntry} index={index} dragHandleProps={dragHandleProps} />
+        )}
+      />
 
       <PathFormModal
         open={addOpen}

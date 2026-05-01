@@ -1,15 +1,17 @@
-import { ConfigProvider, App as AntdApp, Layout, Button, Tooltip } from 'antd'
+import { ConfigProvider, App as AntdApp, Layout, Button, Tooltip, Dropdown } from 'antd'
 import zhCNAntd from 'antd/locale/zh_CN'
 import enUSAntd from 'antd/locale/en_US'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { EyeOutlined, ThunderboltOutlined, SettingOutlined } from '@ant-design/icons'
+import { EyeOutlined, ThunderboltOutlined, SettingOutlined, CopyOutlined } from '@ant-design/icons'
 import { ModuleNav, SettingsModal, PreviewModal, usePreview, KeyModals, type KeyModalsHandle } from './components'
 import { CCConfigPage } from './modules/cc-launch'
+import { CXConfigPage } from './modules/cx-launch'
+import { SystemProxyPage } from './modules/system-proxy'
 import { EnvVarPage } from './modules/shell-env'
 import { PathPage } from './modules/shell-path'
 import { FunctionPage } from './modules/shell-functions'
 import { AliasPage } from './modules/shell-aliases'
-import { SHELL_LABELS, SHELL_OS_SUPPORT, type ShellType } from '@shared/shell'
+import { ALL_SHELL_TYPES, SHELL_LABELS, SHELL_OS_SUPPORT, type ShellType } from '@shared/shell'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { extractIpcErrorMessage, isDecryptFailedError, isKeyNotFoundError } from './utils/ipc-error'
 import { useTranslation } from 'react-i18next'
@@ -52,6 +54,22 @@ function AppLayout(): React.ReactElement {
 
   // Derive enabled shells from settings
   const enabledShells = osShells.filter((s) => settings?.shellProfiles[s]?.enabled)
+
+  const handleCopyScript = async (shell: ShellType) => {
+    try {
+      const content = await window.electronAPI.generateAllConfig(shell)
+      await navigator.clipboard.writeText(content)
+      message.success(t('app.copyScriptSuccess', { shell: SHELL_LABELS[shell] }))
+    } catch (err) {
+      message.error(t('app.copyScriptFailed', { error: extractIpcErrorMessage(err) }))
+    }
+  }
+
+  const copyMenuItems = ALL_SHELL_TYPES.map((shell) => ({
+    key: shell,
+    label: SHELL_LABELS[shell],
+    onClick: () => handleCopyScript(shell),
+  }))
 
   const handleApply = async () => {
     if (enabledShells.length === 0) {
@@ -108,7 +126,9 @@ function AppLayout(): React.ReactElement {
               <Route path="/path" element={<PathPage />} />
               <Route path="/functions" element={<FunctionPage />} />
               <Route path="/aliases" element={<AliasPage />} />
+              <Route path="/system-proxy" element={<SystemProxyPage />} />
               <Route path="/ccland" element={<CCConfigPage />} />
+              <Route path="/cxland" element={<CXConfigPage />} />
             </Routes>
           </Content>
           <Footer className="action-bar">
@@ -126,6 +146,11 @@ function AppLayout(): React.ReactElement {
                   </Button>
                 </Tooltip>
               ))}
+              <Dropdown menu={{ items: copyMenuItems }} placement="topRight">
+                <Button type="default" icon={<CopyOutlined />}>
+                  {t('app.copyScript')}
+                </Button>
+              </Dropdown>
               <Button type="primary" icon={<ThunderboltOutlined />} onClick={handleApply}>
                 {t('app.apply')}
               </Button>

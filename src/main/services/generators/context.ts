@@ -6,14 +6,15 @@ import { isEncrypted } from '../crypto'
 
 /**
  * Escape a value for use inside double quotes in bash/zsh.
- * Handles: \ " ` !
- * Note: $ is NOT escaped to allow variable references like $JAVA_HOME
+ * Handles: \ " ` ! and command substitution.
+ * Note: simple variable references like $JAVA_HOME are left intact.
  */
 export function escapeForBashLike(value: string): string {
   return value
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
     .replace(/`/g, '\\`')
+    .replace(/\$\(/g, '\\$(')
     .replace(/!/g, '\\!')
 }
 

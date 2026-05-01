@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { ShellType } from '@shared/shell'
+import type { AppSettings, CCLaunchData, CXLandData } from '@shared/types'
+import type { BackupEntry, ConflictCheckResult, ShellConfigData } from '@shared/shell-types'
 
 export interface ElectronAPI {
   // Config
@@ -7,15 +9,18 @@ export interface ElectronAPI {
   setConfigDir: (dir: string) => Promise<void>
 
   // Data
-  loadData: () => Promise<string | null>
-  saveData: (json: string) => Promise<void>
+  loadData: () => Promise<CCLaunchData | null>
+  saveData: (data: CCLaunchData) => Promise<void>
+  loadCXLandData: () => Promise<CXLandData>
+  saveCXLandData: (data: CXLandData) => Promise<void>
 
   // Settings
-  loadSettings: () => Promise<string | null>
-  saveSettings: (json: string) => Promise<void>
+  loadSettings: () => Promise<AppSettings>
+  saveSettings: (settings: AppSettings) => Promise<void>
 
   // Crypto
   initKey: (passphrase?: string) => Promise<void>
+  initKeyAtPath: (keyFilePath: string, passphrase?: string) => Promise<void>
   reencryptAll: (newPassphrase?: string) => Promise<void>
   keyExists: () => Promise<boolean>
   keyExistsAtPath: (keyFilePath: string) => Promise<boolean>
@@ -26,18 +31,16 @@ export interface ElectronAPI {
 
   // Shell
   detectShell: () => Promise<string>
-  generateConfig: (shellType: ShellType) => Promise<string>
-  applyConfig: (shellTypes: ShellType[]) => Promise<{ appliedShells: ShellType[]; count: number }>
   tryApplyWithKey: (shellTypes: ShellType[], tempKey: string) => Promise<{ success: boolean; appliedShells?: ShellType[]; count?: number; error?: string }>
 
   // Shell Config
-  loadShellConfig: () => Promise<string>
-  saveShellConfig: (json: string) => Promise<void>
-  checkConflicts: (json: string) => Promise<{ warnings: any[]; errors: any[] }>
+  loadShellConfig: () => Promise<ShellConfigData>
+  saveShellConfig: (data: ShellConfigData) => Promise<void>
+  checkConflicts: (data: ShellConfigData) => Promise<ConflictCheckResult>
 
   // Backup
   createBackup: (shellType: ShellType, outputPath: string) => Promise<string | null>
-  listBackups: (shellType: ShellType) => Promise<any[]>
+  listBackups: (shellType: ShellType) => Promise<BackupEntry[]>
   restoreBackup: (shellType: ShellType, backupId: string, outputPath: string) => Promise<void>
   pruneBackups: (shellType: ShellType, keepCount: number) => Promise<void>
 
@@ -58,9 +61,12 @@ const api: ElectronAPI = {
   setConfigDir: (dir) => ipcRenderer.invoke('config:setDir', dir),
   loadData: () => ipcRenderer.invoke('data:load'),
   saveData: (json) => ipcRenderer.invoke('data:save', json),
+  loadCXLandData: () => ipcRenderer.invoke('cxland:load'),
+  saveCXLandData: (data) => ipcRenderer.invoke('cxland:save', data),
   loadSettings: () => ipcRenderer.invoke('settings:load'),
   saveSettings: (json) => ipcRenderer.invoke('settings:save', json),
   initKey: (passphrase?) => ipcRenderer.invoke('crypto:initKey', passphrase),
+  initKeyAtPath: (keyFilePath, passphrase?) => ipcRenderer.invoke('crypto:initKeyAtPath', keyFilePath, passphrase),
   reencryptAll: (newPassphrase?) => ipcRenderer.invoke('crypto:reencryptAll', newPassphrase),
   keyExists: () => ipcRenderer.invoke('crypto:keyExists'),
   keyExistsAtPath: (keyFilePath) => ipcRenderer.invoke('crypto:keyExistsAtPath', keyFilePath),
@@ -69,8 +75,6 @@ const api: ElectronAPI = {
   encrypt: (plaintext) => ipcRenderer.invoke('crypto:encrypt', plaintext),
   decrypt: (ciphertext) => ipcRenderer.invoke('crypto:decrypt', ciphertext),
   detectShell: () => ipcRenderer.invoke('shell:detect'),
-  generateConfig: (shellType) => ipcRenderer.invoke('shell:generate', shellType),
-  applyConfig: (shellTypes) => ipcRenderer.invoke('shell:apply', shellTypes),
   tryApplyWithKey: (shellTypes, tempKey) => ipcRenderer.invoke('shell:tryApplyWithKey', shellTypes, tempKey),
   loadShellConfig: () => ipcRenderer.invoke('shell-config:load'),
   saveShellConfig: (json) => ipcRenderer.invoke('shell-config:save', json),

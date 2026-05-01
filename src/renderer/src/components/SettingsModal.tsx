@@ -74,8 +74,8 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
     await updateSettings(editSettings)
 
     if (configDirChanged) {
-      await loadData()
-      await loadShellConfig()
+      await loadData(true)
+      await loadShellConfig(true)
     }
 
     onClose()
@@ -132,14 +132,14 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
           message.success(t('settings.reencryptSuccess', { success: result.reencryptedCount }))
         }
       } else if (mode === 'newKey') {
-        await window.electronAPI.initKey(undefined)
+        await window.electronAPI.initKeyAtPath(newPath)
         await updateSettings(newSettings)
         message.success(t('settings.newKeyInitialized'))
       }
       setKeyPathChangeState(null)
       onClose()
       await refreshKeyExists()
-      await loadData()
+      await loadData(true)
     } catch (err) {
       message.error(t('settings.migrationFailed', { error: err instanceof Error ? err.message : String(err) }))
     }

@@ -1,6 +1,7 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { ShellAlias } from '@shared/shell-types'
 import type { ShellType } from '@shared/shell'
+import { assertSafeAliasName, quoteBashLikeLiteral } from '../../shell-syntax'
 
 export class AliasesBashGenerator implements SectionGenerator<ShellAlias[]> {
   readonly sectionName = 'aliases'
@@ -14,7 +15,7 @@ export class AliasesBashGenerator implements SectionGenerator<ShellAlias[]> {
 
     const lines: string[] = []
     for (const a of items) {
-      lines.push(`alias ${a.alias}='${a.command.replace(/'/g, "'\\''")}'`)
+      lines.push(`alias ${assertSafeAliasName(a.alias, a.description || a.id)}=${quoteBashLikeLiteral(a.command)}`)
     }
     return lines.join('\n')
   }

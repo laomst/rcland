@@ -30,7 +30,9 @@ const en = {
     path: 'PATH',
     functions: 'Functions',
     aliases: 'Aliases',
+    systemProxy: 'System Proxy',
     ccland: 'CCLand',
+    cxland: 'CXLand',
   },
 
   app: {
@@ -40,6 +42,9 @@ const en = {
     applySuccess: 'Config applied to: {{shells}}',
     applyNone: 'No Shell config applied',
     applyFailed: 'Apply failed',
+    copyScript: 'Copy Script',
+    copyScriptSuccess: '{{shell}} script copied to clipboard',
+    copyScriptFailed: 'Copy failed: {{error}}',
   },
 
   settings: {
@@ -217,6 +222,8 @@ const en = {
     endpointLabelPlaceholder: 'Label, e.g. Default',
     endpointUrlPlaceholder: 'e.g. https://open.bigmodel.cn/api/anthropic',
     addEndpoint: 'Add Endpoint',
+    useSystemProxy: 'Use system proxy',
+    systemProxyShort: 'Proxy',
     tokenLabel: 'Key (Token)',
     noKeys: 'No keys yet, click button below to add',
     encryptedToken: '•••••••••••• (encrypted)',
@@ -268,6 +275,38 @@ const en = {
     enterToken: 'Please enter a token',
     remark: 'Remark',
     remarkPlaceholder: 'Optional remark',
+  },
+
+  cxLaunch: {
+    configTab: 'Configs',
+    providerTab: 'Providers',
+    selectorTab: 'Selector',
+    newConfig: 'New Config',
+    model: 'Model',
+    wireApiHint: 'chat for most third-party APIs; responses for OpenAI official API',
+    endpointUrlPlaceholder: 'e.g. https://api.openai.com/v1',
+    selector: {
+      enabled: 'Enable Selector',
+      enabledHint: 'When enabled, generates an interactive cx selector function for quick switching between configs',
+      funcName: 'Selector Function Name',
+      promptTitle: 'Prompt Title',
+    },
+  },
+
+  systemProxy: {
+    title: 'System Proxy',
+    hint: 'Configure proxy environment variables for shell sessions. Applying config generates proxy-on, proxy-off, and proxy-status functions.',
+    importTitle: 'Import from export statements',
+    importExports: 'Parse and import',
+    proxyItems: 'Proxy environment variables',
+    exportPlaceholder: 'export HTTP_PROXY=http://127.0.0.1:7890\nexport HTTPS_PROXY=http://127.0.0.1:7890\nexport ALL_PROXY=socks5://127.0.0.1:7890\nexport NO_PROXY=localhost,127.0.0.1',
+    valuePlaceholder: 'e.g. http://127.0.0.1:7890 or socks5://127.0.0.1:7890',
+    proxyTypes: {
+      http: 'HTTP proxy',
+      https: 'HTTPS proxy',
+      all: 'All-protocol proxy',
+      no: 'Proxy bypass list',
+    },
   },
 }
 

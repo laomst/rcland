@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Space, Switch, Typography, Button, Tooltip, App, message } from 'antd'
+import { Space, Switch, Typography, Button, Tooltip, App, message, Tag } from 'antd'
 import { EditOutlined, DeleteOutlined, LockOutlined, CopyOutlined } from '@ant-design/icons'
 import type { Provider } from '@shared/types'
 import { useAppStore } from '@renderer/stores/useAppStore'
@@ -55,9 +55,12 @@ export function ProviderCard({
           {/* Endpoints */}
           <Space size={2}>
             {(provider.endpoints ?? []).map((ep, i) => (
-              <Text key={ep.id} type="secondary" style={{ fontSize: 11, lineHeight: '20px' }}>
-                {i > 0 ? ' / ' : ''}{ep.label || ep.url}
-              </Text>
+              <Space key={ep.id} size={2}>
+                <Text type="secondary" style={{ fontSize: 11, lineHeight: '20px' }}>
+                  {i > 0 ? ' / ' : ''}{ep.label || ep.url}
+                </Text>
+                {ep.useSystemProxy && <Tag style={{ marginInlineEnd: 0 }}>{t('ccLaunch.systemProxyShort')}</Tag>}
+              </Space>
             ))}
           </Space>
 

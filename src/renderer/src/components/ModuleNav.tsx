@@ -4,8 +4,10 @@ import {
   AppstoreOutlined,
   NodeIndexOutlined,
   FunctionOutlined,
-  FileTextOutlined,
-  ApiOutlined
+  TagsOutlined,
+  CodeSandboxOutlined,
+  RobotOutlined,
+  GlobalOutlined
 } from '@ant-design/icons'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { useTranslation } from 'react-i18next'
@@ -17,12 +19,14 @@ export function ModuleNav(): React.ReactElement {
   const settings = useSettingsStore((s) => s.settings)
 
   const menuItems = [
+    { key: '/system-proxy', label: t('nav.systemProxy'), icon: <GlobalOutlined /> },
     { key: '/env', label: t('nav.env'), icon: <AppstoreOutlined /> },
     { key: '/path', label: t('nav.path'), icon: <NodeIndexOutlined /> },
     { key: '/functions', label: t('nav.functions'), icon: <FunctionOutlined /> },
-    { key: '/aliases', label: t('nav.aliases'), icon: <FileTextOutlined /> },
+    { key: '/aliases', label: t('nav.aliases'), icon: <TagsOutlined /> },
     { type: 'divider' as const },
-    { key: '/ccland', label: t('nav.ccland'), icon: <ApiOutlined /> }
+    { key: '/ccland', label: t('nav.ccland'), icon: <CodeSandboxOutlined /> },
+    { key: '/cxland', label: t('nav.cxland'), icon: <RobotOutlined /> }
   ]
   return (
     <Menu

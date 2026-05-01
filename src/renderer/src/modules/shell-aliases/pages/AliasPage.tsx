@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Typography } from 'antd'
-import { DndContext, closestCenter } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { AliasCard } from '@renderer/modules/shell-aliases/components/AliasCard'
 import { AliasFormModal, type AliasFormValues } from '@renderer/modules/shell-aliases/components/AliasFormModal'
 import { createEmptyAlias } from '@shared/builtin-functions'
 import { ALL_SHELL_TYPES } from '@shared/shell'
-import { SortableWrapper } from '@renderer/components/SortableWrapper'
-import { GroupHeader } from '@renderer/components/GroupHeader'
-import { useSortableList } from '@renderer/hooks/useSortableList'
+import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
 
 const { Title } = Typography
 
@@ -34,8 +30,6 @@ export default function AliasPage(): React.ReactElement {
     if (!dataLoaded) loadShellConfig()
   }, [dataLoaded, loadShellConfig])
 
-  const { sensors, handleDragEnd, syncItems, localItems } = useSortableList(aliases, reorderAliases)
-
   const handleAdd = (localOnly: boolean) => {
     const newAlias = createEmptyAlias()
     newAlias.order = aliases.length
@@ -52,35 +46,21 @@ export default function AliasPage(): React.ReactElement {
     <div style={{ padding: 24 }}>
       <Title level={4} style={{ marginBottom: 16 }}>{t('shellAliases.title')}</Title>
 
-      <GroupHeader title={t('common.syncedConfig')} count={syncItems.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
-      {!syncCollapsed && syncItems.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={syncItems.map((a) => a.id)} strategy={verticalListSortingStrategy}>
-            {syncItems.map((alias, idx) => (
-              <SortableWrapper key={alias.id} id={alias.id}>
-                {(dragHandleProps) => (
-                  <AliasCard alias={alias} index={idx + 1} dragHandleProps={dragHandleProps as any} />
-                )}
-              </SortableWrapper>
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
-
-      <GroupHeader title={t('common.localConfig')} count={localItems.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
-      {!localCollapsed && localItems.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={localItems.map((a) => a.id)} strategy={verticalListSortingStrategy}>
-            {localItems.map((alias, idx) => (
-              <SortableWrapper key={alias.id} id={alias.id}>
-                {(dragHandleProps) => (
-                  <AliasCard alias={alias} index={syncItems.length + idx + 1} dragHandleProps={dragHandleProps as any} />
-                )}
-              </SortableWrapper>
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
+      <GroupedSortableList
+        titleSynced={t('common.syncedConfig')}
+        titleLocal={t('common.localConfig')}
+        items={aliases}
+        syncCollapsed={syncCollapsed}
+        localCollapsed={localCollapsed}
+        onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
+        onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
+        onAddSync={() => handleAdd(false)}
+        onAddLocal={() => handleAdd(true)}
+        onReorder={reorderAliases}
+        renderItem={(alias, index, dragHandleProps) => (
+          <AliasCard alias={alias} index={index} dragHandleProps={dragHandleProps} />
+        )}
+      />
 
       <AliasFormModal
         open={addModalOpen}

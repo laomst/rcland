@@ -5,28 +5,14 @@ import { loadLocalShellConfig, saveLocalShellConfig } from './local-shell-config
 import { migrateShellConfig } from '@shared/shell-migration'
 import type { ShellConfigData, LocalShellConfigData } from '@shared/shell-types'
 import { createEmptyShellConfig, BUILTIN_FUNCTIONS } from '@shared/builtin-functions'
+import { assertShellConfigData } from '@shared/ipc-contracts'
+import { markLocalItems, splitLocalItems } from './local-sync'
 
 const SHELL_DATA_FILENAME = 'rcland.config.shell.json'
 
 function getShellDataPath(): string {
   const settings = loadSettings()
   return join(settings.configDir, SHELL_DATA_FILENAME)
-}
-
-/** 按 localOnly 拆分配置项数组 */
-function splitByLocal<T extends { localOnly?: boolean }>(items: T[]): { synced: T[]; local: T[] } {
-  const synced: T[] = []
-  const local: T[] = []
-  for (const item of items) {
-    if (item.localOnly) {
-      local.push(item)
-    } else {
-      // 同步项不写入 localOnly 字段，保持向后兼容
-      const { localOnly, ...rest } = item as any
-      synced.push(rest as T)
-    }
-  }
-  return { synced, local }
 }
 
 /**
@@ -54,15 +40,12 @@ export function loadShellConfig(): string {
   const localConfig = loadLocalShellConfig()
 
   // 3. 为本机项标记 localOnly: true
-  const markLocal = <T extends { localOnly?: boolean }>(items: T[]): T[] =>
-    items.map((item) => ({ ...item, localOnly: true }))
-
   // 4. 合并（同步在前、本机在后，各组内按 order 排序）
   const sortByOrder = <T extends { order: number }>(items: T[]): T[] =>
     items.sort((a, b) => a.order - b.order)
 
   // 5. 合并内置函数：保留用户的 enabled 状态，其余用内置定义覆盖
-  const userFunctions = [...syncedConfig.functions, ...markLocal(localConfig.functions)].filter(
+  const userFunctions = [...syncedConfig.functions, ...markLocalItems(localConfig.functions)].filter(
     (f) => !f.builtIn
   )
   const localFunctionStatus = new Map(
@@ -77,10 +60,10 @@ export function loadShellConfig(): string {
 
   const merged: ShellConfigData = {
     ...syncedConfig,
-    variables: [...sortByOrder(syncedConfig.variables), ...sortByOrder(markLocal(localConfig.variables))],
-    pathEntries: [...sortByOrder(syncedConfig.pathEntries), ...sortByOrder(markLocal(localConfig.pathEntries))],
+    variables: [...sortByOrder(syncedConfig.variables), ...sortByOrder(markLocalItems(localConfig.variables))],
+    pathEntries: [...sortByOrder(syncedConfig.pathEntries), ...sortByOrder(markLocalItems(localConfig.pathEntries))],
     functions: [...mergedBuiltIns, ...sortByOrder(userFunctions)],
-    aliases: [...sortByOrder(syncedConfig.aliases), ...sortByOrder(markLocal(localConfig.aliases))]
+    aliases: [...sortByOrder(syncedConfig.aliases), ...sortByOrder(markLocalItems(localConfig.aliases))]
   }
 
   return JSON.stringify(merged)
@@ -93,10 +76,10 @@ export function saveShellConfig(json: string): void {
   const config: ShellConfigData = JSON.parse(json)
 
   // 拆分四个数组
-  const vars = splitByLocal(config.variables)
-  const paths = splitByLocal(config.pathEntries)
-  const funcs = splitByLocal(config.functions)
-  const aliases = splitByLocal(config.aliases)
+  const vars = splitLocalItems(config.variables)
+  const paths = splitLocalItems(config.pathEntries)
+  const funcs = splitLocalItems(config.functions)
+  const aliases = splitLocalItems(config.aliases)
 
   // 写入同步文件
   const syncedConfig: ShellConfigData = {
@@ -120,4 +103,15 @@ export function saveShellConfig(json: string): void {
     aliases: aliases.local
   }
   saveLocalShellConfig(localConfig)
+}
+
+export function loadShellConfigData(): ShellConfigData {
+  const data = JSON.parse(loadShellConfig())
+  assertShellConfigData(data)
+  return data
+}
+
+export function saveShellConfigData(data: ShellConfigData): void {
+  assertShellConfigData(data)
+  saveShellConfig(JSON.stringify(data))
 }

@@ -6,7 +6,9 @@
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit --tsBuildInfoFile /tmp/rcland-tsconfig-node.tsbuildinfo && tsc -p tsconfig.web.json --noEmit --tsBuildInfoFile /tmp/rcland-tsconfig-web.tsbuildinfo",
+    "test": "mkdir -p /tmp/rcland-tests && esbuild tests/*.test.ts --bundle --platform=node --format=cjs --outdir=/tmp/rcland-tests --alias:@shared=./src/shared --alias:@renderer=./src/renderer/src && node --test /tmp/rcland-tests/*.js",
+    "build": "npm run typecheck && electron-vite build",
     "preview": "electron-vite preview",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
@@ -31,6 +33,7 @@
     "electron": "^35.1.2",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.1.0",
+    "esbuild": "^0.25.12",
     "typescript": "^5.8.2"
   }
 }

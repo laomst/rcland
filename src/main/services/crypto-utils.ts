@@ -1,5 +1,5 @@
 import * as cryptoService from './crypto'
-import type { CCLaunchData, Provider } from '@shared/types'
+import type { CCLaunchData, CXLandData, Provider } from '@shared/types'
 import type { ShellConfigData } from '@shared/shell-types'
 
 /** Build decrypted token map for all configs, returns { map, decryptFailed } */
@@ -59,4 +59,38 @@ export function decryptShellVariables(shellConfig: ShellConfigData, key: string)
     }
   }
   return decrypted
+}
+
+/** Build decrypted CX token map for all configs, returns { map, decryptFailed } */
+export function buildCXDecryptedMap(
+  data: CXLandData,
+  key: string
+): { map: Map<string, string>; decryptFailed: boolean } {
+  const map = new Map<string, string>()
+  let decryptFailed = false
+
+  const keyTokenMap = new Map<string, string>()
+  for (const provider of data.providers) {
+    for (const k of provider.keys) {
+      keyTokenMap.set(`${provider.id}:${k.id}`, k.token)
+    }
+  }
+
+  for (const config of data.configs) {
+    const tokenKey = `${config.providerId}:${config.keyId}`
+    const encryptedToken = keyTokenMap.get(tokenKey)
+    const mapKey = `cx-token:${config.id}`
+
+    if (!encryptedToken || !cryptoService.isEncrypted(encryptedToken)) {
+      map.set(mapKey, '')
+    } else {
+      try {
+        map.set(mapKey, cryptoService.decrypt(encryptedToken, key))
+      } catch {
+        map.set(mapKey, '')
+        decryptFailed = true
+      }
+    }
+  }
+  return { map, decryptFailed }
 }
