@@ -6,7 +6,7 @@ export class FunctionsPowerShellGenerator implements SectionGenerator<ShellFunct
   readonly sectionName = 'functions'
   readonly shellType: ShellType = 'powershell'
 
-  generate(data: ShellFunction[], ctx: GenerateContext): string {
+  generate(data: ShellFunction[], _ctx: GenerateContext): string {
     const items = data.filter((f) => f.enabled && f.body.powershell)
     if (items.length === 0) return ''
 

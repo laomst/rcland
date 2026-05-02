@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Input, Modal, Form, ColorPicker, Divider, Button, Space, App, Switch, Typography, Radio } from 'antd'
+import { Input, Modal, Form, ColorPicker, Button, Space, App, Switch, Typography, Radio } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
 import type { CXEndpoint, CXProviderKey, CXConfigSet } from '@shared/types'
 import { CXKeyEditModal } from './CXKeyEditModal'

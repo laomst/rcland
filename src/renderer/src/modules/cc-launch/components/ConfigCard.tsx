@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Space, Switch, Typography, Tooltip, App, Select } from 'antd'
-import { EditOutlined, DeleteOutlined, WarningOutlined, CopyOutlined, LockOutlined } from '@ant-design/icons'
+import { Button, Space, Switch, Typography, Tooltip, App, Select, Tag } from 'antd'
+import { EditOutlined, DeleteOutlined, WarningOutlined, CopyOutlined, GlobalOutlined } from '@ant-design/icons'
 import type { ConfigSet, Provider } from '@shared/types'
 import { useAppStore } from '@renderer/stores/useAppStore'
 import { ConfigFormModal } from './ConfigFormModal'
@@ -39,7 +39,7 @@ export function ConfigCard({
 
   const provider = providers.find((p) => p.id === config.providerId)
   const accent = provider?.color || '#1677ff'
-  const providerDisabled = !provider?.enabled
+  const providerDisabled = !provider?.enabled && !config.passthrough
 
   const key = provider?.keys.find((k) => k.id === config.keyId)
   const keyMissing = !key && config.keyId
@@ -52,41 +52,44 @@ export function ConfigCard({
         index={index}
         isDragging={isDragging}
         enabled={config.enabled}
-        borderColor={providerDisabled ? '#faad14' : accent}
+        borderColor={config.passthrough ? '#52c41a' : providerDisabled ? '#faad14' : accent}
         background={!config.enabled ? '#f0f0f0' : providerDisabled ? '#fff7e6' : '#f6f8fa'}
         dragHandleProps={dragHandleProps}
         actions={<>
-          {/* Endpoint Selector */}
-          <Select
-            size="small"
-            variant="borderless"
-            value={config.endpointId}
-            onChange={(val) => updateConfig(config.id, { endpointId: val })}
-            style={{ width: 140, textAlign: 'right' }}
-            popupMatchSelectWidth={false}
-            placeholder={t('ccLaunch.selectEndpoint')}
-            options={(provider?.endpoints ?? []).map((ep) => ({
-              value: ep.id,
-              label: <span style={{ fontSize: 12 }}>{ep.label || ep.url}</span>
-            }))}
-          />
+          {!config.passthrough && (
+            <>
+              {/* Endpoint Selector */}
+              <Select
+                size="small"
+                variant="borderless"
+                value={config.endpointId}
+                onChange={(val) => updateConfig(config.id, { endpointId: val })}
+                style={{ width: 140, textAlign: 'right' }}
+                popupMatchSelectWidth={false}
+                placeholder={t('ccLaunch.selectEndpoint')}
+                options={(provider?.endpoints ?? []).map((ep) => ({
+                  value: ep.id,
+                  label: <span style={{ fontSize: 12 }}>{ep.label || ep.url}</span>
+                }))}
+              />
 
-          {/* Key Selector */}
-          <Select
-            size="small"
-            variant="borderless"
-            value={config.keyId}
-            onChange={(val) => updateConfig(config.id, { keyId: val })}
-            style={{ width: 90, textAlign: 'right' }}
-            popupMatchSelectWidth={false}
-            placeholder={t('ccLaunch.selectKey')}
-            status={keyMissing ? 'error' : undefined}
-            suffixIcon={<LockOutlined style={{ fontSize: 10, color: keyMissing ? '#ff4d4f' : '#999' }} />}
-            options={(provider?.keys ?? []).map((k) => ({
-              value: k.id,
-              label: <span style={{ fontSize: 12 }}>{k.label}</span>
-            }))}
-          />
+              {/* Key Selector */}
+              <Select
+                size="small"
+                variant="borderless"
+                value={config.keyId}
+                onChange={(val) => updateConfig(config.id, { keyId: val })}
+                style={{ width: 90, textAlign: 'right' }}
+                popupMatchSelectWidth={false}
+                placeholder={t('ccLaunch.selectKey')}
+                status={keyMissing ? 'error' : undefined}
+                options={(provider?.keys ?? []).map((k) => ({
+                  value: k.id,
+                  label: <span style={{ fontSize: 12 }}>{k.label}</span>
+                }))}
+              />
+            </>
+          )}
 
           {/* Warning */}
           {providerDisabled && (
@@ -137,23 +140,42 @@ export function ConfigCard({
           />
         </>}
       >
-        {/* 1. Provider - fixed */}
-        <Tooltip title={provider?.name ?? t('ccLaunch.unknown')}>
-          <Space size={4} style={{ width: 110, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, display: 'inline-block', flexShrink: 0 }} />
-            <Text style={{ fontSize: 12 }}>{provider?.name ?? t('ccLaunch.unknown')}</Text>
-          </Space>
-        </Tooltip>
+        {config.passthrough ? (
+          <>
+            <Tag color="green" style={{ fontSize: 11, margin: 0, flexShrink: 0 }}>透传</Tag>
+            <Tooltip title={`${configName} (${config.funcName})`}>
+              <div style={{ ...flexCol(1), display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Text strong style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>{configName}</Text>
+                <Text code style={{ fontSize: 11, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>({config.funcName})</Text>
+              </div>
+            </Tooltip>
+            {config.useSystemProxy && (
+              <Tooltip title="系统代理已启用">
+                <GlobalOutlined style={{ fontSize: 14, color: '#52c41a', flexShrink: 0 }} />
+              </Tooltip>
+            )}
+          </>
+        ) : (
+          <>
+            {/* 1. Provider - fixed */}
+            <Tooltip title={provider?.name ?? t('ccLaunch.unknown')}>
+              <Space size={4} style={{ width: 110, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, display: 'inline-block', flexShrink: 0 }} />
+                <Text style={{ fontSize: 12 }}>{provider?.name ?? t('ccLaunch.unknown')}</Text>
+              </Space>
+            </Tooltip>
 
-        <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>|</Text>
+            <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>|</Text>
 
-        {/* 2. Config Name + Function Name - flexible */}
-        <Tooltip title={`${configName} (${config.funcName})`}>
-          <div style={{ ...flexCol(1), display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Text strong style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>{configName}</Text>
-            <Text code style={{ fontSize: 11, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>({config.funcName})</Text>
-          </div>
-        </Tooltip>
+            {/* 2. Config Name + Function Name - flexible */}
+            <Tooltip title={`${configName} (${config.funcName})`}>
+              <div style={{ ...flexCol(1), display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Text strong style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>{configName}</Text>
+                <Text code style={{ fontSize: 11, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>({config.funcName})</Text>
+              </div>
+            </Tooltip>
+          </>
+        )}
       </ItemRow>
 
       <ConfigFormModal
@@ -167,6 +189,8 @@ export function ConfigCard({
           name: config.name || '',
           funcName: config.funcName,
           envVars: { ...config.envVars },
+          passthrough: config.passthrough ?? false,
+          useSystemProxy: config.useSystemProxy ?? false,
           localOnly: config.localOnly ?? false
         }}
         okText={t('common.save')}

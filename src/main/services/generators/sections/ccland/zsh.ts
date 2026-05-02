@@ -3,7 +3,6 @@ import type { CCLaunchData, ConfigSet, Provider, ProviderEndpoint } from '@share
 import { getEndpointUrl, CLAUDE_ENV_VAR_KEYS } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import { assertSafeEnvName, assertSafeShellName, quoteBashLikeLiteral } from '../../shell-syntax'
-import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
 
 /** Data bundle for CCLand section */
 export interface CCLandSectionData {
@@ -23,28 +22,40 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
 
     const providerMap = new Map(ccConfig.providers.map((p) => [p.id, p]))
     const enabledProviderIds = new Set(ccConfig.providers.filter((p) => p.enabled).map((p) => p.id))
-    const enabledConfigs = ccConfig.configs.filter((c) => c.enabled && enabledProviderIds.has(c.providerId))
+    const enabledConfigs = ccConfig.configs.filter((c) => {
+      if (!c.enabled) return false
+      if (c.passthrough) return true
+      return enabledProviderIds.has(c.providerId)
+    })
 
     for (const config of enabledConfigs) {
-      const provider = providerMap.get(config.providerId)
-      if (!provider) continue
-      this.writeFunction(lines, provider, config, decryptedTokens)
+      if (config.passthrough) {
+        this.writePassthroughFunction(lines, config, ctx.proxyFunctionNames)
+      } else {
+        const provider = providerMap.get(config.providerId)
+        if (!provider) continue
+        this.writeFunction(lines, provider, config, decryptedTokens, ctx.proxyFunctionNames)
+      }
     }
 
-    if (ccConfig.selector.enabled) {
-      const entries = enabledConfigs.map((c) => ({
-        funcName: assertSafeShellName(c.funcName, c.name || c.id),
-        label: c.name || c.funcName
-      }))
-      if (entries.length > 0) {
-        const selectorFuncName = assertSafeShellName(ccConfig.selector.funcName, 'selector')
-        this.writeSelectorFunction(lines, selectorFuncName, ccConfig.selector.promptTitle, entries, ccConfig.selector.requireSessionName !== false)
+    // Main selector (always generated when configs exist)
+    const entries = enabledConfigs.map((c) => ({
+      funcName: assertSafeShellName(c.funcName, c.name || c.id),
+      label: c.name || c.funcName
+    }))
+    if (entries.length > 0) {
+      const selectorFuncName = assertSafeShellName(ccConfig.selector.funcName, 'selector')
+      this.writeSelectorFunction(lines, selectorFuncName, ccConfig.selector.promptTitle, entries, ccConfig.selector.requireSessionName !== false)
+      if (ccConfig.selector.aliasEnabled !== false) {
         lines.push('')
-        const aliasName = assertSafeShellName(ccConfig.selector.aliasName || 'ccd', 'ccd-alias')
-        lines.push(`alias ${aliasName}='${selectorFuncName} --dangerously-skip-permissions'`)
+        lines.push(`alias ${selectorFuncName}d='${selectorFuncName} --dangerously-skip-permissions'`)
       }
+    }
 
-      // ccl: local-only selector
+    // local-only selector
+    const ls = ccConfig.selector.localSelector
+    if (ls?.enabled) {
+      const localFuncName = assertSafeShellName(ls.funcName || 'ccl', 'local-selector')
       const localEntries = enabledConfigs
         .filter((c) => c.localOnly)
         .map((c) => ({
@@ -52,9 +63,14 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
           label: c.name || c.funcName
         }))
       if (localEntries.length > 0) {
-        this.writeSelectorFunction(lines, 'ccl', ccConfig.selector.promptTitle, localEntries, ccConfig.selector.requireSessionName !== false)
+        this.writeSelectorFunction(lines, localFuncName, ls.promptTitle || ccConfig.selector.promptTitle, localEntries, ls.requireSessionName !== false)
+      } else {
         lines.push('')
-        lines.push(`alias ccld='ccl --dangerously-skip-permissions'`)
+        lines.push(`${localFuncName}() { echo ${quoteBashLikeLiteral(`错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」`)} >&2; return 1; }`)
+      }
+      if (ls.aliasEnabled !== false) {
+        lines.push('')
+        lines.push(`alias ${localFuncName}d='${localFuncName} --dangerously-skip-permissions'`)
       }
     }
 
@@ -127,7 +143,8 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
     lines: string[],
     provider: Provider,
     config: ConfigSet,
-    tokens: Map<string, string>
+    tokens: Map<string, string>,
+    proxyFns: { proxyOn: string; proxyOff: string }
   ): void {
     lines.push('')
 
@@ -144,25 +161,40 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
     lines.push('  (')
 
     if (endpoint?.useSystemProxy) {
-      lines.push('    local _proxy_lines')
-      lines.push('    _proxy_lines="$(_rcland_read_os_proxy)"')
-      lines.push('    if [[ -z "$_proxy_lines" ]]; then')
-      lines.push(`      echo ${quoteBashLikeLiteral(`错误: 配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)} >&2`)
-      lines.push('      return 1')
-      lines.push('    fi')
-      lines.push('    eval "$_proxy_lines"')
+      lines.push(`    ${proxyFns.proxyOn} || return 1`)
     } else {
-      lines.push(`    unset ${SYSTEM_PROXY_ENV_NAMES.join(' ')}`)
+      lines.push(`    ${proxyFns.proxyOff}`)
     }
 
-    lines.push(`    ANTHROPIC_AUTH_TOKEN=${quoteBashLikeLiteral(tokenVal)}`)
-    lines.push(`    ANTHROPIC_BASE_URL=${quoteBashLikeLiteral(getEndpointUrl(provider, config.endpointId))}`)
+    lines.push(`    export ANTHROPIC_AUTH_TOKEN=${quoteBashLikeLiteral(tokenVal)}`)
+    lines.push(`    export ANTHROPIC_BASE_URL=${quoteBashLikeLiteral(getEndpointUrl(provider, config.endpointId))}`)
 
     for (const key of CLAUDE_ENV_VAR_KEYS) {
       const setting = config.envVars[key]
       if (setting && setting.enabled && setting.value) {
-        lines.push(`    ${assertSafeEnvName(key, funcName)}=${quoteBashLikeLiteral(setting.value)}`)
+        lines.push(`    export ${assertSafeEnvName(key, funcName)}=${quoteBashLikeLiteral(setting.value)}`)
       }
+    }
+
+    lines.push('    claude "$@"')
+    lines.push('  )')
+    lines.push('}')
+  }
+
+  private writePassthroughFunction(
+    lines: string[],
+    config: ConfigSet,
+    proxyFns: { proxyOn: string; proxyOff: string }
+  ): void {
+    lines.push('')
+    const funcName = assertSafeShellName(config.funcName, config.name || config.id)
+    lines.push(`${funcName}() {`)
+    lines.push('  (')
+
+    if (config.useSystemProxy) {
+      lines.push(`    ${proxyFns.proxyOn} || return 1`)
+    } else {
+      lines.push(`    ${proxyFns.proxyOff}`)
     }
 
     lines.push('    claude "$@"')

@@ -58,7 +58,6 @@ function sampleData(
       }],
       configs: [config],
       selector: {
-        enabled: true,
         funcName: 'cc',
         promptTitle: 'Choose "$(touch /tmp/rcland-title)"'
       }
@@ -68,6 +67,16 @@ function sampleData(
     ]),
   }
 }
+
+test('createGenerateContext uses default proxy function names when omitted', () => {
+  const ctx = createGenerateContext('zsh', 'unused')
+
+  assert.deepEqual(ctx.proxyFunctionNames, {
+    proxyOn: 'proxy-on',
+    proxyOff: 'proxy-off',
+    proxyStatus: 'proxy-status'
+  })
+})
 
 test('zsh ccland generator quotes config values as shell literals', () => {
   const output = new CCLandZshGenerator().generate(sampleData(), createGenerateContext('zsh', 'unused'))
@@ -117,8 +126,9 @@ test('zsh ccland generator injects system proxy for endpoint when enabled', () =
     createGenerateContext('zsh', 'unused')
   )
 
-  assert.match(output, /_proxy_lines="\$\(_rcland_read_os_proxy\)"/)
-  assert.match(output, /eval "\$_proxy_lines"/)
+  assert.match(output, /proxy-on \|\| return 1/)
+  assert.doesNotMatch(output, /_rcland_read_os_proxy/)
+  assert.doesNotMatch(output, /eval "\$_proxy_lines"/)
   assert.match(output, /ANTHROPIC_AUTH_TOKEN='tok"\$\(touch \/tmp\/rcland-token\)"'/)
   assert.doesNotMatch(output, /export http_proxy=/)
 })
@@ -129,7 +139,8 @@ test('zsh ccland generator disables inherited proxy for endpoint when disabled',
     createGenerateContext('zsh', 'unused')
   )
 
-  assert.match(output, /unset http_proxy HTTP_PROXY https_proxy HTTPS_PROXY all_proxy ALL_PROXY no_proxy NO_PROXY/)
+  assert.match(output, /proxy-off/)
+  assert.doesNotMatch(output, /unset http_proxy HTTP_PROXY https_proxy HTTPS_PROXY all_proxy ALL_PROXY no_proxy NO_PROXY/)
   assert.match(output, /claude "\$@"/)
 })
 

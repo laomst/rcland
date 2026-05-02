@@ -47,7 +47,12 @@ export function getDecryptedTokensOrThrow(ccData: CCLaunchData, cxData: CXLandDa
 export function generateConfigWithKey(input: GenerateConfigInput): string {
   const decryptedTokens = input.decryptedTokens ?? getDecryptedTokensOrThrow(input.ccData, input.cxData, input.keyPassphrase)
   const decryptedShellConfig = decryptShellVariables(input.shellConfig, input.keyPassphrase)
-  const ctx = createGenerateContext(input.shellType, input.keyPassphrase, input.proxyFunctionNames ?? { proxyOn: 'proxy-on', proxyOff: 'proxy-off', proxyStatus: 'proxy-status' }, decryptedShellConfig.pathVariables)
+  const ctx = createGenerateContext(
+    input.shellType,
+    input.keyPassphrase,
+    input.proxyFunctionNames,
+    decryptedShellConfig.pathVariables
+  )
   return generateFullConfig(input.shellType, decryptedShellConfig, input.ccData, input.cxData, decryptedTokens, ctx)
 }
 

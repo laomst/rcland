@@ -23,7 +23,6 @@ export function CXProviderCard({
   const { t } = useTranslation()
   const { modal } = App.useApp()
   const updateCXProvider = useCXLandStore((s) => s.updateCXProvider)
-  const addCXProvider = useCXLandStore((s) => s.addCXProvider)
   const configs = useCXLandStore((s) => s.data.configs)
   const [editOpen, setEditOpen] = useState(false)
 

@@ -1,7 +1,8 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { PathEntry } from '@shared/shell-types'
 import type { ShellType } from '@shared/shell'
-import { resolvePathVarRefs } from '@shared/var-refs'
+import { resolvePathVarRefs, topoSortPathVariables } from '@shared/var-refs'
+import { assertSafeEnvName } from '../../shell-syntax'
 
 export class PathBashGenerator implements SectionGenerator<PathEntry[]> {
   readonly sectionName = 'path'
@@ -14,6 +15,17 @@ export class PathBashGenerator implements SectionGenerator<PathEntry[]> {
     if (items.length === 0) return ''
 
     const lines: string[] = []
+
+    // Export path variables as environment variables (topologically sorted)
+    const enabledPathVars = ctx.pathVariables.filter((v) => v.enabled && v.key)
+    if (enabledPathVars.length > 0) {
+      const sorted = topoSortPathVariables(enabledPathVars)
+      for (const v of sorted) {
+        const resolved = resolvePathVarRefs(v.value, ctx.pathVariables)
+        lines.push(`export ${assertSafeEnvName(v.key, v.id)}="${ctx.escapeValue(resolved)}"`)
+      }
+    }
+
     lines.push('CUSTOM_PATHS=()')
 
     for (const e of items) {

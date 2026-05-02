@@ -1,8 +1,10 @@
 import { join } from 'path'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { writeFileSync } from 'fs'
 import { app } from 'electron'
 import type { LocalCCLaunchData } from '@shared/types'
-import { createEmptyLocalCCLaunchData } from '@shared/types'
+import { loadLocalCCConfigFrom } from './local-cc-config-loader'
+
+export { loadLocalCCConfigFrom } from './local-cc-config-loader'
 
 const LOCAL_CC_DATA_FILENAME = 'rcland.config.claudecode.local.json'
 
@@ -11,12 +13,7 @@ function getLocalCCDataPath(): string {
 }
 
 export function loadLocalCCConfig(): LocalCCLaunchData {
-  const p = getLocalCCDataPath()
-  if (!existsSync(p)) {
-    return createEmptyLocalCCLaunchData()
-  }
-  const raw = readFileSync(p, 'utf-8')
-  return JSON.parse(raw)
+  return loadLocalCCConfigFrom(getLocalCCDataPath())
 }
 
 export function saveLocalCCConfig(data: LocalCCLaunchData): void {

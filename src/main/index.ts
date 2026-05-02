@@ -1,14 +1,47 @@
 import { app, BrowserWindow, Menu, shell } from 'electron'
 import { join } from 'path'
 import { platform } from 'os'
+import { readFileSync, writeFileSync } from 'fs'
 import { registerIpcHandlers } from './ipc'
 
 const isDev = !app.isPackaged
 
+interface WindowState {
+  x?: number
+  y?: number
+  width: number
+  height: number
+  isMaximized?: boolean
+}
+
+const stateFile = join(app.getPath('userData'), 'window-state.json')
+
+function loadWindowState(): WindowState {
+  try {
+    return JSON.parse(readFileSync(stateFile, 'utf-8'))
+  } catch {
+    return { width: 1200, height: 800 }
+  }
+}
+
+function saveWindowState(win: BrowserWindow): void {
+  const bounds = win.getBounds()
+  const state: WindowState = {
+    ...bounds,
+    isMaximized: win.isMaximized()
+  }
+  try {
+    writeFileSync(stateFile, JSON.stringify(state))
+  } catch { /* ignore */ }
+}
+
 function createWindow(): void {
+  const saved = loadWindowState()
+
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: saved.width,
+    height: saved.height,
+    ...(saved.x !== undefined && saved.y !== undefined ? { x: saved.x, y: saved.y } : {}),
     minWidth: 900,
     minHeight: 600,
     show: false,
@@ -21,8 +54,16 @@ function createWindow(): void {
     }
   })
 
+  if (saved.isMaximized) {
+    mainWindow.maximize()
+  }
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+  })
+
+  mainWindow.on('close', () => {
+    saveWindowState(mainWindow)
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

@@ -18,7 +18,7 @@ function makeData(): CXLandData {
       id: 'c1', providerId: 'p1', endpointId: 'e1', keyId: 'k1',
       name: 'GLM5', funcName: 'cx-glm5', enabled: true
     }],
-    selector: { enabled: true, funcName: 'cx', promptTitle: '选择' }
+    selector: { funcName: 'cx', promptTitle: '选择' }
   }
 }
 
@@ -58,32 +58,36 @@ test('buildPowerShellCXContent parses -n for OSC title in individual function', 
   const tokens = new Map([['cx-token:c1', 'tok']])
   const out = buildPowerShellCXContent(makeData(), tokens)
   assert.match(out, /\$sn = ""; \$filtered = @\(\); \$i = 0/)
-  assert.match(out, /Write-Host "`e\]0;CX 🔸 \$sn`a" -NoNewline/)
+  assert.match(out, /\$safeSn = \$sn -replace '\[\\x00-\\x1F\\x7F\]', ''/)
+  assert.match(out, /Write-Host "`e\]0;CX 🔸 \$safeSn`a" -NoNewline/)
 })
 
 test('buildPowerShellCXContent selector enforces -n with OSC title', () => {
   const data = makeData()
-  data.selector = { enabled: true, funcName: 'cx', promptTitle: '选择' }
+  data.selector = { funcName: 'cx', promptTitle: '选择' }
   const tokens = new Map([['cx-token:c1', 'tok']])
   const out = buildPowerShellCXContent(data, tokens)
   // Selector requires -n
   assert.match(out, /if \(\[string\]::IsNullOrEmpty\(\$session_name\)\)/)
   assert.match(out, /Write-Host '错误: 必须使用 -n 指定会话名称'/)
   // Selector sets OSC title
-  assert.match(out, /Write-Host "`e\]0;CX 🔸 \$session_name`a" -NoNewline/)
+  assert.match(out, /\$safeSessionName = \$session_name -replace '\[\\x00-\\x1F\\x7F\]', ''/)
+  assert.match(out, /Write-Host "`e\]0;CX 🔸 \$safeSessionName`a" -NoNewline/)
   // Selector passes remaining args (not -n) to child
   assert.match(out, /'cx-glm5'  \{ cx-glm5 @remaining/)
 })
 
 test('buildPowerShellCXContent selector makes -n optional when requireSessionName is false', () => {
   const data = makeData()
-  data.selector = { enabled: true, funcName: 'cx', promptTitle: '选择', requireSessionName: false }
+  data.selector = { funcName: 'cx', promptTitle: '选择', requireSessionName: false }
   const tokens = new Map([['cx-token:c1', 'tok']])
   const out = buildPowerShellCXContent(data, tokens)
   // Should NOT enforce -n
   assert.doesNotMatch(out, /错误: 必须使用 -n 指定会话名称/)
-  assert.doesNotMatch(out, /错误: -n 需要提供会话名称/)
+  // Should still validate a present -n has a value
+  assert.match(out, /        if \(\$args\[\$i\] -eq '-n'\) \{\n            if \(\$i \+ 1 -ge \$args\.Count -or \[string\]::IsNullOrEmpty\(\$args\[\$i \+ 1\]\)\) \{\n                Write-Host '错误: -n 需要提供会话名称'/)
   // Should still have OSC title conditionally
   assert.match(out, /if \(-not \[string\]::IsNullOrEmpty\(\$session_name\)\)/)
-  assert.match(out, /Write-Host "`e\]0;CX 🔸 \$session_name`a" -NoNewline/)
+  assert.match(out, /\$safeSessionName = \$session_name -replace '\[\\x00-\\x1F\\x7F\]', ''/)
+  assert.match(out, /Write-Host "`e\]0;CX 🔸 \$safeSessionName`a" -NoNewline/)
 })

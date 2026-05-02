@@ -101,11 +101,16 @@ export function loadData(): string | null {
   const localConfigs = markLocalItems(localData.configs)
 
   // Combine synced + local
+  const rawSelector = syncedData?.selector ?? { funcName: 'cc', promptTitle: '选择启动器' }
+  // Clean up legacy fields
+  const { aliasName: _, enabled: __, ...cleanSelector } = rawSelector as unknown as Record<string, unknown>
+  const selector = { funcName: (cleanSelector.funcName as string) || 'cc', promptTitle: (cleanSelector.promptTitle as string) || '选择启动器', ...cleanSelector }
+
   const merged: CCLaunchData = {
     version: 5,
     providers: [...(syncedData?.providers ?? []), ...localProviders],
     configs: [...(syncedData?.configs ?? []), ...localConfigs],
-    selector: syncedData?.selector ?? { enabled: false, funcName: 'cc', promptTitle: '选择启动器' }
+    selector
   }
 
   // Return null if no data at all
@@ -183,11 +188,16 @@ export function loadCXLandData(): CXLandData {
   const localConfigs = markLocalItems(localData.configs)
 
   const empty = createEmptyCXLandData()
+  const rawCXSelector = syncedData?.selector ?? empty.selector
+  // Clean up legacy fields
+  const { aliasName: _, enabled: __, ...cleanCXSelector } = rawCXSelector as unknown as Record<string, unknown>
+  const cxSelector = { funcName: (cleanCXSelector.funcName as string) || 'cx', promptTitle: (cleanCXSelector.promptTitle as string) || '选择 Codex 供应商', ...cleanCXSelector }
+
   const merged: CXLandData = {
     version: 3,
     providers: [...(syncedData?.providers ?? []), ...localProviders],
     configs: [...(syncedData?.configs ?? []), ...localConfigs],
-    selector: syncedData?.selector ?? empty.selector
+    selector: cxSelector
   }
 
   assertCXLandData(merged)

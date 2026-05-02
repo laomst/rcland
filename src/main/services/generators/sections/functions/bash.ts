@@ -6,7 +6,7 @@ export class FunctionsBashGenerator implements SectionGenerator<ShellFunction[]>
   readonly sectionName = 'functions'
   readonly shellType: ShellType = 'bash'
 
-  generate(data: ShellFunction[], ctx: GenerateContext): string {
+  generate(data: ShellFunction[], _ctx: GenerateContext): string {
     const items = data.filter((f) => f.enabled && (f.body.bash || f.body.zsh))
     if (items.length === 0) return ''
 

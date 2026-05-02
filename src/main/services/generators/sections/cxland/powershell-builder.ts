@@ -14,7 +14,7 @@ import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg } from './codex-
  * - Backtick for line continuation
  * - `@filtered` instead of `"${_filtered[@]}"`
  * - `Write-Error` instead of `echo ... >&2`
- * - `-n` parsed for OSC terminal title (`` `e]0;...`a ``)
+ * - `-n` stripped from args and used for OSC title when provided
  */
 export function buildPowerShellCXContent(
   data: CXLandData,
@@ -26,6 +26,10 @@ export function buildPowerShellCXContent(
   const enabledConfigs = data.configs.filter((c) => c.enabled)
 
   for (const config of enabledConfigs) {
+    if (config.passthrough) {
+      writePassthroughFunction(lines, config)
+      continue
+    }
     const provider = providerMap.get(config.providerId)
     if (!provider) {
       writeErrorFunction(lines, config, `错误: 配置项 ${config.funcName} 的 Provider 不存在`)
@@ -37,12 +41,31 @@ export function buildPowerShellCXContent(
     writeFunction(lines, provider, config, decryptedTokens)
   }
 
-  if (data.selector.enabled && enabledConfigs.length > 0) {
+  // Main selector (always generated when configs exist)
+  if (enabledConfigs.length > 0) {
     const selectorFuncName = assertSafeShellName(data.selector.funcName, 'selector')
     writeSelectorFunction(lines, selectorFuncName, data.selector.promptTitle, enabledConfigs, data.selector.requireSessionName !== false)
-    lines.push('')
-    const aliasName = assertSafeShellName(data.selector.aliasName || 'cxd', 'cxd-alias')
-    lines.push(`function ${aliasName} { ${selectorFuncName} --dangerously-bypass-approvals-and-sandbox @args }`)
+    if (data.selector.aliasEnabled !== false) {
+      lines.push('')
+      lines.push(`function ${selectorFuncName}d { ${selectorFuncName} --dangerously-bypass-approvals-and-sandbox @args }`)
+    }
+  }
+
+  // local-only selector (independent of main selector)
+  const ls = data.selector.localSelector
+  if (ls?.enabled) {
+    const localFuncName = assertSafeShellName(ls.funcName || 'cxl', 'local-selector')
+    const localEntries = enabledConfigs.filter((c) => c.localOnly)
+    if (localEntries.length > 0) {
+      writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries, ls.requireSessionName !== false)
+    } else {
+      lines.push('')
+      lines.push(`function ${localFuncName} { Write-Error ${quotePowerShellLiteral('错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」')} }`)
+    }
+    if (ls.aliasEnabled !== false) {
+      lines.push('')
+      lines.push(`function ${localFuncName}d { ${localFuncName} --dangerously-bypass-approvals-and-sandbox @args }`)
+    }
   }
 
   return lines.join('\n')
@@ -86,24 +109,7 @@ function writeFunction(
 
   lines.push('')
   lines.push(`function ${funcName} {`)
-  lines.push('    $sn = ""; $filtered = @(); $i = 0')
-  lines.push('    while ($i -lt $args.Count) {')
-  lines.push('        if ($args[$i] -eq \'-n\') {')
-  lines.push('            if ($i + 1 -lt $args.Count -and -not [string]::IsNullOrEmpty($args[$i + 1])) {')
-  lines.push('                $sn = $args[$i + 1]; $i += 2')
-  lines.push('            } else {')
-  lines.push('                $i++')
-  lines.push('            }')
-  lines.push('        } elseif ($args[$i] -match \'^-n(.+)$\') {')
-  lines.push('            $sn = $Matches[1]; $i++')
-  lines.push('        } else {')
-  lines.push('            $filtered += $args[$i]; $i++')
-  lines.push('        }')
-  lines.push('    }')
-  lines.push('    if (-not [string]::IsNullOrEmpty($sn)) {')
-  lines.push('        Write-Host "`e]0;CX 🔸 $sn`a" -NoNewline')
-  lines.push('    }')
-  lines.push('')
+
   lines.push(`    $previous_key = [Environment]::GetEnvironmentVariable('OPENAI_API_KEY', 'Process')`)
 
   // Save proxy vars if endpoint uses system proxy
@@ -131,6 +137,25 @@ function writeFunction(
     lines.push(`        foreach ($key in @(${SYSTEM_PROXY_ENV_NAMES.map((k) => quotePowerShellLiteral(k)).join(', ')})) { Remove-Item "Env:\$key" -ErrorAction SilentlyContinue }`)
   }
 
+  lines.push('        $sn = ""; $filtered = @(); $i = 0')
+  lines.push('        while ($i -lt $args.Count) {')
+  lines.push("            if ($args[$i] -eq '-n') {")
+  lines.push('                if ($i + 1 -ge $args.Count -or [string]::IsNullOrEmpty($args[$i + 1])) {')
+  lines.push("                    Write-Host '错误: -n 需要提供会话名称' -ForegroundColor Red")
+  lines.push('                    return 1')
+  lines.push('                }')
+  lines.push('                $sn = $args[$i + 1]; $i += 2')
+  lines.push("            } elseif ($args[$i] -match '^-n(.+)$') {")
+  lines.push('                $sn = $Matches[1]; $i++')
+  lines.push('            } else {')
+  lines.push('                $filtered += $args[$i]; $i++')
+  lines.push('            }')
+  lines.push('        }')
+  lines.push('        if (-not [string]::IsNullOrEmpty($sn)) {')
+  // Sanitize session name before embedding in OSC sequences (strip C0 controls + DEL).
+  lines.push("            $safeSn = $sn -replace '[\\x00-\\x1F\\x7F]', ''")
+  lines.push('            Write-Host "`e]0;CX 🔸 $safeSn`a" -NoNewline')
+  lines.push('        }')
   // Set OPENAI_API_KEY
   lines.push(`        $env:OPENAI_API_KEY = ${quotePowerShellLiteral(tokenVal)}`)
 
@@ -186,12 +211,11 @@ function writeSelectorFunction(
   lines.push('    $i = 0')
   lines.push('    while ($i -lt $args.Count) {')
   lines.push('        if ($args[$i] -eq \'-n\') {')
-  if (requireN) {
+  // Always validate missing -n value when -n is provided, even if session name is optional.
   lines.push('            if ($i + 1 -ge $args.Count -or [string]::IsNullOrEmpty($args[$i + 1])) {')
   lines.push('                Write-Host \'错误: -n 需要提供会话名称\' -ForegroundColor Red')
   lines.push('                return 1')
   lines.push('            }')
-  }
   lines.push('            $session_name = $args[$i + 1]; $i += 2')
   lines.push('        } elseif ($args[$i] -match \'^-n(.+)$\') {')
   lines.push('            $session_name = $Matches[1]; $i++')
@@ -207,7 +231,9 @@ function writeSelectorFunction(
   }
   lines.push('')
   lines.push('    if (-not [string]::IsNullOrEmpty($session_name)) {')
-  lines.push('        Write-Host "`e]0;CX 🔸 $session_name`a" -NoNewline')
+  // Sanitize session name before embedding in OSC sequences (strip C0 controls + DEL).
+  lines.push("        $safeSessionName = $session_name -replace '[\\x00-\\x1F\\x7F]', ''")
+  lines.push('        Write-Host "`e]0;CX 🔸 $safeSessionName`a" -NoNewline')
   lines.push('    }')
   lines.push('')
   lines.push('    $opts = @(')
@@ -224,6 +250,40 @@ function writeSelectorFunction(
     lines.push(`        '${name}'  { ${name} @remaining; break }`)
   }
   lines.push("        default { Write-Error '无效选择'; return }")
+  lines.push('    }')
+  lines.push('}')
+}
+
+function writePassthroughFunction(lines: string[], config: CXConfigSet): void {
+  const funcName = assertSafeShellName(config.funcName, config.name || config.id)
+  const scopedKeys = [...SYSTEM_PROXY_ENV_NAMES]
+  lines.push('')
+  lines.push(`function ${funcName} {`)
+  lines.push(`    $scopedEnvKeys = @(${scopedKeys.map((key) => quotePowerShellLiteral(key)).join(', ')})`)
+  lines.push('    $previous = @{}')
+  lines.push('    foreach ($key in $scopedEnvKeys) { $previous[$key] = [Environment]::GetEnvironmentVariable($key, "Process") }')
+  lines.push('    try {')
+  if (config.useSystemProxy) {
+    lines.push('        $proxyEntries = _rcland_ReadOsProxy')
+    lines.push('        if ($null -eq $proxyEntries) {')
+    lines.push(`            Write-Error ${quotePowerShellLiteral(`配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
+    lines.push('            return')
+    lines.push('        }')
+    lines.push('        foreach ($key in $proxyEntries.Keys) {')
+    lines.push('            Set-Item "Env:$key" $proxyEntries[$key]')
+    lines.push('        }')
+  } else {
+    lines.push('        foreach ($key in @(' + SYSTEM_PROXY_ENV_NAMES.map((key) => quotePowerShellLiteral(key)).join(', ') + ')) { Remove-Item "Env:$key" -ErrorAction SilentlyContinue }')
+  }
+  lines.push('        codex @args')
+  lines.push('    } finally {')
+  lines.push('        foreach ($key in $scopedEnvKeys) {')
+  lines.push('            if ($null -eq $previous[$key]) {')
+  lines.push('                Remove-Item "Env:$key" -ErrorAction SilentlyContinue')
+  lines.push('            } else {')
+  lines.push('                Set-Item "Env:$key" $previous[$key]')
+  lines.push('            }')
+  lines.push('        }')
   lines.push('    }')
   lines.push('}')
 }

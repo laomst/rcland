@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input, Modal, Form, Space, Select, Divider, Typography, Button, Switch } from 'antd'
 import { PlusOutlined, LockOutlined } from '@ant-design/icons'
-import type { ConfigSet, Provider, EnvVarSetting } from '@shared/types'
+import type { Provider, EnvVarSetting } from '@shared/types'
 import { EnvVarEditor } from './EnvVarEditor'
 import type { ConfigFormValues } from './config-update'
 
@@ -55,6 +55,8 @@ export function ConfigFormModal({
       name: '',
       funcName: '',
       envVars: { ...templateEnvVars },
+      passthrough: form.passthrough,
+      useSystemProxy: form.useSystemProxy,
       localOnly: form.localOnly
     })
   }
@@ -62,6 +64,12 @@ export function ConfigFormModal({
   const provider = providers.find((p) => p.id === form.providerId)
   const selectedKey = provider?.keys.find((k) => k.id === form.keyId)
   const hasNoKeys = !provider?.keys?.length
+
+  const isPassthrough = form.passthrough ?? false
+  const canSubmit = form.name?.trim() || form.funcName?.trim()
+  const normalValid = canSubmit && form.providerId && form.keyId
+  const passthroughValid = canSubmit
+  const isValid = isPassthrough ? passthroughValid : normalValid
 
   return (
     <Modal
@@ -72,7 +80,7 @@ export function ConfigFormModal({
       onCancel={onCancel}
       okText={okText}
       cancelText={t('common.cancel')}
-      okButtonProps={{ disabled: okDisabled ?? (!(form.name?.trim() || form.funcName?.trim()) || !form.providerId || !form.keyId) }}
+      okButtonProps={{ disabled: okDisabled ?? !isValid }}
       width={700}
     >
       <Form
@@ -82,91 +90,141 @@ export function ConfigFormModal({
         colon={false}
         style={{ marginTop: 16 }}
       >
-        <Form.Item label={t('ccLaunch.provider')}>
-          <Select
-            value={form.providerId}
-            onChange={handleProviderChange}
-            placeholder={t('ccLaunch.selectProvider')}
-            style={{ width: '100%' }}
-            options={providers.map((p) => ({
-              value: p.id,
-              label: (
-                <Space>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: p.color || '#1677ff', display: 'inline-block' }} />
-                  {p.name}
-                </Space>
-              )
-            }))}
-          />
-        </Form.Item>
-        <Form.Item label={t('ccLaunch.endpoint')}>
-          <Select
-            value={form.endpointId}
-            onChange={(val) => setForm((f) => ({ ...f, endpointId: val }))}
-            placeholder={t('ccLaunch.selectEndpoint')}
-            style={{ width: '100%' }}
-            options={(provider?.endpoints ?? []).map((ep) => ({
-              value: ep.id,
-              label: ep.label ? `${ep.label} — ${ep.url}` : ep.url
-            }))}
-          />
-        </Form.Item>
-        <Form.Item label={t('ccLaunch.key')} required>
-          <Space.Compact style={{ width: '100%' }}>
-            <Select
-              value={form.keyId}
-              onChange={(val) => setForm((f) => ({ ...f, keyId: val }))}
-              placeholder={hasNoKeys ? t('ccLaunch.noKeyHint') : t('ccLaunch.selectKey')}
-              style={{ flex: 1 }}
-              status={!selectedKey && form.keyId ? 'error' : undefined}
-              options={(provider?.keys ?? []).map((k) => ({
-                value: k.id,
-                label: (
-                  <Space>
-                    <LockOutlined style={{ color: '#999' }} />
-                    {k.label}
-                    {k.token && <Text type="success" style={{ fontSize: 11 }}>{t('ccLaunch.keyEncrypted')}</Text>}
-                  </Space>
-                )
-              }))}
+        <Form.Item label="透传模式">
+          <Space>
+            <Switch
+              checked={isPassthrough}
+              onChange={(checked) => setForm((f) => ({ ...f, passthrough: checked }))}
             />
-            {onAddKey && (
-              <Button icon={<PlusOutlined />} onClick={onAddKey}>
-                {t('common.new')}
-              </Button>
+            {isPassthrough && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                直接透传到 claude，不设置 API 密钥和端点
+              </Text>
             )}
-          </Space.Compact>
-          {!selectedKey && form.keyId && (
-            <Text type="danger" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
-              {t('ccLaunch.keyDeletedError')}
-            </Text>
-          )}
+          </Space>
         </Form.Item>
-        <Form.Item label={t('ccLaunch.configName')} required>
-          <Input
-            value={form.name ?? ''}
-            onChange={(e) => {
-              const name = e.target.value
-              setForm((f) => {
-                // Auto-generate funcName from name if funcName is empty or was auto-generated
-                const shouldAutoGen = !f.funcName || f.funcName.startsWith('cc-')
-                const autoFuncName = name.trim()
-                  ? `cc-${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/\s+/g, '-')}`
-                  : ''
-                return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
-              })
-            }}
-            placeholder={t('ccLaunch.configNamePlaceholder')}
-          />
-        </Form.Item>
-        <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
-          <Input
-            value={form.funcName ?? ''}
-            onChange={(e) => setForm((f) => ({ ...f, funcName: e.target.value }))}
-            placeholder={t('ccLaunch.funcNamePlaceholder')}
-            style={{ fontFamily: 'monospace' }}
-          />
-        </Form.Item>
+
+        {isPassthrough ? (
+          <>
+            <Form.Item label={t('ccLaunch.configName')} required>
+              <Input
+                value={form.name ?? ''}
+                onChange={(e) => {
+                  const name = e.target.value
+                  setForm((f) => {
+                    const shouldAutoGen = !f.funcName || f.funcName.startsWith('cc-')
+                    const autoFuncName = name.trim()
+                      ? `cc-${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/\s+/g, '-')}`
+                      : ''
+                    return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
+                  })
+                }}
+                placeholder={t('ccLaunch.configNamePlaceholder')}
+              />
+            </Form.Item>
+            <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
+              <Input
+                value={form.funcName ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, funcName: e.target.value }))}
+                placeholder={t('ccLaunch.funcNamePlaceholder')}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+            <Form.Item label="系统代理">
+              <Switch
+                checked={form.useSystemProxy ?? false}
+                onChange={(checked) => setForm((f) => ({ ...f, useSystemProxy: checked }))}
+              />
+            </Form.Item>
+          </>
+        ) : (
+          <>
+            <Form.Item label={t('ccLaunch.provider')}>
+              <Select
+                value={form.providerId}
+                onChange={handleProviderChange}
+                placeholder={t('ccLaunch.selectProvider')}
+                style={{ width: '100%' }}
+                options={providers.map((p) => ({
+                  value: p.id,
+                  label: (
+                    <Space>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: p.color || '#1677ff', display: 'inline-block' }} />
+                      {p.name}
+                    </Space>
+                  )
+                }))}
+              />
+            </Form.Item>
+            <Form.Item label={t('ccLaunch.endpoint')}>
+              <Select
+                value={form.endpointId}
+                onChange={(val) => setForm((f) => ({ ...f, endpointId: val }))}
+                placeholder={t('ccLaunch.selectEndpoint')}
+                style={{ width: '100%' }}
+                options={(provider?.endpoints ?? []).map((ep) => ({
+                  value: ep.id,
+                  label: ep.label ? `${ep.label} — ${ep.url}` : ep.url
+                }))}
+              />
+            </Form.Item>
+            <Form.Item label={t('ccLaunch.key')} required>
+              <Space.Compact style={{ width: '100%' }}>
+                <Select
+                  value={form.keyId}
+                  onChange={(val) => setForm((f) => ({ ...f, keyId: val }))}
+                  placeholder={hasNoKeys ? t('ccLaunch.noKeyHint') : t('ccLaunch.selectKey')}
+                  style={{ flex: 1 }}
+                  status={!selectedKey && form.keyId ? 'error' : undefined}
+                  options={(provider?.keys ?? []).map((k) => ({
+                    value: k.id,
+                    label: (
+                      <Space>
+                        <LockOutlined style={{ color: '#999' }} />
+                        {k.label}
+                        {k.token && <Text type="success" style={{ fontSize: 11 }}>{t('ccLaunch.keyEncrypted')}</Text>}
+                      </Space>
+                    )
+                  }))}
+                />
+                {onAddKey && (
+                  <Button icon={<PlusOutlined />} onClick={onAddKey}>
+                    {t('common.new')}
+                  </Button>
+                )}
+              </Space.Compact>
+              {!selectedKey && form.keyId && (
+                <Text type="danger" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
+                  {t('ccLaunch.keyDeletedError')}
+                </Text>
+              )}
+            </Form.Item>
+            <Form.Item label={t('ccLaunch.configName')} required>
+              <Input
+                value={form.name ?? ''}
+                onChange={(e) => {
+                  const name = e.target.value
+                  setForm((f) => {
+                    const shouldAutoGen = !f.funcName || f.funcName.startsWith('cc-')
+                    const autoFuncName = name.trim()
+                      ? `cc-${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/\s+/g, '-')}`
+                      : ''
+                    return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
+                  })
+                }}
+                placeholder={t('ccLaunch.configNamePlaceholder')}
+              />
+            </Form.Item>
+            <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
+              <Input
+                value={form.funcName ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, funcName: e.target.value }))}
+                placeholder={t('ccLaunch.funcNamePlaceholder')}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </>
+        )}
         <Form.Item label={t('common.localOnly')}>
           <Space>
             <Switch
@@ -180,8 +238,12 @@ export function ConfigFormModal({
             )}
           </Space>
         </Form.Item>
-        <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>
-        <EnvVarEditor envVars={form.envVars} onChange={handleEnvVarChange} />
+        {!isPassthrough && (
+          <>
+            <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>
+            <EnvVarEditor envVars={form.envVars} onChange={handleEnvVarChange} />
+          </>
+        )}
       </Form>
     </Modal>
   )

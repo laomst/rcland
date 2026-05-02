@@ -1,57 +1,48 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { App } from 'antd'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { createEmptyPathVariable } from '@shared/builtin-functions'
 import { PathVariableCard } from './PathVariableCard'
 import { PathVariableFormModal, type PathVariableFormValues } from './PathVariableFormModal'
-import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
+import { SortableList } from '@renderer/modules/shared/SortableList'
 
 export function PathVariableSection(): React.ReactElement {
   const { t } = useTranslation()
+  const { modal } = App.useApp()
   const pathVariables = useShellConfigStore((s) => s.shellConfig.pathVariables)
   const addPathVariable = useShellConfigStore((s) => s.addPathVariable)
   const reorderPathVariables = useShellConfigStore((s) => s.reorderPathVariables)
 
-  const [syncCollapsed, setSyncCollapsed] = useState(false)
-  const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [editingVarId, setEditingVarId] = useState<string | null>(null)
   const [initialFormValues, setInitialFormValues] = useState<PathVariableFormValues>({
     key: '',
     value: '',
-    description: '',
-    localOnly: false
+    description: ''
   })
 
-  const handleAdd = (localOnly: boolean) => {
+  const handleAdd = () => {
     const newVar = createEmptyPathVariable()
     addPathVariable({
       ...newVar,
-      localOnly,
       order: pathVariables.length
     })
     setEditingVarId(newVar.id)
     setInitialFormValues({
       key: '',
       value: '',
-      description: '',
-      localOnly
+      description: ''
     })
     setAddOpen(true)
   }
 
   return (
     <div>
-      <GroupedSortableList
-        titleSynced={t('common.syncedConfig')}
-        titleLocal={t('common.localConfig')}
+      <SortableList
+        title="路径变量"
         items={pathVariables}
-        syncCollapsed={syncCollapsed}
-        localCollapsed={localCollapsed}
-        onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
-        onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
-        onAddSync={() => handleAdd(false)}
-        onAddLocal={() => handleAdd(true)}
+        onAdd={handleAdd}
         onReorder={reorderPathVariables}
         renderItem={(variable, index, dragHandleProps) => (
           <PathVariableCard variable={variable} index={index} dragHandleProps={dragHandleProps} />
@@ -76,12 +67,19 @@ export function PathVariableSection(): React.ReactElement {
             useShellConfigStore.getState().updatePathVariable(editingVarId, {
               key: values.key.trim(),
               value: values.value,
-              description: values.description.trim() || undefined,
-              localOnly: values.localOnly
+              description: values.description.trim() || undefined
+            })
+            requestAnimationFrame(() => {
+              const err = useShellConfigStore.getState().saveError
+              if (err) {
+                modal.error({ title: '无法保存', content: err, okText: t('common.confirm') })
+                useShellConfigStore.getState().clearSaveError()
+              } else {
+                setEditingVarId(null)
+                setAddOpen(false)
+              }
             })
           }
-          setEditingVarId(null)
-          setAddOpen(false)
         }}
       />
     </div>

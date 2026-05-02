@@ -10,6 +10,7 @@ interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
   deleteConfirmContent: string
+  hideSyncToggle?: boolean
   onUpdate: (id: string, patch: Partial<T>) => void
   onRemove: (id: string) => void
   onDuplicate?: (item: T) => void
@@ -24,6 +25,7 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
   isDragging,
   dragHandleProps,
   deleteConfirmContent,
+  hideSyncToggle,
   onUpdate,
   onRemove,
   onDuplicate,
@@ -73,17 +75,19 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
           <Tooltip title={t('common.delete')}>
             <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={handleDelete} />
           </Tooltip>
-          <Select
-            size="small"
-            variant="borderless"
-            value={item.localOnly ? 'local' : 'sync'}
-            onChange={handleLocalOnlyChange}
-            style={{ width: 70 }}
-            options={[
-              { value: 'sync', label: t('common.synced') },
-              { value: 'local', label: t('common.local') }
-            ]}
-          />
+          {!hideSyncToggle && (
+            <Select
+              size="small"
+              variant="borderless"
+              value={item.localOnly ? 'local' : 'sync'}
+              onChange={handleLocalOnlyChange}
+              style={{ width: 70 }}
+              options={[
+                { value: 'sync', label: t('common.synced') },
+                { value: 'local', label: t('common.local') }
+              ]}
+            />
+          )}
           <Switch
             size="small"
             checked={item.enabled}

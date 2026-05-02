@@ -23,3 +23,19 @@ test('config edit patch preserves provider and locality changes', () => {
     localOnly: true
   })
 })
+
+test('config edit patch includes passthrough fields only when defined', () => {
+  const patch = createConfigUpdatePatch({
+    providerId: '',
+    endpointId: '',
+    keyId: '',
+    name: 'Passthrough',
+    funcName: 'cc-pass',
+    envVars: {},
+    passthrough: true,
+    useSystemProxy: false
+  })
+
+  assert.equal(patch.passthrough, true)
+  assert.equal(patch.useSystemProxy, false)
+})

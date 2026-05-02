@@ -1,8 +1,8 @@
-import { Space, Tooltip, Typography, App } from 'antd'
+import { Tooltip, Typography, App } from 'antd'
 import { useTranslation } from 'react-i18next'
 import type { PathVariable } from '@shared/shell-types'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
-import { PathVariableFormModal, type PathVariableFormValues } from './PathVariableFormModal'
+import { PathVariableFormModal } from './PathVariableFormModal'
 import { BaseItemCard } from '@renderer/components/BaseItemCard'
 import { VariableRefDisplay } from '@renderer/components/VariableRefDisplay'
 
@@ -29,6 +29,7 @@ export function PathVariableCard({
       index={index}
       isDragging={isDragging}
       dragHandleProps={dragHandleProps}
+      hideSyncToggle
       deleteConfirmContent={t('shellEnv.deleteConfirm', { name: variable.key })}
       onUpdate={updatePathVariable}
       onRemove={(id) => {
@@ -82,8 +83,7 @@ export function PathVariableCard({
           initialValues={{
             key: variable.key,
             value: variable.value,
-            description: variable.description ?? '',
-            localOnly: variable.localOnly ?? false
+            description: variable.description ?? ''
           }}
           okText={t('common.save')}
           onCancel={onClose}
@@ -91,10 +91,17 @@ export function PathVariableCard({
             updatePathVariable(variable.id, {
               key: values.key.trim(),
               value: values.value,
-              description: values.description.trim() || undefined,
-              localOnly: values.localOnly
+              description: values.description.trim() || undefined
             })
-            onClose()
+            requestAnimationFrame(() => {
+              const err = useShellConfigStore.getState().saveError
+              if (err) {
+                modal.error({ title: '无法保存', content: err, okText: t('common.confirm') })
+                useShellConfigStore.getState().clearSaveError()
+              } else {
+                onClose()
+              }
+            })
           }}
         />
       )}

@@ -19,6 +19,22 @@ test('zsh system proxy generator outputs _rcland_read_os_proxy function', () => 
   assert.match(output, /gsettings/)
 })
 
+test('zsh system proxy generator reads macOS scutil protocol-specific keys', () => {
+  const gen = new SystemProxyZshGenerator()
+  const output = gen.generate(undefined, mockCtx)
+  assert.match(output, /HTTPEnable/)
+  assert.match(output, /HTTPProxy/)
+  assert.match(output, /HTTPPort/)
+  assert.match(output, /HTTPSEnable/)
+  assert.match(output, /HTTPSProxy/)
+  assert.match(output, /HTTPSPort/)
+  assert.match(output, /SOCKSEnable/)
+  assert.match(output, /SOCKSProxy/)
+  assert.match(output, /SOCKSPort/)
+  assert.doesNotMatch(output, /ProxyEnable/)
+  assert.doesNotMatch(output, /ProxyServer/)
+})
+
 test('bash system proxy generator outputs same functions as zsh', () => {
   const zsh = new SystemProxyZshGenerator().generate(undefined, mockCtx)
   const bash = new SystemProxyBashGenerator().generate(undefined, mockCtx)

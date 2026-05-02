@@ -7,7 +7,7 @@ test('assertCCLaunchData rejects incomplete data', () => {
 })
 
 test('assertShellConfigData rejects incomplete data', () => {
-  assert.throws(() => assertShellConfigData({ version: 1, variables: [] }), /pathEntries/)
+  assert.throws(() => assertShellConfigData({ version: 1, variables: [] }), /pathVariables/)
 })
 
 test('assertCXLandData accepts v3 data', () => {
@@ -15,7 +15,7 @@ test('assertCXLandData accepts v3 data', () => {
     version: 3,
     providers: [],
     configs: [],
-    selector: { enabled: false, funcName: 'cx', promptTitle: '选择' }
+    selector: { funcName: 'cx', promptTitle: '选择' }
   }))
 })
 

@@ -13,7 +13,6 @@ import type {
 import { createEmptyShellConfig, BUILTIN_FUNCTIONS } from '@shared/builtin-functions'
 import { createShellConfigCrud } from './crud-helpers'
 import { findReferencingEntries, detectCircularRefs, detectPathVarCircularRefs } from '@shared/var-refs'
-import { createEmptyPathVariable } from '@shared/builtin-functions'
 import { createPersistQueue, toErrorMessage } from './persist'
 
 const persistQueue = createPersistQueue()

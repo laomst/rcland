@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Empty } from 'antd'
 import {
   DndContext,
   closestCenter,
@@ -95,17 +94,21 @@ export function ConfigTab(): React.ReactElement {
     name: string
     funcName: string
     model?: string
+    passthrough?: boolean
+    useSystemProxy?: boolean
     localOnly?: boolean
   }) => {
     addCXConfig({
       id: crypto.randomUUID(),
-      providerId: values.providerId,
-      endpointId: values.endpointId,
-      keyId: values.keyId,
+      providerId: values.passthrough ? '' : values.providerId,
+      endpointId: values.passthrough ? '' : values.endpointId,
+      keyId: values.passthrough ? '' : values.keyId,
       name: values.name.trim(),
       funcName: values.funcName.trim(),
       enabled: true,
-      model: values.model?.trim() || undefined,
+      model: values.passthrough ? undefined : (values.model?.trim() || undefined),
+      passthrough: values.passthrough,
+      useSystemProxy: values.passthrough ? values.useSystemProxy : undefined,
       localOnly: values.localOnly
     })
     setAddOpen(false)
@@ -124,36 +127,29 @@ export function ConfigTab(): React.ReactElement {
 
   return (
     <div>
-      {providers.length === 0
-        ? <Empty description={t('ccLaunch.noProviderHint')} />
-        : (
-          <>
-            {/* Synced configs */}
-            <GroupHeader title={t('common.syncedConfig')} count={syncedConfigs.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
-            {!syncCollapsed && syncedConfigs.length > 0 && (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                  {syncedConfigs.map((c, idx) => (
-                    <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            )}
+      {/* Synced configs */}
+      <GroupHeader title={t('common.syncedConfig')} count={syncedConfigs.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+      {!syncCollapsed && syncedConfigs.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {syncedConfigs.map((c, idx) => (
+              <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
 
-            {/* Local configs */}
-            <GroupHeader title={t('common.localConfig')} count={localConfigs.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
-            {!localCollapsed && localConfigs.length > 0 && (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                  {localConfigs.map((c, idx) => (
-                    <SortableConfigCard key={c.id} config={c} providers={providers} index={syncedConfigs.length + idx + 1} />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            )}
-          </>
-        )
-      }
+      {/* Local configs */}
+      <GroupHeader title={t('common.localConfig')} count={localConfigs.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      {!localCollapsed && localConfigs.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {localConfigs.map((c, idx) => (
+              <SortableConfigCard key={c.id} config={c} providers={providers} index={syncedConfigs.length + idx + 1} />
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
 
       <ConfigFormModal
         open={addOpen}
@@ -166,6 +162,8 @@ export function ConfigTab(): React.ReactElement {
           name: '',
           funcName: '',
           model: '',
+          passthrough: false,
+          useSystemProxy: false,
           localOnly: addLocalOnly
         }}
         okText={t('common.add')}

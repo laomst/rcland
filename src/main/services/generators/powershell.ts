@@ -30,30 +30,31 @@ export class PowerShellGenerator extends BaseShellGenerator {
       }
     }
 
-    if (data.selector.enabled) {
+    // Main selector (always generated when configs exist)
+    if (enabledConfigs.length > 0) {
       const entries = enabledConfigs.map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
       if (entries.length > 0) {
         lines.push(this.separator('Selector'))
         this.writeSelectorFunction(lines, data.selector.funcName, data.selector.promptTitle, entries)
       }
 
-      // ccl: local-only selector
-      const localEntries = enabledConfigs
-        .filter((c) => c.localOnly)
-        .map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
-      if (localEntries.length > 0) {
-        this.writeSelectorFunction(lines, 'ccl', data.selector.promptTitle, localEntries)
-      }
-    }
-
-    if (data.selector.enabled && enabledConfigs.length > 0) {
       lines.push(this.separator('Aliases'))
       lines.push('')
-      lines.push(`function ccd { ${data.selector.funcName} --dangerously-skip-permissions @args }`)
+      lines.push(`function ${data.selector.funcName}d { ${data.selector.funcName} --dangerously-skip-permissions @args }`)
 
-      const hasLocal = enabledConfigs.some((c) => c.localOnly)
-      if (hasLocal) {
-        lines.push(`function ccld { ccl --dangerously-skip-permissions @args }`)
+      // local-only selector
+      const ls = data.selector.localSelector
+      if (ls?.enabled) {
+        const localEntries = enabledConfigs
+          .filter((c) => c.localOnly)
+          .map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
+        if (localEntries.length > 0) {
+          const localFuncName = ls.funcName || 'ccl'
+          this.writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries)
+          if (ls.aliasEnabled !== false) {
+            lines.push(`function ${localFuncName}d { ${localFuncName} --dangerously-skip-permissions @args }`)
+          }
+        }
       }
     }
 

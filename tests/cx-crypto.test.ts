@@ -30,7 +30,7 @@ test('buildCXDecryptedMap decrypts tokens for each enabled CX config', () => {
       funcName: 'cx-glm5',
       enabled: true
     }],
-    selector: { enabled: false, funcName: 'cx', promptTitle: '选择' }
+    selector: { funcName: 'cx', promptTitle: '选择' }
   }
   const { map, decryptFailed } = buildCXDecryptedMap(data, KEY)
   assert.equal(decryptFailed, false)
@@ -57,7 +57,7 @@ test('buildCXDecryptedMap sets empty token and decryptFailed=true on bad key', (
       funcName: 'cx-x',
       enabled: true
     }],
-    selector: { enabled: false, funcName: 'cx', promptTitle: 't' }
+    selector: { funcName: 'cx', promptTitle: 't' }
   }
   const { map, decryptFailed } = buildCXDecryptedMap(data, 'wrong-key')
   assert.equal(decryptFailed, true)
@@ -84,7 +84,7 @@ test('buildCXDecryptedMap returns empty token when key reference is missing', ()
       funcName: 'cx-x',
       enabled: true
     }],
-    selector: { enabled: false, funcName: 'cx', promptTitle: 't' }
+    selector: { funcName: 'cx', promptTitle: 't' }
   }
   const { map, decryptFailed } = buildCXDecryptedMap(data, KEY)
   assert.equal(decryptFailed, false)

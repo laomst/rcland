@@ -37,7 +37,6 @@ const ALIAS_INITIAL_STATE: AliasFormValues = {
 export function AliasFormModal({
   open,
   title,
-  isEdit = false,
   initialValues,
   okText,
   okDisabled,

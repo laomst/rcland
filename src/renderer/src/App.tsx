@@ -15,7 +15,7 @@ import { ALL_SHELL_TYPES, SHELL_LABELS, SHELL_OS_SUPPORT, type ShellType } from 
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { extractIpcErrorMessage, isDecryptFailedError, isKeyNotFoundError } from './utils/ipc-error'
 import { useTranslation } from 'react-i18next'
-import i18n from './i18n'
+import './i18n'
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 

@@ -61,8 +61,8 @@ export function loadShellConfig(): string {
   const merged: ShellConfigData = {
     ...syncedConfig,
     variables: [...sortByOrder(syncedConfig.variables), ...sortByOrder(markLocalItems(localConfig.variables))],
-    pathVariables: [...sortByOrder(syncedConfig.pathVariables), ...sortByOrder(markLocalItems(localConfig.pathVariables))],
-    pathEntries: [...sortByOrder(syncedConfig.pathEntries), ...sortByOrder(markLocalItems(localConfig.pathEntries))],
+    pathVariables: [...sortByOrder(syncedConfig.pathVariables), ...sortByOrder(localConfig.pathVariables)].map((v) => ({ ...v, localOnly: true })),
+    pathEntries: [...sortByOrder(syncedConfig.pathEntries), ...sortByOrder(localConfig.pathEntries)].map((e) => ({ ...e, localOnly: true })),
     functions: [...mergedBuiltIns, ...sortByOrder(userFunctions)],
     aliases: [...sortByOrder(syncedConfig.aliases), ...sortByOrder(markLocalItems(localConfig.aliases))]
   }

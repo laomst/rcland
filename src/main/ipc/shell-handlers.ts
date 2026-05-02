@@ -71,7 +71,7 @@ function defaultCCData(): CCLaunchData {
     version: 5,
     providers: [],
     configs: [],
-    selector: { enabled: false, funcName: 'cc', promptTitle: '' }
+    selector: { funcName: 'cc', promptTitle: '' }
   }
 }
 

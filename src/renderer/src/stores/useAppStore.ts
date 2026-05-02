@@ -4,7 +4,7 @@ import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
 import { createTopLevelCrud } from './crud-helpers'
 import { createPersistQueue, toErrorMessage } from './persist'
 
-const DEFAULT_SELECTOR = { enabled: true, funcName: 'cc', promptTitle: '选择启动器' }
+const DEFAULT_SELECTOR = { funcName: 'cc', promptTitle: '选择启动器' }
 const persistQueue = createPersistQueue()
 
 interface AppState {

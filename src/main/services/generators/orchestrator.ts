@@ -71,7 +71,7 @@ function getSection(name: string, shellType: ShellType): SectionGenerator | unde
 }
 
 /** Shebang / header by shell type */
-function generateHeader(shellType: ShellType, timestamp: string): string {
+function generateHeader(shellType: ShellType): string {
   const shebangs: Record<ShellType, string> = {
     zsh: '#!/bin/zsh',
     bash: '#!/bin/bash',
@@ -125,7 +125,7 @@ export function generateFullConfig(
     ccConfig,
     decryptedTokens,
   }
-  const parts: string[] = [generateHeader(shellType, ctx.timestamp)]
+  const parts: string[] = [generateHeader(shellType)]
 
   for (const sectionName of SECTION_ORDER) {
     const gen = getSection(sectionName, shellType)

@@ -1,5 +1,6 @@
 import type { ShellType } from '@shared/shell'
 import type { PathVariable } from '@shared/shell-types'
+import { DEFAULT_PROXY_FUNCTION_NAMES, type ProxyFunctionNames } from '@shared/types'
 import type { GenerateContext } from './section-types'
 import * as cryptoService from '../crypto'
 
@@ -32,7 +33,7 @@ export function escapeForPowerShell(value: string): string {
 export function createGenerateContext(
   shellType: ShellType,
   keyPassphrase: string,
-  proxyFunctionNames: { proxyOn: string; proxyOff: string; proxyStatus: string },
+  proxyFunctionNames: ProxyFunctionNames = DEFAULT_PROXY_FUNCTION_NAMES,
   pathVariables: PathVariable[] = []
 ): GenerateContext {
   const escapeFn = shellType === 'powershell' ? escapeForPowerShell : escapeForBashLike

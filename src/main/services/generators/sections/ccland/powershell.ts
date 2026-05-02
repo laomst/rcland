@@ -10,7 +10,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
   readonly sectionName = 'ccland'
   readonly shellType: ShellType = 'powershell'
 
-  generate(data: CCLandSectionData, ctx: GenerateContext): string {
+  generate(data: CCLandSectionData, _ctx: GenerateContext): string {
     const { ccConfig, decryptedTokens } = data
     const lines: string[] = []
 
@@ -18,28 +18,40 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
 
     const providerMap = new Map(ccConfig.providers.map((p) => [p.id, p]))
     const enabledProviderIds = new Set(ccConfig.providers.filter((p) => p.enabled).map((p) => p.id))
-    const enabledConfigs = ccConfig.configs.filter((c) => c.enabled && enabledProviderIds.has(c.providerId))
+    const enabledConfigs = ccConfig.configs.filter((c) => {
+      if (!c.enabled) return false
+      if (c.passthrough) return true
+      return enabledProviderIds.has(c.providerId)
+    })
 
     for (const config of enabledConfigs) {
-      const provider = providerMap.get(config.providerId)
-      if (!provider) continue
-      this.writeFunction(lines, provider, config, decryptedTokens)
+      if (config.passthrough) {
+        this.writePassthroughFunction(lines, config)
+      } else {
+        const provider = providerMap.get(config.providerId)
+        if (!provider) continue
+        this.writeFunction(lines, provider, config, decryptedTokens)
+      }
     }
 
-    if (ccConfig.selector.enabled) {
-      const entries = enabledConfigs.map((c) => ({
-        funcName: assertSafeShellName(c.funcName, c.name || c.id),
-        label: c.name || c.funcName
-      }))
-      if (entries.length > 0) {
-        const selectorFuncName = assertSafeShellName(ccConfig.selector.funcName, 'selector')
-        this.writeSelectorFunction(lines, selectorFuncName, ccConfig.selector.promptTitle, entries)
+    // Main selector (always generated when configs exist)
+    const entries = enabledConfigs.map((c) => ({
+      funcName: assertSafeShellName(c.funcName, c.name || c.id),
+      label: c.name || c.funcName
+    }))
+    if (entries.length > 0) {
+      const selectorFuncName = assertSafeShellName(ccConfig.selector.funcName, 'selector')
+      this.writeSelectorFunction(lines, selectorFuncName, ccConfig.selector.promptTitle, entries)
+      if (ccConfig.selector.aliasEnabled !== false) {
         lines.push('')
-        const aliasName = assertSafeShellName(ccConfig.selector.aliasName || 'ccd', 'ccd-alias')
-        lines.push(`function ${aliasName} { ${selectorFuncName} --dangerously-skip-permissions @args }`)
+        lines.push(`function ${selectorFuncName}d { ${selectorFuncName} --dangerously-skip-permissions @args }`)
       }
+    }
 
-      // ccl: local-only selector
+    // local-only selector
+    const ls = ccConfig.selector.localSelector
+    if (ls?.enabled) {
+      const localFuncName = assertSafeShellName(ls.funcName || 'ccl', 'local-selector')
       const localEntries = enabledConfigs
         .filter((c) => c.localOnly)
         .map((c) => ({
@@ -47,9 +59,14 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
           label: c.name || c.funcName
         }))
       if (localEntries.length > 0) {
-        this.writeSelectorFunction(lines, 'ccl', ccConfig.selector.promptTitle, localEntries)
+        this.writeSelectorFunction(lines, localFuncName, ls.promptTitle || ccConfig.selector.promptTitle, localEntries)
+      } else {
         lines.push('')
-        lines.push(`function ccld { ccl --dangerously-skip-permissions @args }`)
+        lines.push(`function ${localFuncName} { Write-Error ${quotePowerShellLiteral('错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」')} }`)
+      }
+      if (ls.aliasEnabled !== false) {
+        lines.push('')
+        lines.push(`function ${localFuncName}d { ${localFuncName} --dangerously-skip-permissions @args }`)
       }
     }
 
@@ -154,6 +171,45 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
       if (setting && setting.enabled && setting.value) {
         lines.push(`        $env:${assertSafeEnvName(key, funcName)} = ${quotePowerShellLiteral(setting.value)}`)
       }
+    }
+
+    lines.push('        claude @args')
+    lines.push('    } finally {')
+    lines.push('        foreach ($key in $scopedEnvKeys) {')
+    lines.push('            if ($null -eq $previous[$key]) {')
+    lines.push('                Remove-Item "Env:$key" -ErrorAction SilentlyContinue')
+    lines.push('            } else {')
+    lines.push('                Set-Item "Env:$key" $previous[$key]')
+    lines.push('            }')
+    lines.push('        }')
+    lines.push('    }')
+    lines.push('}')
+  }
+
+  private writePassthroughFunction(
+    lines: string[],
+    config: ConfigSet
+  ): void {
+    lines.push('')
+    const funcName = assertSafeShellName(config.funcName, config.name || config.id)
+    const scopedKeys = [...SYSTEM_PROXY_ENV_NAMES]
+    lines.push(`function ${funcName} {`)
+    lines.push(`    $scopedEnvKeys = @(${scopedKeys.map((key) => quotePowerShellLiteral(key)).join(', ')})`)
+    lines.push('    $previous = @{}')
+    lines.push('    foreach ($key in $scopedEnvKeys) { $previous[$key] = [Environment]::GetEnvironmentVariable($key, "Process") }')
+    lines.push('    try {')
+
+    if (config.useSystemProxy) {
+      lines.push('        $proxyEntries = _rcland_ReadOsProxy')
+      lines.push('        if ($null -eq $proxyEntries) {')
+      lines.push(`            Write-Error ${quotePowerShellLiteral(`配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
+      lines.push('            return')
+      lines.push('        }')
+      lines.push('        foreach ($key in $proxyEntries.Keys) {')
+      lines.push('            Set-Item "Env:$key" $proxyEntries[$key]')
+      lines.push('        }')
+    } else {
+      lines.push('        foreach ($key in @(' + SYSTEM_PROXY_ENV_NAMES.map((key) => quotePowerShellLiteral(key)).join(', ') + ')) { Remove-Item "Env:$key" -ErrorAction SilentlyContinue }')
     }
 
     lines.push('        claude @args')

@@ -1,6 +1,5 @@
-import type { CXLandData, CXProvider, CXConfigSet, CXEndpoint } from '@shared/types'
+import { DEFAULT_PROXY_FUNCTION_NAMES, type CXLandData, type CXProvider, type CXConfigSet, type CXEndpoint, type ProxyFunctionNames } from '@shared/types'
 import { getCXEndpointUrl } from '@shared/types'
-import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
 import { quoteBashLikeLiteral, assertSafeShellName } from '../../shell-syntax'
 import { sanitizeCodexProviderId, buildBashCodexConfigArg } from './codex-args'
 
@@ -10,13 +9,14 @@ import { sanitizeCodexProviderId, buildBashCodexConfigArg } from './codex-args'
  * Key differences from CC (Claude Code):
  * - Uses `codex` command, NOT `claude`
  * - Uses `-c key="value"` dynamic config, NOT environment variable templates
- * - `-n` session name parsed for OSC terminal title only (not passed to codex)
+ * - `-n` stripped from args and used for OSC title when provided
  * - `OPENAI_API_KEY` env var, not `ANTHROPIC_API_KEY`
  * - `cxd` alias uses `--dangerously-bypass-approvals-and-sandbox`
  */
 export function buildBashLikeCXContent(
   data: CXLandData,
-  decryptedTokens: Map<string, string>
+  decryptedTokens: Map<string, string>,
+  proxyFns: ProxyFunctionNames = DEFAULT_PROXY_FUNCTION_NAMES
 ): string {
   const lines: string[] = []
 
@@ -24,6 +24,10 @@ export function buildBashLikeCXContent(
   const enabledConfigs = data.configs.filter((c) => c.enabled)
 
   for (const config of enabledConfigs) {
+    if (config.passthrough) {
+      writePassthroughFunction(lines, config, proxyFns)
+      continue
+    }
     const provider = providerMap.get(config.providerId)
     if (!provider) {
       writeErrorStub(lines, config, `错误: 配置项 ${config.funcName} 的 Provider 不存在`)
@@ -32,15 +36,34 @@ export function buildBashLikeCXContent(
     if (!provider.enabled) {
       continue
     }
-    writeFunction(lines, provider, config, decryptedTokens)
+    writeFunction(lines, provider, config, decryptedTokens, proxyFns)
   }
 
-  if (data.selector.enabled && enabledConfigs.length > 0) {
+  // Main selector (always generated when configs exist)
+  if (enabledConfigs.length > 0) {
     const selectorFuncName = assertSafeShellName(data.selector.funcName, 'selector')
     writeSelectorFunction(lines, selectorFuncName, data.selector.promptTitle, enabledConfigs, data.selector.requireSessionName !== false)
-    lines.push('')
-    const aliasName = assertSafeShellName(data.selector.aliasName || 'cxd', 'cxd-alias')
-    lines.push(`alias ${aliasName}='${selectorFuncName} --dangerously-bypass-approvals-and-sandbox'`)
+    if (data.selector.aliasEnabled !== false) {
+      lines.push('')
+      lines.push(`alias ${selectorFuncName}d='${selectorFuncName} --dangerously-bypass-approvals-and-sandbox'`)
+    }
+  }
+
+  // local-only selector (independent of main selector)
+  const ls = data.selector.localSelector
+  if (ls?.enabled) {
+    const localFuncName = assertSafeShellName(ls.funcName || 'cxl', 'local-selector')
+    const localEntries = enabledConfigs.filter((c) => c.localOnly)
+    if (localEntries.length > 0) {
+      writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries, ls.requireSessionName !== false)
+    } else {
+      lines.push('')
+      lines.push(`${localFuncName}() { echo ${quoteBashLikeLiteral(`错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」`)} >&2; return 1; }`)
+    }
+    if (ls.aliasEnabled !== false) {
+      lines.push('')
+      lines.push(`alias ${localFuncName}d='${localFuncName} --dangerously-bypass-approvals-and-sandbox'`)
+    }
   }
 
   return lines.join('\n')
@@ -56,7 +79,8 @@ function writeFunction(
   lines: string[],
   provider: CXProvider,
   config: CXConfigSet,
-  tokens: Map<string, string>
+  tokens: Map<string, string>,
+  proxyFns: ProxyFunctionNames
 ): void {
   const funcName = assertSafeShellName(config.funcName, config.name || config.id)
   const tokenKey = `cx-token:${config.id}`
@@ -78,43 +102,35 @@ function writeFunction(
 
   lines.push('')
   lines.push(`${funcName}() {`)
-  lines.push('  local _sn=""')
-  lines.push('  local _filtered=()')
-  lines.push('  while [[ $# -gt 0 ]]; do')
-  lines.push('    case "$1" in')
-  lines.push('      -n)')
-  lines.push('        if [[ $# -ge 2 && -n "$2" ]]; then')
-  lines.push('          _sn="$2"; shift 2')
-  lines.push('        else')
-  lines.push('          _sn="${1#-n}"; shift')
-  lines.push('        fi')
-  lines.push('        ;;')
-  lines.push('      -n*)')
-  lines.push('        _sn="${1#-n}"; shift')
-  lines.push('        ;;')
-  lines.push('      *)')
-  lines.push('        _filtered+=("$1"); shift')
-  lines.push('        ;;')
-  lines.push('    esac')
-  lines.push('  done')
-  lines.push('  if [[ -n "$_sn" ]]; then')
-  lines.push("    printf '\\033]0;%s\\007' \"CX 🔸 $_sn\"")
-  lines.push('  fi')
   lines.push('  (')
 
   if (endpoint?.useSystemProxy) {
-    lines.push('    local _proxy_lines')
-    lines.push('    _proxy_lines="$(_rcland_read_os_proxy)"')
-    lines.push('    if [[ -z "$_proxy_lines" ]]; then')
-    lines.push(`      echo ${quoteBashLikeLiteral(`错误: 配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)} >&2`)
-    lines.push('      return 1')
-    lines.push('    fi')
-    lines.push('    eval "$_proxy_lines"')
+    lines.push(`    ${proxyFns.proxyOn} || return 1`)
   } else {
-    lines.push(`    unset ${SYSTEM_PROXY_ENV_NAMES.join(' ')}`)
+    lines.push(`    ${proxyFns.proxyOff}`)
   }
 
-  lines.push(`    OPENAI_API_KEY=${quoteBashLikeLiteral(tokenVal)}`)
+  lines.push('    local _sn=""')
+  lines.push('    local _filtered=()')
+  lines.push('    while [[ $# -gt 0 ]]; do')
+  lines.push('      case "$1" in')
+  lines.push('        -n)')
+  lines.push('          if [[ $# -lt 2 || -z "$2" ]]; then')
+  lines.push("            printf '\\033[31m错误: -n 需要提供会话名称\\033[0m\\n' >&2")
+  lines.push('            return 1')
+  lines.push('          fi')
+  lines.push('          _sn="$2"; shift 2')
+  lines.push('          ;;')
+  lines.push('        -n*) _sn="${1#-n}"; shift ;;')
+  lines.push('        *) _filtered+=("$1"); shift ;;')
+  lines.push('      esac')
+  lines.push('    done')
+  lines.push('    if [[ -n "$_sn" ]]; then')
+  // Sanitize session name before embedding in OSC sequences (strip C0 controls + DEL).
+  lines.push('      local _safe_sn="$(printf \'%s\' "$_sn" | LC_ALL=C tr -d \'\\000-\\037\\177\')"')
+  lines.push(`      printf '\\033]0;%s\\007' "CX 🔸 $_safe_sn"`)
+  lines.push('    fi')
+  lines.push(`    export OPENAI_API_KEY=${quoteBashLikeLiteral(tokenVal)}`)
   lines.push('    codex \\')
 
   // -c args: provider config
@@ -151,12 +167,11 @@ function writeSelectorFunction(
   lines.push('  while [[ $# -gt 0 ]]; do')
   lines.push('    case "$1" in')
   lines.push('      -n)')
-  if (requireN) {
+  // Always validate missing -n value when -n is provided, even if session name is optional.
   lines.push('        if [[ $# -lt 2 || -z "$2" ]]; then')
   lines.push("          printf '\\033[31m错误: -n 需要提供会话名称\\033[0m\\n' >&2")
   lines.push('          return 1')
   lines.push('        fi')
-  }
   lines.push('        _session_name="$2"; shift 2')
   lines.push('        ;;')
   lines.push('      -n*)')
@@ -176,7 +191,9 @@ function writeSelectorFunction(
   lines.push('')
   }
   lines.push('  if [[ -n "$_session_name" ]]; then')
-  lines.push("    printf '\\033]0;%s\\007' \"CX 🔸 $_session_name\"")
+  // Sanitize session name before embedding in OSC sequences (strip C0 controls + DEL).
+  lines.push('    local _safe_session_name="$(printf \'%s\' "$_session_name" | LC_ALL=C tr -d \'\\000-\\037\\177\')"')
+  lines.push("    printf '\\033]0;%s\\007' \"CX 🔸 $_safe_session_name\"")
   lines.push('  fi')
   lines.push('')
   lines.push('  local _opts=(')
@@ -193,6 +210,21 @@ function writeSelectorFunction(
     lines.push(`    ${name})  ${name} "\${_remaining[@]}" ;;`)
   }
   lines.push('  esac')
+  lines.push('}')
+}
+
+function writePassthroughFunction(lines: string[], config: CXConfigSet, proxyFns: ProxyFunctionNames): void {
+  const funcName = assertSafeShellName(config.funcName, config.name || config.id)
+  lines.push('')
+  lines.push(`${funcName}() {`)
+  lines.push('  (')
+  if (config.useSystemProxy) {
+    lines.push(`    ${proxyFns.proxyOn} || return 1`)
+  } else {
+    lines.push(`    ${proxyFns.proxyOff}`)
+  }
+  lines.push('    codex "$@"')
+  lines.push('  )')
   lines.push('}')
 }
 

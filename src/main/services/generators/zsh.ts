@@ -30,30 +30,31 @@ export class ZshGenerator extends BaseShellGenerator {
       }
     }
 
-    if (data.selector.enabled) {
+    // Main selector (always generated when configs exist)
+    if (enabledConfigs.length > 0) {
       const entries = enabledConfigs.map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
       if (entries.length > 0) {
         lines.push(this.separator('Selector'))
         this.writeSelectorFunction(lines, data.selector.funcName, data.selector.promptTitle, entries)
       }
 
-      // ccl: local-only selector
-      const localEntries = enabledConfigs
-        .filter((c) => c.localOnly)
-        .map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
-      if (localEntries.length > 0) {
-        this.writeSelectorFunction(lines, 'ccl', data.selector.promptTitle, localEntries)
-      }
-    }
-
-    if (data.selector.enabled && enabledConfigs.length > 0) {
       lines.push(this.separator('Aliases'))
       lines.push('')
-      lines.push(`alias ccd='${data.selector.funcName} --dangerously-skip-permissions'`)
+      lines.push(`alias ${data.selector.funcName}d='${data.selector.funcName} --dangerously-skip-permissions'`)
 
-      const hasLocal = enabledConfigs.some((c) => c.localOnly)
-      if (hasLocal) {
-        lines.push(`alias ccld='ccl --dangerously-skip-permissions'`)
+      // local-only selector
+      const ls = data.selector.localSelector
+      if (ls?.enabled) {
+        const localEntries = enabledConfigs
+          .filter((c) => c.localOnly)
+          .map((c) => ({ funcName: c.funcName, label: c.name || c.funcName }))
+        if (localEntries.length > 0) {
+          const localFuncName = ls.funcName || 'ccl'
+          this.writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries)
+          if (ls.aliasEnabled !== false) {
+            lines.push(`alias ${localFuncName}d='${localFuncName} --dangerously-skip-permissions'`)
+          }
+        }
       }
     }
 

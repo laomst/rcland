@@ -8,7 +8,7 @@ import { getOsSupportedShells } from '@shared/shell'
 import { PathCard } from '../components/PathCard'
 import { PathVariableSection } from '../components/PathVariableSection'
 import { PathFormModal, type PathFormValues } from '../components/PathFormModal'
-import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
+import { SortableList } from '@renderer/modules/shared/SortableList'
 
 const { Title } = Typography
 
@@ -19,21 +19,13 @@ export function PathPage(): React.ReactElement {
   const loadShellConfig = useShellConfigStore((s) => s.loadShellConfig)
   const addPathEntry = useShellConfigStore((s) => s.addPathEntry)
   const reorderPathEntries = useShellConfigStore((s) => s.reorderPathEntries)
-  const [syncCollapsed, setSyncCollapsed] = useState(false)
-  const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
-  const [addLocalOnly, setAddLocalOnly] = useState(false)
 
   useEffect(() => {
     if (!dataLoaded) {
       loadShellConfig()
     }
   }, [dataLoaded, loadShellConfig])
-
-  const handleAdd = (localOnly: boolean) => {
-    setAddLocalOnly(localOnly)
-    setAddOpen(true)
-  }
 
   const handleConfirmAdd = (values: PathFormValues) => {
     const newEntry = createEmptyPathEntry()
@@ -42,7 +34,6 @@ export function PathPage(): React.ReactElement {
       path: values.path.trim(),
       description: values.description.trim() || undefined,
       shells: values.shells.length > 0 ? values.shells : undefined,
-      localOnly: values.localOnly,
       order: pathEntries.length
     })
     setAddOpen(false)
@@ -69,16 +60,10 @@ export function PathPage(): React.ReactElement {
             icon: <EnvironmentOutlined />,
             children: (
               <>
-                <GroupedSortableList
-                  titleSynced={t('common.syncedConfig')}
-                  titleLocal={t('common.localConfig')}
+                <SortableList
+                  title="PATH 条目"
                   items={pathEntries}
-                  syncCollapsed={syncCollapsed}
-                  localCollapsed={localCollapsed}
-                  onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
-                  onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
-                  onAddSync={() => handleAdd(false)}
-                  onAddLocal={() => handleAdd(true)}
+                  onAdd={() => setAddOpen(true)}
                   onReorder={reorderPathEntries}
                   renderItem={(pathEntry, index, dragHandleProps) => (
                     <PathCard pathEntry={pathEntry} index={index} dragHandleProps={dragHandleProps} />
@@ -91,8 +76,7 @@ export function PathPage(): React.ReactElement {
                   initialValues={{
                     path: '',
                     description: '',
-                    shells: [...getOsSupportedShells()],
-                    localOnly: addLocalOnly
+                    shells: [...getOsSupportedShells()]
                   }}
                   okText={t('common.add')}
                   onCancel={() => setAddOpen(false)}

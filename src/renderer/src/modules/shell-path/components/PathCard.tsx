@@ -29,6 +29,7 @@ export function PathCard({
       index={index}
       isDragging={isDragging}
       dragHandleProps={dragHandleProps}
+      hideSyncToggle
       deleteConfirmContent={t('shellPath.deleteConfirm', { path: pathEntry.path })}
       onUpdate={updatePathEntry}
       onRemove={(id) => useShellConfigStore.getState().removePathEntry(id)}
@@ -48,7 +49,6 @@ export function PathCard({
               <VariableRefDisplay text={item.path || t('common.notSet')} maxLength={50} style={{ flex: 1, fontSize: 12, fontFamily: 'monospace' }} />
             </Tooltip>
 
-            {/* Description */}
             {item.description && (
               <Tooltip title={item.description}>
                 <Text type="secondary" style={{ fontSize: 11, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -67,8 +67,7 @@ export function PathCard({
           initialValues={{
             path: pathEntry.path,
             description: pathEntry.description ?? '',
-            shells: pathEntry.shells ?? [],
-            localOnly: pathEntry.localOnly ?? false
+            shells: pathEntry.shells ?? []
           }}
           okText={t('common.save')}
           onCancel={onClose}
@@ -76,8 +75,7 @@ export function PathCard({
             updatePathEntry(pathEntry.id, {
               path: values.path,
               description: values.description,
-              shells: values.shells,
-              localOnly: values.localOnly
+              shells: values.shells
             })
             onClose()
           }}

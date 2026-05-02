@@ -99,12 +99,18 @@ export interface CCLaunchData {
   providers: Provider[]
   configs: ConfigSet[]
   selector: {
-    enabled: boolean
     funcName: string
     promptTitle: string
-    aliasName?: string
+    aliasEnabled?: boolean
     /** Whether to require -n session name in selector function. Default: true */
     requireSessionName?: boolean
+    localSelector?: {
+      enabled: boolean
+      funcName: string
+      promptTitle?: string
+      aliasEnabled?: boolean
+      requireSessionName?: boolean
+    }
   }
 }
 
@@ -157,17 +163,27 @@ export interface CXConfigSet {
   enabled: boolean
   /** Optional override for codex -c model="..." */
   model?: string
+  /** Passthrough mode: just run codex directly without provider/endpoint/key */
+  passthrough?: boolean
+  /** Use system proxy (only meaningful when passthrough=true) */
+  useSystemProxy?: boolean
   /** Only stored locally, not synced */
   localOnly?: boolean
 }
 
 export interface CXSelector {
-  enabled: boolean
   funcName: string
   promptTitle: string
-  aliasName?: string
+  aliasEnabled?: boolean
   /** Whether to require -n session name in selector function. Default: true */
   requireSessionName?: boolean
+  localSelector?: {
+    enabled: boolean
+    funcName: string
+    promptTitle?: string
+    aliasEnabled?: boolean
+    requireSessionName?: boolean
+  }
 }
 
 export interface CXLandData {
@@ -188,7 +204,7 @@ export function createEmptyCXLandData(): CXLandData {
     version: 3,
     providers: [],
     configs: [],
-    selector: { enabled: true, funcName: 'cx', promptTitle: '选择 Codex 供应商' }
+    selector: { funcName: 'cx', promptTitle: '选择 Codex 供应商' }
   }
 }
 
@@ -201,6 +217,12 @@ export function normalizeCXLandData(data: unknown): CXLandData {
   const obj = data as Partial<CXLandData>
   if (obj.version !== 3 || !Array.isArray(obj.providers) || !Array.isArray(obj.configs)) {
     return createEmptyCXLandData()
+  }
+  // Clean up legacy selector fields
+  if (obj.selector) {
+    const s = obj.selector as unknown as Record<string, unknown>
+    delete s['aliasName']
+    delete s['enabled']
   }
   return obj as CXLandData
 }
@@ -265,6 +287,10 @@ export interface ConfigSet {
   enabled: boolean
   /** Fixed Claude env vars, each with value + enabled */
   envVars: EnvVarsMap
+  /** Passthrough mode: just run claude directly without provider/endpoint/key */
+  passthrough?: boolean
+  /** Use system proxy (only meaningful when passthrough=true) */
+  useSystemProxy?: boolean
   /** Only stored locally, not synced */
   localOnly?: boolean
 }

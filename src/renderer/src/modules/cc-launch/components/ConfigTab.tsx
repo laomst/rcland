@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Empty } from 'antd'
 import {
   DndContext,
   closestCenter,
@@ -96,16 +95,34 @@ export function ConfigTab(): React.ReactElement {
     name: string
     funcName: string
     envVars: typeof configs[number]['envVars']
+    passthrough?: boolean
+    useSystemProxy?: boolean
     localOnly?: boolean
   }) => {
-    const config = createEmptyConfig(values.providerId, values.endpointId, values.keyId)
-    addConfig({
-      ...config,
-      name: values.name.trim(),
-      funcName: values.funcName.trim(),
-      envVars: values.envVars,
-      localOnly: values.localOnly
-    })
+    if (values.passthrough) {
+      addConfig({
+        id: crypto.randomUUID(),
+        providerId: '',
+        endpointId: '',
+        keyId: '',
+        name: values.name.trim(),
+        funcName: values.funcName.trim(),
+        enabled: true,
+        envVars: {},
+        passthrough: true,
+        useSystemProxy: values.useSystemProxy,
+        localOnly: values.localOnly
+      })
+    } else {
+      const config = createEmptyConfig(values.providerId, values.endpointId, values.keyId)
+      addConfig({
+        ...config,
+        name: values.name.trim(),
+        funcName: values.funcName.trim(),
+        envVars: values.envVars,
+        localOnly: values.localOnly
+      })
+    }
     setAddOpen(false)
   }
 
@@ -126,36 +143,29 @@ export function ConfigTab(): React.ReactElement {
 
   return (
     <div>
-      {providers.length === 0
-        ? <Empty description={t('ccLaunch.noProviderHint')} />
-        : (
-          <>
-            {/* 同步配置 */}
-            <GroupHeader title={t('common.syncedConfig')} count={syncedConfigs.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
-            {!syncCollapsed && syncedConfigs.length > 0 && (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                  {syncedConfigs.map((c, idx) => (
-                    <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            )}
+      {/* 同步配置 */}
+      <GroupHeader title={t('common.syncedConfig')} count={syncedConfigs.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+      {!syncCollapsed && syncedConfigs.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {syncedConfigs.map((c, idx) => (
+              <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
 
-            {/* 本机配置 */}
-            <GroupHeader title={t('common.localConfig')} count={localConfigs.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
-            {!localCollapsed && localConfigs.length > 0 && (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                  {localConfigs.map((c, idx) => (
-                    <SortableConfigCard key={c.id} config={c} providers={providers} index={syncedConfigs.length + idx + 1} />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            )}
-          </>
-        )
-      }
+      {/* 本机配置 */}
+      <GroupHeader title={t('common.localConfig')} count={localConfigs.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      {!localCollapsed && localConfigs.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {localConfigs.map((c, idx) => (
+              <SortableConfigCard key={c.id} config={c} providers={providers} index={syncedConfigs.length + idx + 1} />
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
 
       <ConfigFormModal
         open={addOpen}
@@ -168,6 +178,8 @@ export function ConfigTab(): React.ReactElement {
           name: '',
           funcName: '',
           envVars: firstTemplateEnvVars,
+          passthrough: false,
+          useSystemProxy: false,
           localOnly: addLocalOnly
         }}
         okText={t('common.add')}

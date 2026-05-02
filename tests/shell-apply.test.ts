@@ -24,7 +24,7 @@ const ccData: CCLaunchData = {
     enabled: true,
     envVars: {}
   }],
-  selector: { enabled: false, funcName: 'cc', promptTitle: '' }
+  selector: { funcName: 'cc', promptTitle: '' }
 }
 
 const shellConfig: ShellConfigData = {

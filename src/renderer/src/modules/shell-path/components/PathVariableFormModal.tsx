@@ -1,16 +1,14 @@
-import { Input, Modal, Form, Switch, Typography, Space } from 'antd'
+import { Input, Modal, Form, Button } from 'antd'
 import { useTranslation } from 'react-i18next'
+import { FolderOpenOutlined } from '@ant-design/icons'
 import { useFormModal } from '@renderer/hooks/useFormModal'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { VariableRefInput } from '@renderer/components/VariableRefInput'
-
-const { Text } = Typography
 
 export interface PathVariableFormValues {
   key: string
   value: string
   description: string
-  localOnly: boolean
 }
 
 interface PathVariableFormModalProps {
@@ -27,8 +25,7 @@ interface PathVariableFormModalProps {
 const INITIAL_STATE: PathVariableFormValues = {
   key: '',
   value: '',
-  description: '',
-  localOnly: false
+  description: ''
 }
 
 export function PathVariableFormModal({
@@ -42,7 +39,7 @@ export function PathVariableFormModal({
   onOk
 }: PathVariableFormModalProps): React.ReactElement {
   const { t } = useTranslation()
-  const pathVariables = useShellConfigStore((s) => s.shellConfig.pathVariables)
+  const allPathVariables = useShellConfigStore((s) => s.shellConfig.pathVariables)
   const { formState, setField } = useFormModal<PathVariableFormValues>({
     initialState: INITIAL_STATE,
     editingValues: open ? initialValues : undefined,
@@ -74,8 +71,22 @@ export function PathVariableFormModal({
           <VariableRefInput
             value={formState.value}
             onChange={(val) => setField('value', val)}
-            variables={pathVariables}
+            variables={allPathVariables}
             placeholder="/Users/username"
+            addonAfter={
+              <Button
+                icon={<FolderOpenOutlined />}
+                onClick={async () => {
+                  const selected = await window.electronAPI.showOpenDialog({
+                    title: t('shellPath.selectDir'),
+                    properties: ['openDirectory']
+                  })
+                  if (selected) {
+                    setField('value', selected)
+                  }
+                }}
+              />
+            }
           />
         </Form.Item>
         <Form.Item label={t('common.description')}>
@@ -84,19 +95,6 @@ export function PathVariableFormModal({
             onChange={(e) => setField('description', e.target.value)}
             placeholder={t('common.descriptionPlaceholder')}
           />
-        </Form.Item>
-        <Form.Item label={t('common.localOnly')}>
-          <Space>
-            <Switch
-              checked={formState.localOnly}
-              onChange={(checked) => setField('localOnly', checked)}
-            />
-            {formState.localOnly && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {t('common.localOnlyHint')}
-              </Text>
-            )}
-          </Space>
         </Form.Item>
       </Form>
     </Modal>

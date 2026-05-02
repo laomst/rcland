@@ -8,12 +8,6 @@ const VAR_REF_RE = /\{\{[A-Za-z_][A-Za-z0-9_]*\}\}/
 
 const { Text } = Typography
 
-interface VarRefItem {
-  id: string
-  key: string
-  enabled: boolean
-}
-
 interface VariableRefInputProps {
   value: string
   onChange: (value: string) => void

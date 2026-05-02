@@ -88,18 +88,24 @@ export function SystemProxyPage(): React.ReactElement {
               { key: 'proxyStatus' as const, label: t('systemProxy.proxyStatusFunc'), desc: t('systemProxy.funcStatusDesc') },
             ].map(({ key, label, desc }) => {
               const value = settings?.proxyFunctionNames?.[key] ?? DEFAULT_PROXY_FUNCTION_NAMES[key]
-              const empty = !value.trim()
               return (
                 <Card key={key} size="small">
                   <Text strong style={{ display: 'block', marginBottom: 4 }}>{label}</Text>
                   <Input
-                    status={empty ? 'error' : undefined}
                     value={value}
                     onChange={(e) => {
                       const current = settings?.proxyFunctionNames ?? DEFAULT_PROXY_FUNCTION_NAMES
                       updateSettings({
                         proxyFunctionNames: { ...current, [key]: e.target.value }
                       })
+                    }}
+                    onBlur={(e) => {
+                      if (!e.target.value.trim()) {
+                        const current = settings?.proxyFunctionNames ?? DEFAULT_PROXY_FUNCTION_NAMES
+                        updateSettings({
+                          proxyFunctionNames: { ...current, [key]: DEFAULT_PROXY_FUNCTION_NAMES[key] }
+                        })
+                      }
                     }}
                     placeholder={DEFAULT_PROXY_FUNCTION_NAMES[key]}
                   />

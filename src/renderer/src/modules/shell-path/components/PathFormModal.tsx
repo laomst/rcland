@@ -1,4 +1,4 @@
-import { Input, Modal, Form, Checkbox, Typography, Space, Switch, Button } from 'antd'
+import { Input, Modal, Form, Checkbox, Typography, Space, Button } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { FolderOpenOutlined } from '@ant-design/icons'
 import type { ShellType } from '@shared/shell'
@@ -13,7 +13,6 @@ export interface PathFormValues {
   path: string
   description: string
   shells: ShellType[]
-  localOnly: boolean
 }
 
 interface PathFormModalProps {
@@ -30,8 +29,7 @@ interface PathFormModalProps {
 const PATH_INITIAL_STATE: PathFormValues = {
   path: '',
   description: '',
-  shells: [...ALL_SHELL_TYPES],
-  localOnly: false
+  shells: [...ALL_SHELL_TYPES]
 }
 
 export function PathFormModal({
@@ -44,7 +42,7 @@ export function PathFormModal({
   onOk
 }: PathFormModalProps): React.ReactElement {
   const { t } = useTranslation()
-  const pathVariables = useShellConfigStore((s) => s.shellConfig.pathVariables)
+  const allPathVariables = useShellConfigStore((s) => s.shellConfig.pathVariables)
   const { formState, setField, toggleShell } = useFormModal({
     initialState: PATH_INITIAL_STATE,
     editingValues: open ? initialValues : undefined,
@@ -73,7 +71,7 @@ export function PathFormModal({
           <VariableRefInput
             value={formState.path}
             onChange={(val) => setField('path', val)}
-            variables={pathVariables}
+            variables={allPathVariables}
             placeholder={t('shellPath.pathPlaceholder')}
             addonAfter={
               <Button
@@ -100,19 +98,6 @@ export function PathFormModal({
             onChange={(e) => setField('description', e.target.value)}
             placeholder={t('common.descriptionPlaceholder')}
           />
-        </Form.Item>
-        <Form.Item label={t('common.localOnly')}>
-          <Space>
-            <Switch
-              checked={formState.localOnly}
-              onChange={(checked) => setField('localOnly', checked)}
-            />
-            {formState.localOnly && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {t('common.localOnlyHint')}
-              </Text>
-            )}
-          </Space>
         </Form.Item>
         <Form.Item label={t('common.applicableShells')} extra={t('shellPath.pathShellHint')}>
           <Space size={8}>

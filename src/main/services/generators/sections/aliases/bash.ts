@@ -7,7 +7,7 @@ export class AliasesBashGenerator implements SectionGenerator<ShellAlias[]> {
   readonly sectionName = 'aliases'
   readonly shellType: ShellType = 'bash'
 
-  generate(data: ShellAlias[], ctx: GenerateContext): string {
+  generate(data: ShellAlias[], _ctx: GenerateContext): string {
     const items = data.filter(
       (a) => a.enabled && (!a.shells || a.shells.length === 0 || a.shells.includes('bash'))
     )
