@@ -33,6 +33,7 @@ export function assertShellConfigData(value: unknown): asserts value is ShellCon
   assertObject(value, 'ShellConfigData')
   if (value.version !== 1) throw new Error('version must be 1')
   assertArray(value.variables, 'variables')
+  assertArray(value.pathVariables, 'pathVariables')
   assertArray(value.pathEntries, 'pathEntries')
   assertArray(value.functions, 'functions')
   assertArray(value.aliases, 'aliases')

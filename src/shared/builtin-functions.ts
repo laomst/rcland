@@ -1,6 +1,7 @@
 import type {
   ShellConfigData,
   ShellVariable,
+  PathVariable,
   PathEntry,
   ShellFunction,
   ShellAlias,
@@ -29,6 +30,7 @@ export function createEmptyShellConfig(): ShellConfigData {
   return {
     version: 1,
     variables: [],
+    pathVariables: [],
     pathEntries: [],
     functions: [],
     aliases: [],
@@ -38,7 +40,7 @@ export function createEmptyShellConfig(): ShellConfigData {
 }
 
 export function createEmptyLocalShellConfig(): LocalShellConfigData {
-  return { version: 1, variables: [], pathEntries: [], functions: [], aliases: [] }
+  return { version: 1, variables: [], pathVariables: [], pathEntries: [], functions: [], aliases: [] }
 }
 
 export function createEmptyVariable(): ShellVariable {
@@ -56,6 +58,16 @@ export function createEmptyPathEntry(): PathEntry {
   return {
     id: generateUUID(),
     path: '',
+    enabled: true,
+    order: 0
+  }
+}
+
+export function createEmptyPathVariable(): PathVariable {
+  return {
+    id: generateUUID(),
+    key: '',
+    value: '',
     enabled: true,
     order: 0
   }

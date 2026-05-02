@@ -5,6 +5,7 @@ import type { PathEntry } from '@shared/shell-types'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { PathFormModal } from './PathFormModal'
 import { BaseItemCard } from '@renderer/components/BaseItemCard'
+import { VariableRefDisplay } from '@renderer/components/VariableRefDisplay'
 
 const { Text } = Typography
 
@@ -39,19 +40,12 @@ export function PathCard({
       }}
       getAllItems={() => useShellConfigStore.getState().shellConfig.pathEntries}
       renderContent={(item) => {
-        const displayPath = item.path.length > 50
-          ? item.path.slice(0, 50) + '...'
-          : item.path
         return (
           <>
-            {/* Folder Icon */}
             <FolderOutlined style={{ fontSize: 14, color: '#999', flexShrink: 0 }} />
 
-            {/* Path */}
             <Tooltip title={item.path}>
-              <Text style={{ fontSize: 12, flex: 1, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {displayPath || t('common.notSet')}
-              </Text>
+              <VariableRefDisplay text={item.path || t('common.notSet')} maxLength={50} style={{ flex: 1, fontSize: 12, fontFamily: 'monospace' }} />
             </Tooltip>
 
             {/* Description */}

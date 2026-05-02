@@ -26,6 +26,7 @@ export function migrateShellConfig(data: unknown): ShellConfigData {
     ...defaults,
     ...config,
     variables: Array.isArray(config.variables) ? config.variables : [],
+    pathVariables: Array.isArray(config.pathVariables) ? config.pathVariables : [],
     pathEntries: Array.isArray(config.pathEntries) ? config.pathEntries : [],
     functions: Array.isArray(config.functions) ? config.functions : [],
     aliases: Array.isArray(config.aliases) ? config.aliases : [],

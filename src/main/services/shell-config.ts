@@ -61,6 +61,7 @@ export function loadShellConfig(): string {
   const merged: ShellConfigData = {
     ...syncedConfig,
     variables: [...sortByOrder(syncedConfig.variables), ...sortByOrder(markLocalItems(localConfig.variables))],
+    pathVariables: [...sortByOrder(syncedConfig.pathVariables), ...sortByOrder(markLocalItems(localConfig.pathVariables))],
     pathEntries: [...sortByOrder(syncedConfig.pathEntries), ...sortByOrder(markLocalItems(localConfig.pathEntries))],
     functions: [...mergedBuiltIns, ...sortByOrder(userFunctions)],
     aliases: [...sortByOrder(syncedConfig.aliases), ...sortByOrder(markLocalItems(localConfig.aliases))]
@@ -75,8 +76,9 @@ export function loadShellConfig(): string {
 export function saveShellConfig(json: string): void {
   const config: ShellConfigData = JSON.parse(json)
 
-  // 拆分四个数组
+  // 拆分五个数组
   const vars = splitLocalItems(config.variables)
+  const pathVars = splitLocalItems(config.pathVariables)
   const paths = splitLocalItems(config.pathEntries)
   const funcs = splitLocalItems(config.functions)
   const aliases = splitLocalItems(config.aliases)
@@ -85,6 +87,7 @@ export function saveShellConfig(json: string): void {
   const syncedConfig: ShellConfigData = {
     ...config,
     variables: vars.synced,
+    pathVariables: pathVars.synced,
     pathEntries: paths.synced,
     functions: funcs.synced,
     aliases: aliases.synced
@@ -98,6 +101,7 @@ export function saveShellConfig(json: string): void {
   const localConfig: LocalShellConfigData = {
     version: 1,
     variables: vars.local,
+    pathVariables: pathVars.local,
     pathEntries: paths.local,
     functions: funcs.local,
     aliases: aliases.local

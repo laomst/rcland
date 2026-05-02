@@ -4,6 +4,8 @@ import { LockOutlined } from '@ant-design/icons'
 import type { ShellType } from '@shared/shell'
 import { ALL_SHELL_TYPES, SHELL_LABELS } from '@shared/shell'
 import { useFormModal } from '@renderer/hooks/useFormModal'
+import { VariableRefInput } from '@renderer/components/VariableRefInput'
+import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 
 const { Text } = Typography
 
@@ -46,6 +48,7 @@ export function EnvVarFormModal({
   onOk
 }: EnvVarFormModalProps): React.ReactElement {
   const { t } = useTranslation()
+  const variables = useShellConfigStore((s) => s.shellConfig.variables)
   const { formState, setField, toggleShell } = useFormModal({
     initialState: ENVVAR_INITIAL_STATE,
     editingValues: open ? initialValues : undefined,
@@ -79,21 +82,13 @@ export function EnvVarFormModal({
           />
         </Form.Item>
         <Form.Item label={t('shellEnv.varValue')} required>
-          {formState.encrypted ? (
-            <Input.Password
-              value={formState.value}
-              onChange={(e) => setField('value', e.target.value)}
-              placeholder={t('shellEnv.encryptedPlaceholder')}
-              style={{ fontFamily: 'monospace' }}
-            />
-          ) : (
-            <Input
-              value={formState.value}
-              onChange={(e) => setField('value', e.target.value)}
-              placeholder={t('shellEnv.valuePlaceholder')}
-              style={{ fontFamily: 'monospace' }}
-            />
-          )}
+          <VariableRefInput
+            value={formState.value}
+            onChange={(val) => setField('value', val)}
+            variables={variables}
+            password={formState.encrypted}
+            placeholder={formState.encrypted ? t('shellEnv.encryptedPlaceholder') : t('shellEnv.valuePlaceholder')}
+          />
         </Form.Item>
         <Form.Item label={t('shellEnv.encryptStorage')}>
           <Space>

@@ -7,6 +7,7 @@ import type { ShellType } from './shell'
 export interface ShellConfigData {
   version: 1
   variables: ShellVariable[]
+  pathVariables: PathVariable[]
   pathEntries: PathEntry[]
   functions: ShellFunction[]
   aliases: ShellAlias[]
@@ -24,6 +25,18 @@ export interface ShellVariable {
   enabled: boolean
   order: number
   shells?: ShellType[]
+  /** 仅本机配置，不同步到其他设备 */
+  localOnly?: boolean
+}
+
+/** Path variable (resolved at generation time, not exported as shell variable) */
+export interface PathVariable {
+  id: string
+  key: string
+  value: string
+  description?: string
+  enabled: boolean
+  order: number
   /** 仅本机配置，不同步到其他设备 */
   localOnly?: boolean
 }
@@ -111,6 +124,7 @@ export interface OutputConfig {
 export interface LocalShellConfigData {
   version: 1
   variables: ShellVariable[]
+  pathVariables: PathVariable[]
   pathEntries: PathEntry[]
   functions: ShellFunction[]
   aliases: ShellAlias[]

@@ -1,6 +1,7 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { PathEntry } from '@shared/shell-types'
 import type { ShellType } from '@shared/shell'
+import { resolvePathVarRefs } from '@shared/var-refs'
 
 export class PathBashGenerator implements SectionGenerator<PathEntry[]> {
   readonly sectionName = 'path'
@@ -16,7 +17,8 @@ export class PathBashGenerator implements SectionGenerator<PathEntry[]> {
     lines.push('CUSTOM_PATHS=()')
 
     for (const e of items) {
-      lines.push(`CUSTOM_PATHS+=("${ctx.escapeValue(e.path)}")`)
+      const resolved = resolvePathVarRefs(e.path, ctx.pathVariables)
+      lines.push(`CUSTOM_PATHS+=("${ctx.escapeValue(resolved)}")`)
     }
 
     lines.push('')

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type {
   ShellConfigData,
   ShellVariable,
+  PathVariable,
   PathEntry,
   ShellFunction,
   ShellAlias,
@@ -11,6 +12,8 @@ import type {
 } from '@shared/shell-types'
 import { createEmptyShellConfig, BUILTIN_FUNCTIONS } from '@shared/builtin-functions'
 import { createShellConfigCrud } from './crud-helpers'
+import { findReferencingEntries, detectCircularRefs, detectPathVarCircularRefs } from '@shared/var-refs'
+import { createEmptyPathVariable } from '@shared/builtin-functions'
 import { createPersistQueue, toErrorMessage } from './persist'
 
 const persistQueue = createPersistQueue()
@@ -31,6 +34,13 @@ export interface ShellConfigState {
   updateVariable: (id: string, patch: Partial<ShellVariable>) => void
   removeVariable: (id: string) => void
   reorderVariables: (activeId: string, overId: string) => void
+
+  // Path Variables CRUD
+  addPathVariable: (v: PathVariable) => void
+  addPathVariableAfter: (afterId: string, v: PathVariable) => void
+  updatePathVariable: (id: string, patch: Partial<PathVariable>) => void
+  removePathVariable: (id: string) => void
+  reorderPathVariables: (activeId: string, overId: string) => void
 
   // PATH CRUD
   addPathEntry: (e: PathEntry) => void
@@ -65,6 +75,7 @@ export interface ShellConfigState {
 
 export const useShellConfigStore = create<ShellConfigState>((set, get) => {
   const variablesCrud = createShellConfigCrud<ShellVariable>('variables', get, set)
+  const pathVariablesCrud = createShellConfigCrud<PathVariable>('pathVariables', get, set)
   const pathEntriesCrud = createShellConfigCrud<PathEntry>('pathEntries', get, set)
   const functionsCrud = createShellConfigCrud<ShellFunction>('functions', get, set)
   const aliasesCrud = createShellConfigCrud<ShellAlias>('aliases', get, set)
@@ -106,9 +117,65 @@ export const useShellConfigStore = create<ShellConfigState>((set, get) => {
     // Variables
     addVariable: variablesCrud.add,
     addVariableAfter: variablesCrud.addAfter,
-    updateVariable: variablesCrud.update,
-    removeVariable: variablesCrud.remove,
+    updateVariable: (id: string, patch: Partial<ShellVariable>) => {
+      const { shellConfig } = get()
+      const tempVars = shellConfig.variables.map((v) =>
+        v.id === id ? { ...v, ...patch } : v
+      )
+      const cycles = detectCircularRefs(tempVars)
+      if (cycles.length > 0) {
+        const cycleStr = cycles.map((c) => c.join(' → ')).join('；')
+        set({ saveError: `检测到循环引用：${cycleStr}` })
+        return
+      }
+      variablesCrud.update(id, patch)
+    },
+    removeVariable: (id: string) => {
+      const { shellConfig } = get()
+      const variable = shellConfig.variables.find((v) => v.id === id)
+      if (!variable) return
+      const refs = findReferencingEntries(variable.key, shellConfig.variables, [])
+      if (refs.length > 0) {
+        const details = refs.map((r) => `变量 ${r.keyOrPath}`).join('、')
+        set({ saveError: `无法删除变量 "${variable.key}"，以下条目正在引用它：${details}` })
+        return
+      }
+      variablesCrud.remove(id)
+    },
     reorderVariables: variablesCrud.reorder,
+
+    // Path Variables
+    addPathVariable: pathVariablesCrud.add,
+    addPathVariableAfter: pathVariablesCrud.addAfter,
+    updatePathVariable: (id: string, patch: Partial<PathVariable>) => {
+      const { shellConfig } = get()
+      const tempVars = shellConfig.pathVariables.map((v) =>
+        v.id === id ? { ...v, ...patch } : v
+      )
+      const cycles = detectPathVarCircularRefs(tempVars)
+      if (cycles.length > 0) {
+        const cycleStr = cycles.map((c) => c.join(' → ')).join('；')
+        set({ saveError: `检测到循环引用：${cycleStr}` })
+        return
+      }
+      pathVariablesCrud.update(id, patch)
+    },
+    removePathVariable: (id: string) => {
+      const { shellConfig } = get()
+      const pv = shellConfig.pathVariables.find((v) => v.id === id)
+      if (!pv) return
+      const refs = findReferencingEntries(pv.key, [], shellConfig.pathEntries, shellConfig.pathVariables)
+      if (refs.length > 0) {
+        const details = refs.map((r) => {
+          if (r.type === 'path') return `PATH ${r.keyOrPath}`
+          return `路径变量 ${r.keyOrPath}`
+        }).join('、')
+        set({ saveError: `无法删除路径变量 "${pv.key}"，以下条目正在引用它：${details}` })
+        return
+      }
+      pathVariablesCrud.remove(id)
+    },
+    reorderPathVariables: pathVariablesCrud.reorder,
 
     // PATH
     addPathEntry: pathEntriesCrud.add,

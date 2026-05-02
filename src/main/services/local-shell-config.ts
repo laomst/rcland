@@ -16,7 +16,17 @@ export function loadLocalShellConfig(): LocalShellConfigData {
     return createEmptyLocalShellConfig()
   }
   const raw = readFileSync(p, 'utf-8')
-  return JSON.parse(raw)
+  const parsed = JSON.parse(raw)
+  const defaults = createEmptyLocalShellConfig()
+  return {
+    ...defaults,
+    ...parsed,
+    variables: Array.isArray(parsed.variables) ? parsed.variables : [],
+    pathVariables: Array.isArray(parsed.pathVariables) ? parsed.pathVariables : [],
+    pathEntries: Array.isArray(parsed.pathEntries) ? parsed.pathEntries : [],
+    functions: Array.isArray(parsed.functions) ? parsed.functions : [],
+    aliases: Array.isArray(parsed.aliases) ? parsed.aliases : [],
+  }
 }
 
 export function saveLocalShellConfig(data: LocalShellConfigData): void {

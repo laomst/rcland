@@ -1,4 +1,5 @@
 import type { ShellConfigData, ConflictCheckResult, ConflictWarning, ConflictError } from '@shared/shell-types'
+import { extractVarRefs } from '@shared/var-refs'
 
 /** Common system commands that should warn when aliased */
 const SYSTEM_COMMANDS = new Set([
@@ -71,20 +72,32 @@ export function checkConflicts(config: ShellConfigData): ConflictCheckResult {
     }
   }
 
-  // 6. Unused variable reference in PATH (warning)
-  const definedVars = new Set(config.variables.filter((v) => v.enabled).map((v) => v.key))
+  // 6. Undefined variable reference (warning)
+  const definedEnvVars = new Set(config.variables.filter((v) => v.enabled).map((v) => v.key))
+  const definedPathVars = new Set(config.pathVariables.filter((v) => v.enabled).map((v) => v.key))
+
+  // PATH entries can only reference path variables
   for (const p of config.pathEntries.filter((p) => p.enabled)) {
-    const refs = p.path.match(/\$([A-Z_][A-Z0-9_]*)/g)
-    if (refs) {
-      for (const ref of refs) {
-        const varName = ref.slice(1) // remove $
-        if (varName !== 'HOME' && varName !== 'PATH' && !definedVars.has(varName)) {
-          warnings.push({
-            type: 'unused-variable-ref',
-            message: `PATH 条目引用了未定义的变量 $${varName}`,
-            itemIds: [p.id]
-          })
-        }
+    for (const varName of extractVarRefs(p.path)) {
+      if (!definedPathVars.has(varName)) {
+        warnings.push({
+          type: 'unused-variable-ref',
+          message: `PATH 条目引用了未定义的路径变量 {{${varName}}}`,
+          itemIds: [p.id]
+        })
+      }
+    }
+  }
+
+  // Env vars can only reference other env vars
+  for (const v of config.variables.filter((v) => v.enabled)) {
+    for (const varName of extractVarRefs(v.value)) {
+      if (!definedEnvVars.has(varName)) {
+        warnings.push({
+          type: 'unused-variable-ref',
+          message: `变量 "${v.key}" 引用了未定义的变量 {{${varName}}}`,
+          itemIds: [v.id]
+        })
       }
     }
   }

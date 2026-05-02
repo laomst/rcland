@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Typography, Spin } from 'antd'
+import { Typography, Spin, Tabs } from 'antd'
+import { EnvironmentOutlined, ToolOutlined } from '@ant-design/icons'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { createEmptyPathEntry } from '@shared/builtin-functions'
 import { getOsSupportedShells } from '@shared/shell'
 import { PathCard } from '../components/PathCard'
+import { PathVariableSection } from '../components/PathVariableSection'
 import { PathFormModal, type PathFormValues } from '../components/PathFormModal'
 import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
 
@@ -22,7 +24,6 @@ export function PathPage(): React.ReactElement {
   const [addOpen, setAddOpen] = useState(false)
   const [addLocalOnly, setAddLocalOnly] = useState(false)
 
-  // Load data on mount
   useEffect(() => {
     if (!dataLoaded) {
       loadShellConfig()
@@ -59,34 +60,54 @@ export function PathPage(): React.ReactElement {
     <div>
       <Title level={4} style={{ marginBottom: 16 }}>{t('shellPath.title')}</Title>
 
-      <GroupedSortableList
-        titleSynced={t('common.syncedConfig')}
-        titleLocal={t('common.localConfig')}
-        items={pathEntries}
-        syncCollapsed={syncCollapsed}
-        localCollapsed={localCollapsed}
-        onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
-        onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
-        onAddSync={() => handleAdd(false)}
-        onAddLocal={() => handleAdd(true)}
-        onReorder={reorderPathEntries}
-        renderItem={(pathEntry, index, dragHandleProps) => (
-          <PathCard pathEntry={pathEntry} index={index} dragHandleProps={dragHandleProps} />
-        )}
-      />
+      <Tabs
+        defaultActiveKey="entries"
+        items={[
+          {
+            key: 'entries',
+            label: 'PATH 条目',
+            icon: <EnvironmentOutlined />,
+            children: (
+              <>
+                <GroupedSortableList
+                  titleSynced={t('common.syncedConfig')}
+                  titleLocal={t('common.localConfig')}
+                  items={pathEntries}
+                  syncCollapsed={syncCollapsed}
+                  localCollapsed={localCollapsed}
+                  onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
+                  onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
+                  onAddSync={() => handleAdd(false)}
+                  onAddLocal={() => handleAdd(true)}
+                  onReorder={reorderPathEntries}
+                  renderItem={(pathEntry, index, dragHandleProps) => (
+                    <PathCard pathEntry={pathEntry} index={index} dragHandleProps={dragHandleProps} />
+                  )}
+                />
 
-      <PathFormModal
-        open={addOpen}
-        title={t('shellPath.addTitle')}
-        initialValues={{
-          path: '',
-          description: '',
-          shells: [...getOsSupportedShells()],
-          localOnly: addLocalOnly
-        }}
-        okText={t('common.add')}
-        onCancel={() => setAddOpen(false)}
-        onOk={handleConfirmAdd}
+                <PathFormModal
+                  open={addOpen}
+                  title={t('shellPath.addTitle')}
+                  initialValues={{
+                    path: '',
+                    description: '',
+                    shells: [...getOsSupportedShells()],
+                    localOnly: addLocalOnly
+                  }}
+                  okText={t('common.add')}
+                  onCancel={() => setAddOpen(false)}
+                  onOk={handleConfirmAdd}
+                />
+              </>
+            )
+          },
+          {
+            key: 'variables',
+            label: '路径变量',
+            icon: <ToolOutlined />,
+            children: <PathVariableSection />
+          }
+        ]}
       />
     </div>
   )
