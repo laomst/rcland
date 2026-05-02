@@ -59,7 +59,7 @@ export function createShellConfigCrud<T extends { id: string }>(
 
 /**
  * Creates standard CRUD actions for a top-level array field.
- * Used by useAppStore for providers, configs.
+ * Used by useCCLaunchStore for providers, configs.
  */
 export function createTopLevelCrud<T extends { id: string }>(
   field: string,

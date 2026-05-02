@@ -4,12 +4,12 @@ import { Space, Switch, Typography, Button, Tooltip, App, message, Tag } from 'a
 import { EditOutlined, DeleteOutlined, LockOutlined, CopyOutlined } from '@ant-design/icons'
 import type { CXProvider } from '@shared/types'
 import { useCXLandStore } from '@renderer/stores/useCXLandStore'
-import { CXProviderFormModal } from './CXProviderFormModal'
+import { ProviderFormModal } from './ProviderFormModal'
 import { ItemRow } from '@renderer/components/ItemRow'
 
 const { Text } = Typography
 
-export function CXProviderCard({
+export function ProviderCard({
   provider,
   index,
   isDragging,
@@ -22,8 +22,9 @@ export function CXProviderCard({
 }): React.ReactElement {
   const { t } = useTranslation()
   const { modal } = App.useApp()
-  const updateCXProvider = useCXLandStore((s) => s.updateCXProvider)
-  const configs = useCXLandStore((s) => s.data.configs)
+  const updateProvider = useCXLandStore((s) => s.updateProvider)
+  const addProviderAfter = useCXLandStore((s) => s.addProviderAfter)
+  const configs = useCXLandStore((s) => s.configs)
   const [editOpen, setEditOpen] = useState(false)
 
   const accent = provider.color || '#1677ff'
@@ -37,16 +38,7 @@ export function CXProviderCard({
       id: crypto.randomUUID(),
       name: provider.name + ' ' + t('ccLaunch.copySuffix')
     }
-    // Insert after current provider
-    const providers = useCXLandStore.getState().data.providers
-    const idx = providers.findIndex((p) => p.id === provider.id)
-    const reordered = [...providers]
-    reordered.splice(idx + 1, 0, newProvider)
-    // Use updateCXProvider indirectly — directly set all providers
-    useCXLandStore.setState((s) => ({
-      data: { ...s.data, providers: reordered }
-    }))
-    void useCXLandStore.getState().saveData()
+    addProviderAfter(provider.id, newProvider)
     message.success(t('ccLaunch.providerCopied'))
   }
 
@@ -101,14 +93,14 @@ export function CXProviderCard({
                 okText: t('common.delete'),
                 okType: 'danger',
                 cancelText: t('common.cancel'),
-                onOk: () => useCXLandStore.getState().removeCXProvider(provider.id)
+                onOk: () => useCXLandStore.getState().removeProvider(provider.id)
               })
             }} />
           </Tooltip>
           <Switch
             size="small"
             checked={provider.enabled}
-            onChange={(checked) => updateCXProvider(provider.id, { enabled: checked })}
+            onChange={(checked) => updateProvider(provider.id, { enabled: checked })}
           />
         </>}
       >
@@ -125,7 +117,7 @@ export function CXProviderCard({
         {!provider.enabled && <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.providerDisabled')}</Text>}
       </ItemRow>
 
-      <CXProviderFormModal
+      <ProviderFormModal
         open={editOpen}
         title={t('ccLaunch.editProviderTitle', { name: provider.name })}
         initialValues={{
@@ -139,7 +131,7 @@ export function CXProviderCard({
         existingConfigs={configs}
         onCancel={() => setEditOpen(false)}
         onOk={(values) => {
-          updateCXProvider(provider.id, values)
+          updateProvider(provider.id, values)
           setEditOpen(false)
         }}
       />

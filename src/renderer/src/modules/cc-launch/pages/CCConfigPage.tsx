@@ -2,16 +2,16 @@ import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tabs, Spin } from 'antd'
 import { ShopOutlined, SettingOutlined, MenuOutlined } from '@ant-design/icons'
-import { useAppStore } from '@renderer/stores/useAppStore'
+import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
 import { ProviderTab } from '../components/ProviderTab'
 import { ConfigTab } from '../components/ConfigTab'
 import { SelectorTab } from '../components/SelectorTab'
 
 export default function CCConfigPage(): React.ReactElement {
   const { t } = useTranslation()
-  const loadData = useAppStore((s) => s.loadData)
-  const dataLoaded = useAppStore((s) => s.dataLoaded)
-  const loading = useAppStore((s) => s.loading)
+  const loadData = useCCLaunchStore((s) => s.loadData)
+  const dataLoaded = useCCLaunchStore((s) => s.dataLoaded)
+  const loading = useCCLaunchStore((s) => s.loading)
 
   useEffect(() => {
     if (!dataLoaded && !loading) {

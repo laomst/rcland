@@ -33,7 +33,7 @@ export function ConfigCard({
 }): React.ReactElement {
   const { t } = useTranslation()
   const { modal } = App.useApp()
-  const updateCXConfig = useCXLandStore((s) => s.updateCXConfig)
+  const updateConfig = useCXLandStore((s) => s.updateConfig)
   const [editOpen, setEditOpen] = useState(false)
 
   const provider = providers.find((p) => p.id === config.providerId)
@@ -59,7 +59,7 @@ export function ConfigCard({
                 size="small"
                 variant="borderless"
                 value={config.endpointId}
-                onChange={(val) => updateCXConfig(config.id, { endpointId: val })}
+                onChange={(val) => updateConfig(config.id, { endpointId: val })}
                 style={{ width: 140, textAlign: 'right' }}
                 popupMatchSelectWidth={false}
                 placeholder={t('ccLaunch.selectEndpoint')}
@@ -74,7 +74,7 @@ export function ConfigCard({
                 size="small"
                 variant="borderless"
                 value={config.keyId}
-                onChange={(val) => updateCXConfig(config.id, { keyId: val })}
+                onChange={(val) => updateConfig(config.id, { keyId: val })}
                 style={{ width: 90, textAlign: 'right' }}
                 popupMatchSelectWidth={false}
                 placeholder={t('ccLaunch.selectKey')}
@@ -95,7 +95,7 @@ export function ConfigCard({
           <Tooltip title={t('common.copy')}>
             <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => {
               const { id, ...rest } = config
-              useCXLandStore.getState().addCXConfig({
+              useCXLandStore.getState().addConfig({
                 ...rest,
                 id: crypto.randomUUID(),
                 funcName: config.funcName + '-copy'
@@ -113,7 +113,7 @@ export function ConfigCard({
                 okText: t('common.delete'),
                 okType: 'danger',
                 cancelText: t('common.cancel'),
-                onOk: () => useCXLandStore.getState().removeCXConfig(config.id)
+                onOk: () => useCXLandStore.getState().removeConfig(config.id)
               })
             }} />
           </Tooltip>
@@ -121,7 +121,7 @@ export function ConfigCard({
             size="small"
             variant="borderless"
             value={config.localOnly ? 'local' : 'sync'}
-            onChange={(val) => updateCXConfig(config.id, { localOnly: val === 'local' })}
+            onChange={(val) => updateConfig(config.id, { localOnly: val === 'local' })}
             style={{ width: 70 }}
             options={[
               { value: 'sync', label: t('common.synced') },
@@ -131,7 +131,7 @@ export function ConfigCard({
           <Switch
             size="small"
             checked={config.enabled}
-            onChange={(checked) => updateCXConfig(config.id, { enabled: checked })}
+            onChange={(checked) => updateConfig(config.id, { enabled: checked })}
           />
         </>}
       >
@@ -208,7 +208,7 @@ export function ConfigCard({
         okText={t('common.save')}
         onCancel={() => setEditOpen(false)}
         onOk={(values) => {
-          updateCXConfig(config.id, {
+          updateConfig(config.id, {
             providerId: values.providerId,
             endpointId: values.endpointId,
             keyId: values.keyId,

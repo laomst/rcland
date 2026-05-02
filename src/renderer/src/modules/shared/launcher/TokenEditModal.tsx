@@ -3,15 +3,17 @@ import { useTranslation } from 'react-i18next'
 import { Input, Modal, message } from 'antd'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 
-export function CXTokenEditModal({
-  open,
-  onConfirm,
-  onCancel
-}: {
+interface TokenEditModalProps {
   open: boolean
   onConfirm: (encrypted: string) => void
   onCancel: () => void
-}): React.ReactElement {
+}
+
+export function TokenEditModal({
+  open,
+  onConfirm,
+  onCancel
+}: TokenEditModalProps): React.ReactElement {
   const { t } = useTranslation()
   const encryptToken = useSettingsStore((s) => s.encryptToken)
   const keyExists = useSettingsStore((s) => s.keyExists)

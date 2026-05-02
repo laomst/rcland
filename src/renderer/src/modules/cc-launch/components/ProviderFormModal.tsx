@@ -5,7 +5,7 @@ import { PlusOutlined, DeleteOutlined, EditOutlined, LockOutlined } from '@ant-d
 import type { EnvVarSetting, EnvVarsMap, ProviderEndpoint, ProviderKey, ConfigSet } from '@shared/types'
 import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
 import { EnvVarEditor } from './EnvVarEditor'
-import { KeyEditModal } from './KeyEditModal'
+import { KeyEditModal } from '@renderer/modules/shared/launcher/KeyEditModal'
 
 const PRESET_COLORS = ['#1677ff', '#52c41a', '#fa8c16', '#722ed1', '#eb2f96', '#13c2c2', '#faad14', '#f5222d']
 const { Text } = Typography

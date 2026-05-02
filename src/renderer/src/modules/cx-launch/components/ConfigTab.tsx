@@ -58,10 +58,10 @@ function SortableConfigCard({ config, providers, index }: SortableConfigCardProp
 
 export function ConfigTab(): React.ReactElement {
   const { t } = useTranslation()
-  const configs = useCXLandStore((s) => s.data.configs)
-  const providers = useCXLandStore((s) => s.data.providers)
-  const addCXConfig = useCXLandStore((s) => s.addCXConfig)
-  const reorderCXConfigs = useCXLandStore((s) => s.reorderCXConfigs)
+  const configs = useCXLandStore((s) => s.configs)
+  const providers = useCXLandStore((s) => s.providers)
+  const addConfig = useCXLandStore((s) => s.addConfig)
+  const reorderConfigs = useCXLandStore((s) => s.reorderConfigs)
   const [syncCollapsed, setSyncCollapsed] = useState(false)
   const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -98,7 +98,7 @@ export function ConfigTab(): React.ReactElement {
     useSystemProxy?: boolean
     localOnly?: boolean
   }) => {
-    addCXConfig({
+    addConfig({
       id: crypto.randomUUID(),
       providerId: values.passthrough ? '' : values.providerId,
       endpointId: values.passthrough ? '' : values.endpointId,
@@ -117,7 +117,7 @@ export function ConfigTab(): React.ReactElement {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
-      reorderCXConfigs(active.id as string, over.id as string)
+      reorderConfigs(active.id as string, over.id as string)
     }
   }
 

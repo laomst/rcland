@@ -2,21 +2,21 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input, Modal, App } from 'antd'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
-import type { CXProviderKey } from '@shared/types'
+import type { BaseProviderKey } from './types'
 
-interface CXKeyEditModalProps {
+interface KeyEditModalProps {
   open: boolean
-  editingKey: CXProviderKey | null
-  onConfirm: (key: CXProviderKey) => void
+  editingKey: BaseProviderKey | null
+  onConfirm: (key: BaseProviderKey) => void
   onCancel: () => void
 }
 
-export function CXKeyEditModal({
+export function KeyEditModal({
   open,
   editingKey,
   onConfirm,
   onCancel
-}: CXKeyEditModalProps): React.ReactElement {
+}: KeyEditModalProps): React.ReactElement {
   const { t } = useTranslation()
   const { message } = App.useApp()
   const encryptToken = useSettingsStore((s) => s.encryptToken)
@@ -27,11 +27,10 @@ export function CXKeyEditModal({
   const [plainText, setPlainText] = useState('')
   const [comment, setComment] = useState('')
 
-  // Reset form when modal opens
   useEffect(() => {
     if (open && editingKey) {
       setLabel(editingKey.label)
-      setPlainText('') // Can't decrypt, start empty
+      setPlainText('')
       setComment(editingKey.comment || '')
     } else if (open) {
       setLabel('')
@@ -46,13 +45,11 @@ export function CXKeyEditModal({
       return
     }
 
-    // Editing existing key but no new token entered
     if (editingKey && !plainText.trim()) {
       onConfirm({ ...editingKey, label, comment })
       return
     }
 
-    // New key or token changed - need encryption
     if (!keyExists) {
       openKeyModal('init')
       return

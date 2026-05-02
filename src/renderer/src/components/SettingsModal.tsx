@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react'
 import { ALL_SHELL_TYPES, SHELL_LABELS, SHELL_OS_SUPPORT, type ShellType } from '@shared/shell'
 import { getAppPageLabels, type AppPage, type AppSettings } from '@shared/types'
 import { useTranslation } from 'react-i18next'
-import { useAppStore } from '@renderer/stores/useAppStore'
+import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 
@@ -33,7 +33,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
   const keyExists = useSettingsStore((s) => s.keyExists)
   const refreshKeyExists = useSettingsStore((s) => s.refreshKeyExists)
   const openKeyModal = useSettingsStore((s) => s.openKeyModal)
-  const loadData = useAppStore((s) => s.loadData)
+  const loadData = useCCLaunchStore((s) => s.loadData)
   const loadShellConfig = useShellConfigStore((s) => s.loadShellConfig)
 
   const [editSettings, setEditSettings] = useState<AppSettings | null>(null)

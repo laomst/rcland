@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { EnvVarsMap, Provider, ProviderEndpoint, ProviderKey } from '@shared/types'
-import { useAppStore } from '@renderer/stores/useAppStore'
+import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
 import { ProviderCard } from './ProviderCard'
 import { ProviderFormModal, withDefaults } from './ProviderFormModal'
 
@@ -59,9 +59,9 @@ function SortableProviderCard({ provider, index }: SortableProviderCardProps) {
 
 export function ProviderTab(): React.ReactElement {
   const { t } = useTranslation()
-  const providers = useAppStore((s) => s.providers)
-  const addProvider = useAppStore((s) => s.addProvider)
-  const reorderProviders = useAppStore((s) => s.reorderProviders)
+  const providers = useCCLaunchStore((s) => s.providers)
+  const addProvider = useCCLaunchStore((s) => s.addProvider)
+  const reorderProviders = useCCLaunchStore((s) => s.reorderProviders)
   const [addOpen, setAddOpen] = useState(false)
 
   const sensors = useSensors(

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Input, Modal, Form, ColorPicker, Button, Space, App, Switch, Typography, Radio } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
 import type { CXEndpoint, CXProviderKey, CXConfigSet } from '@shared/types'
-import { CXKeyEditModal } from './CXKeyEditModal'
+import { KeyEditModal } from '@renderer/modules/shared/launcher/KeyEditModal'
 
 const PRESET_COLORS = ['#1677ff', '#52c41a', '#fa8c16', '#722ed1', '#eb2f96', '#13c2c2', '#faad14', '#f5222d']
 const { Text } = Typography
@@ -17,7 +17,7 @@ export interface CXProviderFormValues {
   keys: CXProviderKey[]
 }
 
-export function CXProviderFormModal({
+export function ProviderFormModal({
   open,
   initialValues,
   title,
@@ -251,7 +251,7 @@ export function CXProviderFormModal({
           </Form.Item>
         </Form>
       </Modal>
-      <CXKeyEditModal
+      <KeyEditModal
         open={keyEditOpen}
         editingKey={editingKey}
         onConfirm={handleKeyEditConfirm}

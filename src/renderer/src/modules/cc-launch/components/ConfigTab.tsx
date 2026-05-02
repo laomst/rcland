@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useAppStore, createEmptyConfig } from '@renderer/stores/useAppStore'
+import { useCCLaunchStore, createEmptyConfig } from '@renderer/stores/useCCLaunchStore'
 import { ConfigCard } from './ConfigCard'
 import { ConfigFormModal } from './ConfigFormModal'
 import { GroupHeader } from '@renderer/components/GroupHeader'
@@ -58,10 +58,10 @@ function SortableConfigCard({ config, providers, index }: SortableConfigCardProp
 
 export function ConfigTab(): React.ReactElement {
   const { t } = useTranslation()
-  const configs = useAppStore((s) => s.configs)
-  const providers = useAppStore((s) => s.providers)
-  const addConfig = useAppStore((s) => s.addConfig)
-  const reorderConfigs = useAppStore((s) => s.reorderConfigs)
+  const configs = useCCLaunchStore((s) => s.configs)
+  const providers = useCCLaunchStore((s) => s.providers)
+  const addConfig = useCCLaunchStore((s) => s.addConfig)
+  const reorderConfigs = useCCLaunchStore((s) => s.reorderConfigs)
   const [syncCollapsed, setSyncCollapsed] = useState(false)
   const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)

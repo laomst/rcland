@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Space, Switch, Typography, Button, Tooltip, App, message, Tag } from 'antd'
 import { EditOutlined, DeleteOutlined, LockOutlined, CopyOutlined } from '@ant-design/icons'
 import type { Provider } from '@shared/types'
-import { useAppStore } from '@renderer/stores/useAppStore'
+import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
 import { ProviderFormModal, withDefaults } from './ProviderFormModal'
 import { ItemRow } from '@renderer/components/ItemRow'
 
@@ -22,9 +22,9 @@ export function ProviderCard({
 }): React.ReactElement {
   const { t } = useTranslation()
   const { modal } = App.useApp()
-  const updateProvider = useAppStore((s) => s.updateProvider)
-  const addProviderAfter = useAppStore((s) => s.addProviderAfter)
-  const configs = useAppStore((s) => s.configs)
+  const updateProvider = useCCLaunchStore((s) => s.updateProvider)
+  const addProviderAfter = useCCLaunchStore((s) => s.addProviderAfter)
+  const configs = useCCLaunchStore((s) => s.configs)
   const [editOpen, setEditOpen] = useState(false)
 
   const accent = provider.color || '#1677ff'
@@ -90,7 +90,7 @@ export function ProviderCard({
                 okText: t('common.delete'),
                 okType: 'danger',
                 cancelText: t('common.cancel'),
-                onOk: () => useAppStore.getState().removeProvider(provider.id)
+                onOk: () => useCCLaunchStore.getState().removeProvider(provider.id)
               })
             }} />
           </Tooltip>

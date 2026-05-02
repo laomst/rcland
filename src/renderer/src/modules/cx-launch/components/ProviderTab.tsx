@@ -20,17 +20,17 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import type { CXEndpoint, CXProvider, CXProviderKey } from '@shared/types'
 import { useCXLandStore } from '@renderer/stores/useCXLandStore'
-import { CXProviderCard } from './CXProviderCard'
-import { CXProviderFormModal } from './CXProviderFormModal'
+import { ProviderCard } from './ProviderCard'
+import { ProviderFormModal } from './ProviderFormModal'
 
 const { Text } = Typography
 
-interface SortableCXProviderCardProps {
+interface SortableProviderCardProps {
   provider: CXProvider
   index: number
 }
 
-function SortableCXProviderCard({ provider, index }: SortableCXProviderCardProps) {
+function SortableProviderCard({ provider, index }: SortableProviderCardProps) {
   const {
     attributes,
     listeners,
@@ -47,7 +47,7 @@ function SortableCXProviderCard({ provider, index }: SortableCXProviderCardProps
 
   return (
     <div ref={setNodeRef} style={style}>
-      <CXProviderCard
+      <ProviderCard
         provider={provider}
         index={index}
         isDragging={isDragging}
@@ -57,11 +57,11 @@ function SortableCXProviderCard({ provider, index }: SortableCXProviderCardProps
   )
 }
 
-export function CXProviderTab(): React.ReactElement {
+export function ProviderTab(): React.ReactElement {
   const { t } = useTranslation()
-  const providers = useCXLandStore((s) => s.data.providers)
-  const addCXProvider = useCXLandStore((s) => s.addCXProvider)
-  const reorderCXProviders = useCXLandStore((s) => s.reorderCXProviders)
+  const providers = useCXLandStore((s) => s.providers)
+  const addProvider = useCXLandStore((s) => s.addProvider)
+  const reorderProviders = useCXLandStore((s) => s.reorderProviders)
   const [addOpen, setAddOpen] = useState(false)
 
   const sensors = useSensors(
@@ -74,7 +74,7 @@ export function CXProviderTab(): React.ReactElement {
   )
 
   const handleAdd = (values: { name: string; color: string; wireApi: 'responses' | 'chat'; endpoints: CXEndpoint[]; keys: CXProviderKey[] }) => {
-    addCXProvider({
+    addProvider({
       id: crypto.randomUUID(),
       name: values.name.trim(),
       enabled: true,
@@ -89,7 +89,7 @@ export function CXProviderTab(): React.ReactElement {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
-      reorderCXProviders(active.id as string, over.id as string)
+      reorderProviders(active.id as string, over.id as string)
     }
   }
 
@@ -111,14 +111,14 @@ export function CXProviderTab(): React.ReactElement {
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={providers.map((p) => p.id)} strategy={verticalListSortingStrategy}>
               {providers.map((p, idx) => (
-                <SortableCXProviderCard key={p.id} provider={p} index={idx + 1} />
+                <SortableProviderCard key={p.id} provider={p} index={idx + 1} />
               ))}
             </SortableContext>
           </DndContext>
         )
       }
 
-      <CXProviderFormModal
+      <ProviderFormModal
         open={addOpen}
         title={t('ccLaunch.newProvider')}
         initialValues={{

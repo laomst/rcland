@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button, Space, Switch, Typography, Tooltip, App, Select, Tag } from 'antd'
 import { EditOutlined, DeleteOutlined, WarningOutlined, CopyOutlined, GlobalOutlined } from '@ant-design/icons'
 import type { ConfigSet, Provider } from '@shared/types'
-import { useAppStore } from '@renderer/stores/useAppStore'
+import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
 import { ConfigFormModal } from './ConfigFormModal'
 import { ItemRow } from '@renderer/components/ItemRow'
 import { createConfigUpdatePatch } from './config-update'
@@ -34,7 +34,7 @@ export function ConfigCard({
 }): React.ReactElement {
   const { t } = useTranslation()
   const { modal } = App.useApp()
-  const updateConfig = useAppStore((s) => s.updateConfig)
+  const updateConfig = useCCLaunchStore((s) => s.updateConfig)
   const [editOpen, setEditOpen] = useState(false)
 
   const provider = providers.find((p) => p.id === config.providerId)
@@ -100,7 +100,7 @@ export function ConfigCard({
           <Tooltip title={t('common.copy')}>
             <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => {
               const { id, ...rest } = config
-              useAppStore.getState().addConfigAfter(config.id, {
+              useCCLaunchStore.getState().addConfigAfter(config.id, {
                 ...rest,
                 id: crypto.randomUUID(),
                 funcName: config.funcName + '-copy'
@@ -118,7 +118,7 @@ export function ConfigCard({
                 okText: t('common.delete'),
                 okType: 'danger',
                 cancelText: t('common.cancel'),
-                onOk: () => useAppStore.getState().removeConfig(config.id)
+                onOk: () => useCCLaunchStore.getState().removeConfig(config.id)
               })
             }} />
           </Tooltip>

@@ -42,7 +42,7 @@ interface AppState {
   updateSelector: (patch: Partial<CCLaunchData['selector']>) => void
 }
 
-export const useAppStore = create<AppState>((set, get) => {
+export const useCCLaunchStore = create<AppState>((set, get) => {
   const providerCrud = createTopLevelCrud<Provider>('providers', get, set)
   const configCrud = createTopLevelCrud<ConfigSet>('configs', get, set)
 
