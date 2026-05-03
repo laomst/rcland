@@ -1,6 +1,6 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { CCLaunchData, ConfigSet, Provider, ProviderEndpoint } from '@shared/types'
-import { getEndpointUrl, CLAUDE_ENV_VAR_KEYS } from '@shared/types'
+import { getEndpointUrl } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import { assertSafeEnvName, assertSafeShellName, quoteBashLikeLiteral } from '../../shell-syntax'
 
@@ -169,7 +169,7 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
     lines.push(`    export ANTHROPIC_AUTH_TOKEN=${quoteBashLikeLiteral(tokenVal)}`)
     lines.push(`    export ANTHROPIC_BASE_URL=${quoteBashLikeLiteral(getEndpointUrl(provider, config.endpointId))}`)
 
-    for (const key of CLAUDE_ENV_VAR_KEYS) {
+    for (const key of Object.keys(config.envVars)) {
       const setting = config.envVars[key]
       if (setting && setting.enabled && setting.value) {
         lines.push(`    export ${assertSafeEnvName(key, funcName)}=${quoteBashLikeLiteral(setting.value)}`)

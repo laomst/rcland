@@ -1,7 +1,6 @@
 import { BaseShellGenerator, type DecryptedValues } from './base'
 import type { CCLaunchData, ConfigSet, Provider } from '@shared/types'
 import { getEndpointUrl } from '@shared/types'
-import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 
 export class ZshGenerator extends BaseShellGenerator {
@@ -113,7 +112,7 @@ export class ZshGenerator extends BaseShellGenerator {
     const urlVal = getEndpointUrl(provider, config.endpointId)
     envLines.push(`  ANTHROPIC_BASE_URL="${urlVal}" \\`)
 
-    for (const key of CLAUDE_ENV_VAR_KEYS) {
+    for (const key of Object.keys(config.envVars)) {
       const setting = config.envVars[key]
       if (setting && setting.enabled && setting.value) {
         envLines.push(`  ${key}=${setting.value} \\`)

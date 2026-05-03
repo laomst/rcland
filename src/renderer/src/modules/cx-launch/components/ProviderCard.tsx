@@ -88,7 +88,16 @@ export function ProviderCard({
               modal.confirm({
                 title: t('common.confirmDelete'),
                 content: count > 0
-                  ? t('ccLaunch.deleteProviderWithConfigs', { name: provider.name, count })
+                  ? (
+                      <div>
+                        <p>{t('ccLaunch.deleteProviderWithConfigs', { name: provider.name, count })}</p>
+                        <div style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}>
+                          {relatedConfigs.map((c) => (
+                            <div key={c.id}>{c.name || c.id}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )
                   : t('ccLaunch.deleteProviderConfirm', { name: provider.name }),
                 okText: t('common.delete'),
                 okType: 'danger',

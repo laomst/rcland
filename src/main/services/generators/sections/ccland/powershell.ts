@@ -1,6 +1,6 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { ConfigSet, Provider, ProviderEndpoint } from '@shared/types'
-import { getEndpointUrl, CLAUDE_ENV_VAR_KEYS } from '@shared/types'
+import { getEndpointUrl } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import type { CCLandSectionData } from './zsh'
 import { assertSafeEnvName, assertSafeShellName, quotePowerShellLiteral } from '../../shell-syntax'
@@ -142,7 +142,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
       ...SYSTEM_PROXY_ENV_NAMES,
       'ANTHROPIC_AUTH_TOKEN',
       'ANTHROPIC_BASE_URL',
-      ...CLAUDE_ENV_VAR_KEYS
+      ...Object.keys(config.envVars)
     ]
     lines.push(`function ${funcName} {`)
     lines.push(`    $scopedEnvKeys = @(${[...new Set(scopedKeys)].map((key) => quotePowerShellLiteral(key)).join(', ')})`)
@@ -166,7 +166,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
     lines.push(`        $env:ANTHROPIC_AUTH_TOKEN = ${quotePowerShellLiteral(tokenVal)}`)
     lines.push(`        $env:ANTHROPIC_BASE_URL = ${quotePowerShellLiteral(getEndpointUrl(provider, config.endpointId))}`)
 
-    for (const key of CLAUDE_ENV_VAR_KEYS) {
+    for (const key of Object.keys(config.envVars)) {
       const setting = config.envVars[key]
       if (setting && setting.enabled && setting.value) {
         lines.push(`        $env:${assertSafeEnvName(key, funcName)} = ${quotePowerShellLiteral(setting.value)}`)

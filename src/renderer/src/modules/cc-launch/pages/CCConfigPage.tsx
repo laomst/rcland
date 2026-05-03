@@ -1,23 +1,30 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tabs, Spin } from 'antd'
-import { ShopOutlined, SettingOutlined, MenuOutlined } from '@ant-design/icons'
+import { ShopOutlined, SettingOutlined, MenuOutlined, AppstoreOutlined } from '@ant-design/icons'
 import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
+import { useClaudeEnvDictStore } from '@renderer/stores/useClaudeEnvDictStore'
 import { ProviderTab } from '../components/ProviderTab'
 import { ConfigTab } from '../components/ConfigTab'
 import { SelectorTab } from '../components/SelectorTab'
+import { EnvDictTab } from '@renderer/modules/claude-env-dict/components/EnvDictTab'
 
 export default function CCConfigPage(): React.ReactElement {
   const { t } = useTranslation()
   const loadData = useCCLaunchStore((s) => s.loadData)
   const dataLoaded = useCCLaunchStore((s) => s.dataLoaded)
   const loading = useCCLaunchStore((s) => s.loading)
+  const loadDict = useClaudeEnvDictStore((s) => s.load)
+  const dictLoaded = useClaudeEnvDictStore((s) => s.loaded)
 
   useEffect(() => {
     if (!dataLoaded && !loading) {
       loadData()
     }
-  }, [dataLoaded, loading, loadData])
+    if (!dictLoaded) {
+      loadDict()
+    }
+  }, [dataLoaded, loading, loadData, dictLoaded, loadDict])
 
   if (loading || !dataLoaded) {
     return (
@@ -42,6 +49,12 @@ export default function CCConfigPage(): React.ReactElement {
           label: t('ccLaunch.providerTab'),
           icon: <ShopOutlined />,
           children: <ProviderTab />
+        },
+        {
+          key: 'env-dict',
+          label: t('claudeEnvDict.tabTitle'),
+          icon: <AppstoreOutlined />,
+          children: <EnvDictTab />
         },
         {
           key: 'selector',

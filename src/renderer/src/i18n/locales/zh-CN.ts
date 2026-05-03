@@ -1,3 +1,5 @@
+import claudeEnvDict from './zh-CN/claude-env-dict'
+
 const zhCN = {
   common: {
     confirm: '确定',
@@ -127,15 +129,6 @@ const zhCN = {
     valuePlaceholder: '输入变量值',
     encryptStorage: '加密存储',
     encryptStorageHint: '值将被加密存储',
-    claudeLabels: {
-      model: '主模型',
-      opusModel: 'Opus 模型',
-      sonnetModel: 'Sonnet 模型',
-      haikuModel: 'Haiku 模型',
-      apiTimeout: 'API 超时 (ms)',
-      disableNonessentialTraffic: '禁用非必要流量',
-      disableExperimentalBetas: '禁用实验性 Beta',
-    },
   },
 
   shellPath: {
@@ -327,6 +320,8 @@ const zhCN = {
       localAliasEnabledHint: '自动生成 {函数名}d 别名（如 cxld）',
     },
   },
+
+  claudeEnvDict,
 
   systemProxy: {
     title: '系统代理',

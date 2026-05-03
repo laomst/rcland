@@ -1,3 +1,5 @@
+import claudeEnvDict from './en/claude-env-dict'
+
 const en = {
   common: {
     confirm: 'OK',
@@ -127,15 +129,6 @@ const en = {
     valuePlaceholder: 'Enter value',
     encryptStorage: 'Encrypt Storage',
     encryptStorageHint: 'Value will be stored encrypted',
-    claudeLabels: {
-      model: 'Main Model',
-      opusModel: 'Opus Model',
-      sonnetModel: 'Sonnet Model',
-      haikuModel: 'Haiku Model',
-      apiTimeout: 'API Timeout (ms)',
-      disableNonessentialTraffic: 'Disable Non-essential Traffic',
-      disableExperimentalBetas: 'Disable Experimental Betas',
-    },
   },
 
   shellPath: {
@@ -327,6 +320,8 @@ const en = {
       localAliasEnabledHint: 'Auto-generates a {funcName}d alias (e.g. cxld)',
     },
   },
+
+  claudeEnvDict,
 
   systemProxy: {
     title: 'System Proxy',

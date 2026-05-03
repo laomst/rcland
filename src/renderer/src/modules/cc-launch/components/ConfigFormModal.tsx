@@ -42,6 +42,23 @@ export function ConfigFormModal({
     setForm((f) => ({ ...f, envVars: { ...f.envVars, [key]: setting } }))
   }
 
+  const handleEnvVarRemove = (key: string) => {
+    setForm((f) => {
+      const { [key]: _, ...rest } = f.envVars
+      return { ...f, envVars: rest }
+    })
+  }
+
+  const handleEnvVarAdd = (keys: string[]) => {
+    setForm((f) => {
+      const next = { ...f.envVars }
+      for (const k of keys) {
+        if (!(k in next)) next[k] = { value: '', enabled: false }
+      }
+      return { ...f, envVars: next }
+    })
+  }
+
   const handleProviderChange = (providerId: string) => {
     const newProvider = providers.find((p) => p.id === providerId)
     const firstEndpointId = newProvider?.endpoints?.[0]?.id ?? ''
@@ -241,7 +258,12 @@ export function ConfigFormModal({
         {!isPassthrough && (
           <>
             <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>
-            <EnvVarEditor envVars={form.envVars} onChange={handleEnvVarChange} />
+            <EnvVarEditor
+            envVars={form.envVars}
+            onChange={handleEnvVarChange}
+            onRemove={handleEnvVarRemove}
+            onAdd={handleEnvVarAdd}
+          />
           </>
         )}
       </Form>

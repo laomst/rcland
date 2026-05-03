@@ -3,6 +3,11 @@ import type { ShellType } from '@shared/shell'
 import type { AppSettings, CCLaunchData, CXLandData } from '@shared/types'
 import type { BackupEntry, ConflictCheckResult, ShellConfigData } from '@shared/shell-types'
 import type { SystemProxyConfig } from '@shared/system-proxy'
+import type {
+  ClaudeEnvDictItem,
+  UserClaudeEnvDictItem,
+  BuiltInOverride
+} from '@shared/types/claude-env-dict'
 
 export interface ElectronAPI {
   // Config
@@ -56,6 +61,13 @@ export interface ElectronAPI {
   // System Proxy
   readOsProxy: () => Promise<SystemProxyConfig>
 
+  // Claude Env Dict
+  loadClaudeEnvDict: () => Promise<ClaudeEnvDictItem[]>
+  addClaudeEnvDictUserItem: (item: UserClaudeEnvDictItem) => Promise<ClaudeEnvDictItem[]>
+  updateClaudeEnvDictUserItem: (item: UserClaudeEnvDictItem) => Promise<ClaudeEnvDictItem[]>
+  deleteClaudeEnvDictUserItem: (key: string) => Promise<ClaudeEnvDictItem[]>
+  setClaudeEnvDictBuiltInOverride: (key: string, override: BuiltInOverride) => Promise<ClaudeEnvDictItem[]>
+
   // Events
   on: (channel: string, callback: (...args: unknown[]) => void) => void
 }
@@ -92,6 +104,11 @@ const api: ElectronAPI = {
   showOpenDialog: (options) => ipcRenderer.invoke('dialog:open', options),
   showSaveDialog: (options) => ipcRenderer.invoke('dialog:save', options),
   readOsProxy: () => ipcRenderer.invoke('system-proxy:read-os'),
+  loadClaudeEnvDict: () => ipcRenderer.invoke('claude-env-dict:read'),
+  addClaudeEnvDictUserItem: (item) => ipcRenderer.invoke('claude-env-dict:add-user-item', item),
+  updateClaudeEnvDictUserItem: (item) => ipcRenderer.invoke('claude-env-dict:update-user-item', item),
+  deleteClaudeEnvDictUserItem: (key) => ipcRenderer.invoke('claude-env-dict:delete-user-item', key),
+  setClaudeEnvDictBuiltInOverride: (key, override) => ipcRenderer.invoke('claude-env-dict:set-built-in-override', key, override),
   on: (channel, callback) => {
     ipcRenderer.on(channel, (_event, ...args) => callback(...args))
   }

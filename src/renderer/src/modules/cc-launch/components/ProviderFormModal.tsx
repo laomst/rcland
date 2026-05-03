@@ -3,21 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { Input, Modal, Form, ColorPicker, Divider, Button, Space, App, Switch, Typography } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
 import type { EnvVarSetting, EnvVarsMap, ProviderEndpoint, ProviderKey, ConfigSet } from '@shared/types'
-import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
 import { EnvVarEditor } from './EnvVarEditor'
 import { KeyEditModal } from '@renderer/modules/shared/launcher/KeyEditModal'
 
 const PRESET_COLORS = ['#1677ff', '#52c41a', '#fa8c16', '#722ed1', '#eb2f96', '#13c2c2', '#faad14', '#f5222d']
 const { Text } = Typography
-
-/** Ensure all env var keys have a setting entry so EnvVarEditor renders them */
-function withDefaults(envVars?: EnvVarsMap): EnvVarsMap {
-  const result: EnvVarsMap = {}
-  for (const key of CLAUDE_ENV_VAR_KEYS) {
-    result[key] = envVars?.[key] ?? { value: '', enabled: false }
-  }
-  return result
-}
 
 export interface ProviderFormValues {
   id?: string
@@ -60,6 +50,23 @@ export function ProviderFormModal({
         envVars: { ...f.template.envVars, [key]: setting }
       }
     }))
+  }
+
+  const handleEnvVarRemove = (key: string) => {
+    setForm((f) => {
+      const { [key]: _, ...rest } = f.template.envVars
+      return { ...f, template: { ...f.template, envVars: rest } }
+    })
+  }
+
+  const handleEnvVarAdd = (keys: string[]) => {
+    setForm((f) => {
+      const next = { ...f.template.envVars }
+      for (const k of keys) {
+        if (!(k in next)) next[k] = { value: '', enabled: false }
+      }
+      return { ...f, template: { ...f.template, envVars: next } }
+    })
   }
 
   // Endpoint handlers
@@ -260,7 +267,12 @@ export function ProviderFormModal({
             </div>
           </Form.Item>
           <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.defaultEnvTemplate')}</Divider>
-          <EnvVarEditor envVars={form.template.envVars} onChange={handleEnvVarChange} />
+          <EnvVarEditor
+            envVars={form.template.envVars}
+            onChange={handleEnvVarChange}
+            onRemove={handleEnvVarRemove}
+            onAdd={handleEnvVarAdd}
+          />
         </Form>
       </Modal>
       <KeyEditModal
@@ -272,5 +284,3 @@ export function ProviderFormModal({
     </>
   )
 }
-
-export { withDefaults }

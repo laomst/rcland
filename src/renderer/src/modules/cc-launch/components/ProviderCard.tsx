@@ -4,7 +4,7 @@ import { Space, Switch, Typography, Button, Tooltip, App, message, Tag } from 'a
 import { EditOutlined, DeleteOutlined, LockOutlined, CopyOutlined } from '@ant-design/icons'
 import type { Provider } from '@shared/types'
 import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
-import { ProviderFormModal, withDefaults } from './ProviderFormModal'
+import { ProviderFormModal } from './ProviderFormModal'
 import { ItemRow } from '@renderer/components/ItemRow'
 
 const { Text } = Typography
@@ -85,7 +85,16 @@ export function ProviderCard({
               modal.confirm({
                 title: t('common.confirmDelete'),
                 content: count > 0
-                  ? t('ccLaunch.deleteProviderWithConfigs', { name: provider.name, count })
+                  ? (
+                      <div>
+                        <p>{t('ccLaunch.deleteProviderWithConfigs', { name: provider.name, count })}</p>
+                        <div style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}>
+                          {relatedConfigs.map((c) => (
+                            <div key={c.id}>{c.name || c.funcName || c.id}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )
                   : t('ccLaunch.deleteProviderConfirm', { name: provider.name }),
                 okText: t('common.delete'),
                 okType: 'danger',
@@ -123,7 +132,7 @@ export function ProviderCard({
           endpoints: (provider.endpoints ?? []).map((ep) => ({ ...ep })),
           keys: (provider.keys ?? []).map((k) => ({ ...k })),
           color: accent,
-          template: { envVars: withDefaults(provider.template?.envVars) }
+          template: { envVars: { ...(provider.template?.envVars ?? {}) } }
         }}
         existingConfigs={configs}
         onCancel={() => setEditOpen(false)}

@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import type { Provider, ConfigSet, CCLaunchData, ProviderKey } from '@shared/types'
-import { CLAUDE_ENV_VAR_KEYS } from '@shared/types'
 import { createTopLevelCrud } from './crud-helpers'
 import { createPersistQueue, toErrorMessage } from './persist'
 
@@ -149,9 +148,6 @@ export const useCCLaunchStore = create<AppState>((set, get) => {
 /** Helper: create empty config with all env vars disabled */
 export function createEmptyConfig(providerId: string, endpointId: string, keyId: string): ConfigSet {
   const envVars: ConfigSet['envVars'] = {}
-  for (const key of CLAUDE_ENV_VAR_KEYS) {
-    envVars[key] = { value: '', enabled: false }
-  }
   return {
     id: crypto.randomUUID(),
     providerId,

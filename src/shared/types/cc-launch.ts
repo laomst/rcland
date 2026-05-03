@@ -1,35 +1,11 @@
-import type { TFunction } from 'i18next'
-
-export const CLAUDE_ENV_VAR_KEYS = [
-  'ANTHROPIC_MODEL',
-  'ANTHROPIC_DEFAULT_OPUS_MODEL',
-  'ANTHROPIC_DEFAULT_SONNET_MODEL',
-  'ANTHROPIC_DEFAULT_HAIKU_MODEL',
-  'API_TIMEOUT_MS',
-  'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
-  'CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS',
-] as const
-
-export type ClaudeEnvVarKey = (typeof CLAUDE_ENV_VAR_KEYS)[number]
-
-export const getClaudeEnvVarLabels = (t: TFunction): Record<ClaudeEnvVarKey, string> => ({
-  ANTHROPIC_MODEL:                              t('shellEnv.claudeLabels.model'),
-  ANTHROPIC_DEFAULT_OPUS_MODEL:                 t('shellEnv.claudeLabels.opusModel'),
-  ANTHROPIC_DEFAULT_SONNET_MODEL:               t('shellEnv.claudeLabels.sonnetModel'),
-  ANTHROPIC_DEFAULT_HAIKU_MODEL:                t('shellEnv.claudeLabels.haikuModel'),
-  API_TIMEOUT_MS:                               t('shellEnv.claudeLabels.apiTimeout'),
-  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC:     t('shellEnv.claudeLabels.disableNonessentialTraffic'),
-  CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS:       t('shellEnv.claudeLabels.disableExperimentalBetas'),
-})
-
 /** A single env var with value + enabled toggle */
 export interface EnvVarSetting {
   value: string
   enabled: boolean
 }
 
-/** All env vars for a config */
-export type EnvVarsMap = Partial<Record<ClaudeEnvVarKey, EnvVarSetting>>
+/** All env vars for a config (key 由 Claude Env Dict 统一维护) */
+export type EnvVarsMap = Record<string, EnvVarSetting>
 
 export interface ProviderEndpoint {
   id: string

@@ -20,8 +20,9 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import type { EnvVarsMap, Provider, ProviderEndpoint, ProviderKey } from '@shared/types'
 import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
+import { useClaudeEnvDictStore } from '@renderer/stores/useClaudeEnvDictStore'
 import { ProviderCard } from './ProviderCard'
-import { ProviderFormModal, withDefaults } from './ProviderFormModal'
+import { ProviderFormModal } from './ProviderFormModal'
 
 const { Text } = Typography
 
@@ -62,7 +63,18 @@ export function ProviderTab(): React.ReactElement {
   const providers = useCCLaunchStore((s) => s.providers)
   const addProvider = useCCLaunchStore((s) => s.addProvider)
   const reorderProviders = useCCLaunchStore((s) => s.reorderProviders)
+  const dictItems = useClaudeEnvDictStore((s) => s.items)
   const [addOpen, setAddOpen] = useState(false)
+
+  const buildDefaultTemplateEnvVars = (): EnvVarsMap => {
+    const result: EnvVarsMap = {}
+    for (const item of dictItems) {
+      if (item.defaultInTemplate) {
+        result[item.key] = { value: '', enabled: false }
+      }
+    }
+    return result
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -126,7 +138,7 @@ export function ProviderTab(): React.ReactElement {
           color: '#1677ff',
           endpoints: [{ id: crypto.randomUUID(), label: t('ccLaunch.defaultEndpoint'), url: '', useSystemProxy: false }],
           keys: [],
-          template: { envVars: withDefaults() }
+          template: { envVars: buildDefaultTemplateEnvVars() }
         }}
         onCancel={() => setAddOpen(false)}
         onOk={handleAdd}
