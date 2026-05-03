@@ -24,11 +24,11 @@ export function ProviderCard({
   const { modal } = App.useApp()
   const updateProvider = useCXLandStore((s) => s.updateProvider)
   const addProviderAfter = useCXLandStore((s) => s.addProviderAfter)
-  const configs = useCXLandStore((s) => s.configs)
+  const launchItems = useCXLandStore((s) => s.launchItems)
   const [editOpen, setEditOpen] = useState(false)
 
   const accent = provider.color || '#1677ff'
-  const relatedConfigs = configs.filter((c) => c.providerId === provider.id)
+  const relatedLaunchItems = launchItems.filter((c) => c.providerId === provider.id)
   const keyCount = provider.keys?.length ?? 0
 
   const handleCopy = () => {
@@ -75,7 +75,7 @@ export function ProviderCard({
             </Text>
           )}
 
-          <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.relatedConfigs', { count: relatedConfigs.length })}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.relatedConfigs', { count: relatedLaunchItems.length })}</Text>
           <Tooltip title={t('common.copy')}>
             <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy} />
           </Tooltip>
@@ -84,7 +84,7 @@ export function ProviderCard({
           </Tooltip>
           <Tooltip title={t('common.delete')}>
             <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => {
-              const count = relatedConfigs.length
+              const count = relatedLaunchItems.length
               modal.confirm({
                 title: t('common.confirmDelete'),
                 content: count > 0
@@ -92,7 +92,7 @@ export function ProviderCard({
                       <div>
                         <p>{t('ccLaunch.deleteProviderWithConfigs', { name: provider.name, count })}</p>
                         <div style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}>
-                          {relatedConfigs.map((c) => (
+                          {relatedLaunchItems.map((c) => (
                             <div key={c.id}>{c.name || c.id}</div>
                           ))}
                         </div>
@@ -138,7 +138,7 @@ export function ProviderCard({
           keys: (provider.keys ?? []).map((k) => ({ ...k })),
           color: accent
         }}
-        existingConfigs={configs}
+        existingLaunchItems={launchItems}
         onCancel={() => setEditOpen(false)}
         onOk={(values) => {
           updateProvider(provider.id, values)

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input, Modal, Form, ColorPicker, Divider, Button, Space, App, Switch, Typography } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
-import type { EnvVarSetting, EnvVarsMap, ProviderEndpoint, ProviderKey, ConfigSet } from '@shared/types'
+import type { EnvVarSetting, EnvVarsMap, ProviderEndpoint, ProviderKey, LaunchItem } from '@shared/types'
 import { EnvVarEditor } from './EnvVarEditor'
 import { KeyEditModal } from '@renderer/modules/shared/launcher/KeyEditModal'
 
@@ -25,7 +25,7 @@ export function ProviderFormModal({
   title,
   onCancel,
   onOk,
-  existingConfigs = []
+  existingLaunchItems = []
 }: {
   open: boolean
   initialValues: ProviderFormValues
@@ -33,7 +33,7 @@ export function ProviderFormModal({
   onCancel: () => void
   onOk: (values: ProviderFormValues) => void
   /** Existing configs to check key usage (for delete confirmation) */
-  existingConfigs?: ConfigSet[]
+  existingLaunchItems?: LaunchItem[]
 }): React.ReactElement {
   const { t } = useTranslation()
   const { modal } = App.useApp()
@@ -114,20 +114,20 @@ export function ProviderFormModal({
   const removeKey = (keyId: string, keyLabel: string) => {
     // Check if this key is being used by any config
     const providerId = form.id
-    const usedConfigs = existingConfigs.filter(
+    const usedLaunchItems = existingLaunchItems.filter(
       (c) => c.providerId === providerId && c.keyId === keyId
     )
 
-    if (usedConfigs.length > 0) {
+    if (usedLaunchItems.length > 0) {
       // Key is in use, show confirmation dialog
-      const configNames = usedConfigs.map((c) => c.funcName).join('、')
+      const launchItemNames = usedLaunchItems.map((c) => c.funcName).join('、')
       modal.confirm({
         title: t('ccLaunch.keyInUse'),
         content: (
           <div>
             <p>{t('ccLaunch.keyInUseDesc', { label: keyLabel })}</p>
             <p style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}>
-              {configNames}
+              {launchItemNames}
             </p>
             <p>{t('ccLaunch.keyInUseWarning')}</p>
           </div>

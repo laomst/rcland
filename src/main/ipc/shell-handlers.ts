@@ -70,7 +70,7 @@ function defaultCCData(): CCLaunchData {
   return {
     version: 5,
     providers: [],
-    configs: [],
+    launchItems: [],
     selector: { funcName: 'cc', promptTitle: '' }
   }
 }

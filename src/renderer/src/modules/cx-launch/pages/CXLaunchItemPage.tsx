@@ -3,11 +3,11 @@ import { Tabs, Spin, Alert } from 'antd'
 import { SettingOutlined, ShopOutlined, MenuOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useCXLandStore } from '@renderer/stores/useCXLandStore'
-import { ConfigTab } from '../components/ConfigTab'
+import { LaunchItemTab } from '../components/LaunchItemTab'
 import { ProviderTab } from '../components/ProviderTab'
 import { SelectorTab } from '../components/SelectorTab'
 
-export function CXConfigPage(): React.ReactElement {
+export function CXLaunchItemPage(): React.ReactElement {
   const { t } = useTranslation()
   const loadData = useCXLandStore((s) => s.loadData)
   const dataLoaded = useCXLandStore((s) => s.dataLoaded)
@@ -41,7 +41,7 @@ export function CXConfigPage(): React.ReactElement {
       <Tabs
         defaultActiveKey="configs"
         items={[
-          { key: 'configs', label: t('cxLaunch.configTab'), icon: <SettingOutlined />, children: <ConfigTab /> },
+          { key: 'configs', label: t('cxLaunch.launchItemTab'), icon: <SettingOutlined />, children: <LaunchItemTab /> },
           { key: 'providers', label: t('cxLaunch.providerTab'), icon: <ShopOutlined />, children: <ProviderTab /> },
           { key: 'selector', label: t('cxLaunch.selectorTab'), icon: <MenuOutlined />, children: <SelectorTab /> }
         ]}

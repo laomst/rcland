@@ -14,7 +14,7 @@ const ccData: CCLaunchData = {
     endpoints: [{ id: 'endpoint-1', label: 'Default', url: 'https://api.example.com' }],
     keys: [{ id: 'key-1', label: 'Key', token: 'enc:v1:not-real' }]
   }],
-  configs: [{
+  launchItems: [{
     id: 'config-1',
     providerId: 'provider-1',
     endpointId: 'endpoint-1',

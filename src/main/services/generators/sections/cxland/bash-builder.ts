@@ -1,10 +1,10 @@
-import { DEFAULT_PROXY_FUNCTION_NAMES, type CXLandData, type CXProvider, type CXConfigSet, type CXEndpoint, type ProxyFunctionNames } from '@shared/types'
+import { DEFAULT_PROXY_FUNCTION_NAMES, type CXLandData, type CXProvider, type CXLaunchItem, type CXEndpoint, type ProxyFunctionNames } from '@shared/types'
 import { getCXEndpointUrl } from '@shared/types'
 import { quoteBashLikeLiteral, assertSafeShellName } from '../../shell-syntax'
 import { sanitizeCodexProviderId, buildBashCodexConfigArg } from './codex-args'
 
 /**
- * Build bash/zsh shell content for all enabled CXConfigSets and optional selector.
+ * Build bash/zsh shell content for all enabled CXLaunchItems and optional selector.
  *
  * Key differences from CC (Claude Code):
  * - Uses `codex` command, NOT `claude`
@@ -21,7 +21,7 @@ export function buildBashLikeCXContent(
   const lines: string[] = []
 
   const providerMap = new Map(data.providers.map((p) => [p.id, p]))
-  const enabledConfigs = data.configs.filter((c) => c.enabled)
+  const enabledConfigs = data.launchItems.filter((c) => c.enabled)
 
   for (const config of enabledConfigs) {
     if (config.passthrough) {
@@ -30,7 +30,7 @@ export function buildBashLikeCXContent(
     }
     const provider = providerMap.get(config.providerId)
     if (!provider) {
-      writeErrorStub(lines, config, `错误: 配置项 ${config.funcName} 的 Provider 不存在`)
+      writeErrorStub(lines, config, `错误: 启动项 ${config.funcName} 的 Provider 不存在`)
       continue
     }
     if (!provider.enabled) {
@@ -82,7 +82,7 @@ export function buildBashLikeCXContent(
   return lines.join('\n')
 }
 
-function writeErrorStub(lines: string[], config: CXConfigSet, message: string): void {
+function writeErrorStub(lines: string[], config: CXLaunchItem, message: string): void {
   const funcName = assertSafeShellName(config.funcName, config.name || config.id)
   lines.push('')
   lines.push(`${funcName}() { echo ${quoteBashLikeLiteral(message)} >&2; return 1; }`)
@@ -91,7 +91,7 @@ function writeErrorStub(lines: string[], config: CXConfigSet, message: string): 
 function writeFunction(
   lines: string[],
   provider: CXProvider,
-  config: CXConfigSet,
+  config: CXLaunchItem,
   tokens: Map<string, string>,
   proxyFns: ProxyFunctionNames
 ): void {
@@ -100,14 +100,14 @@ function writeFunction(
   const tokenVal = tokens.get(tokenKey) ?? ''
 
   if (!tokenVal) {
-    writeErrorStub(lines, config, `错误: 配置项 ${funcName} 未设置 Token.请在 RCLand 中配置`)
+    writeErrorStub(lines, config, `错误: 启动项 ${funcName} 未设置 Token.请在 RCLand 中配置`)
     return
   }
 
   const endpoint = getEndpoint(provider, config.endpointId)
   const baseUrl = getCXEndpointUrl(provider, config.endpointId)
   if (!baseUrl) {
-    writeErrorStub(lines, config, `错误: 配置项 ${funcName} 的 Endpoint URL 为空`)
+    writeErrorStub(lines, config, `错误: 启动项 ${funcName} 的 Endpoint URL 为空`)
     return
   }
 
@@ -174,7 +174,7 @@ function writeSelectorFunction(
   lines: string[],
   funcName: string,
   promptTitle: string,
-  entries: CXConfigSet[],
+  entries: CXLaunchItem[],
   requireN: boolean
 ): void {
   lines.push('')
@@ -231,7 +231,7 @@ function writeSelectorFunction(
   lines.push('}')
 }
 
-function writePassthroughFunction(lines: string[], config: CXConfigSet, proxyFns: ProxyFunctionNames): void {
+function writePassthroughFunction(lines: string[], config: CXLaunchItem, proxyFns: ProxyFunctionNames): void {
   const funcName = assertSafeShellName(config.funcName, config.name || config.id)
   lines.push('')
   lines.push(`${funcName}() {`)

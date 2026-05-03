@@ -1,11 +1,11 @@
-import type { CXLandData, CXProvider, CXConfigSet, CXEndpoint } from '@shared/types'
+import type { CXLandData, CXProvider, CXLaunchItem, CXEndpoint } from '@shared/types'
 import { getCXEndpointUrl } from '@shared/types'
 import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
 import { quotePowerShellLiteral, assertSafeShellName } from '../../shell-syntax'
 import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg } from './codex-args'
 
 /**
- * Build PowerShell shell content for all enabled CXConfigSets and optional selector.
+ * Build PowerShell shell content for all enabled CXLaunchItems and optional selector.
  *
  * Key differences from bash-builder:
  * - `function name { ... }` instead of `name() { ... }`
@@ -23,7 +23,7 @@ export function buildPowerShellCXContent(
   const lines: string[] = []
 
   const providerMap = new Map(data.providers.map((p) => [p.id, p]))
-  const enabledConfigs = data.configs.filter((c) => c.enabled)
+  const enabledConfigs = data.launchItems.filter((c) => c.enabled)
 
   for (const config of enabledConfigs) {
     if (config.passthrough) {
@@ -32,7 +32,7 @@ export function buildPowerShellCXContent(
     }
     const provider = providerMap.get(config.providerId)
     if (!provider) {
-      writeErrorFunction(lines, config, `错误: 配置项 ${config.funcName} 的 Provider 不存在`)
+      writeErrorFunction(lines, config, `错误: 启动项 ${config.funcName} 的 Provider 不存在`)
       continue
     }
     if (!provider.enabled) {
@@ -84,7 +84,7 @@ export function buildPowerShellCXContent(
   return lines.join('\n')
 }
 
-function writeErrorFunction(lines: string[], config: CXConfigSet, message: string): void {
+function writeErrorFunction(lines: string[], config: CXLaunchItem, message: string): void {
   const funcName = assertSafeShellName(config.funcName, config.name || config.id)
   lines.push('')
   lines.push(`function ${funcName} { Write-Error ${quotePowerShellLiteral(message)} }`)
@@ -93,7 +93,7 @@ function writeErrorFunction(lines: string[], config: CXConfigSet, message: strin
 function writeFunction(
   lines: string[],
   provider: CXProvider,
-  config: CXConfigSet,
+  config: CXLaunchItem,
   tokens: Map<string, string>
 ): void {
   const funcName = assertSafeShellName(config.funcName, config.name || config.id)
@@ -101,14 +101,14 @@ function writeFunction(
   const tokenVal = tokens.get(tokenKey) ?? ''
 
   if (!tokenVal) {
-    writeErrorFunction(lines, config, `错误: 配置项 ${funcName} 未设置 Token.请在 RCLand 中配置`)
+    writeErrorFunction(lines, config, `错误: 启动项 ${funcName} 未设置 Token.请在 RCLand 中配置`)
     return
   }
 
   const endpoint = getEndpoint(provider, config.endpointId)
   const baseUrl = getCXEndpointUrl(provider, config.endpointId)
   if (!baseUrl) {
-    writeErrorFunction(lines, config, `错误: 配置项 ${funcName} 的 Endpoint URL 为空`)
+    writeErrorFunction(lines, config, `错误: 启动项 ${funcName} 的 Endpoint URL 为空`)
     return
   }
 
@@ -143,7 +143,7 @@ function writeFunction(
   if (endpoint?.useSystemProxy) {
     lines.push('        $proxyEntries = _rcland_ReadOsProxy')
     lines.push('        if ($null -eq $proxyEntries) {')
-    lines.push(`            Write-Error ${quotePowerShellLiteral(`配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
+    lines.push(`            Write-Error ${quotePowerShellLiteral(`启动项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
     lines.push('            return')
     lines.push('        }')
     lines.push('        foreach ($key in $proxyEntries.Keys) {')
@@ -228,7 +228,7 @@ function writeSelectorFunction(
   lines: string[],
   funcName: string,
   promptTitle: string,
-  entries: CXConfigSet[],
+  entries: CXLaunchItem[],
   requireN: boolean
 ): void {
   lines.push('')
@@ -281,7 +281,7 @@ function writeSelectorFunction(
   lines.push('}')
 }
 
-function writePassthroughFunction(lines: string[], config: CXConfigSet): void {
+function writePassthroughFunction(lines: string[], config: CXLaunchItem): void {
   const funcName = assertSafeShellName(config.funcName, config.name || config.id)
   const scopedKeys = [...SYSTEM_PROXY_ENV_NAMES]
   lines.push('')
@@ -293,7 +293,7 @@ function writePassthroughFunction(lines: string[], config: CXConfigSet): void {
   if (config.useSystemProxy) {
     lines.push('        $proxyEntries = _rcland_ReadOsProxy')
     lines.push('        if ($null -eq $proxyEntries) {')
-    lines.push(`            Write-Error ${quotePowerShellLiteral(`配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
+    lines.push(`            Write-Error ${quotePowerShellLiteral(`启动项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
     lines.push('            return')
     lines.push('        }')
     lines.push('        foreach ($key in $proxyEntries.Keys) {')

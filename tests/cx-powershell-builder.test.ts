@@ -14,7 +14,7 @@ function makeData(): CXLandData {
       endpoints: [{ id: 'e1', label: 'd', url: 'https://api.example.com/v1', useSystemProxy: false }],
       keys: [{ id: 'k1', label: 'm', token: 'enc:v1:abc' }]
     }],
-    configs: [{
+    launchItems: [{
       id: 'c1', providerId: 'p1', endpointId: 'e1', keyId: 'k1',
       name: 'GLM5', funcName: 'cx-glm5', enabled: true
     }],

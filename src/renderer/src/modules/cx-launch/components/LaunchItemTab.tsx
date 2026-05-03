@@ -17,18 +17,18 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useCXLandStore } from '@renderer/stores/useCXLandStore'
-import { ConfigCard } from './ConfigCard'
-import { ConfigFormModal } from './ConfigFormModal'
+import { LaunchItemCard } from './LaunchItemCard'
+import { LaunchItemFormModal } from './LaunchItemFormModal'
 import { GroupHeader } from '@renderer/components/GroupHeader'
-import type { CXConfigSet, CXProvider } from '@shared/types'
+import type { CXLaunchItem, CXProvider } from '@shared/types'
 
-interface SortableConfigCardProps {
-  config: CXConfigSet
+interface SortableLaunchItemCardProps {
+  launchItem: CXLaunchItem
   providers: CXProvider[]
   index: number
 }
 
-function SortableConfigCard({ config, providers, index }: SortableConfigCardProps) {
+function SortableLaunchItemCard({ launchItem, providers, index }: SortableLaunchItemCardProps) {
   const {
     attributes,
     listeners,
@@ -36,7 +36,7 @@ function SortableConfigCard({ config, providers, index }: SortableConfigCardProp
     transform,
     transition,
     isDragging
-  } = useSortable({ id: config.id })
+  } = useSortable({ id: launchItem.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -45,8 +45,8 @@ function SortableConfigCard({ config, providers, index }: SortableConfigCardProp
 
   return (
     <div ref={setNodeRef} style={style}>
-      <ConfigCard
-        config={config}
+      <LaunchItemCard
+        launchItem={launchItem}
         providers={providers}
         index={index}
         isDragging={isDragging}
@@ -56,12 +56,12 @@ function SortableConfigCard({ config, providers, index }: SortableConfigCardProp
   )
 }
 
-export function ConfigTab(): React.ReactElement {
+export function LaunchItemTab(): React.ReactElement {
   const { t } = useTranslation()
-  const configs = useCXLandStore((s) => s.configs)
+  const launchItems = useCXLandStore((s) => s.launchItems)
   const providers = useCXLandStore((s) => s.providers)
-  const addConfig = useCXLandStore((s) => s.addConfig)
-  const reorderConfigs = useCXLandStore((s) => s.reorderConfigs)
+  const addLaunchItem = useCXLandStore((s) => s.addLaunchItem)
+  const reorderLaunchItems = useCXLandStore((s) => s.reorderLaunchItems)
   const [syncCollapsed, setSyncCollapsed] = useState(false)
   const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -98,7 +98,7 @@ export function ConfigTab(): React.ReactElement {
     useSystemProxy?: boolean
     localOnly?: boolean
   }) => {
-    addConfig({
+    addLaunchItem({
       id: crypto.randomUUID(),
       providerId: values.passthrough ? '' : values.providerId,
       endpointId: values.passthrough ? '' : values.endpointId,
@@ -117,43 +117,43 @@ export function ConfigTab(): React.ReactElement {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
-      reorderConfigs(active.id as string, over.id as string)
+      reorderLaunchItems(active.id as string, over.id as string)
     }
   }
 
   // Split into synced and local groups
-  const syncedConfigs = configs.filter((c) => !c.localOnly)
-  const localConfigs = configs.filter((c) => c.localOnly)
+  const syncedLaunchItems = launchItems.filter((c) => !c.localOnly)
+  const localLaunchItems = launchItems.filter((c) => c.localOnly)
 
   return (
     <div>
-      {/* Synced configs */}
-      <GroupHeader title={t('common.syncedConfig')} count={syncedConfigs.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
-      {!syncCollapsed && syncedConfigs.length > 0 && (
+      {/* Synced launch items */}
+      <GroupHeader title={t('common.syncedConfig')} count={syncedLaunchItems.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+      {!syncCollapsed && syncedLaunchItems.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            {syncedConfigs.map((c, idx) => (
-              <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
+          <SortableContext items={syncedLaunchItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {syncedLaunchItems.map((c, idx) => (
+              <SortableLaunchItemCard key={c.id} launchItem={c} providers={providers} index={idx + 1} />
             ))}
           </SortableContext>
         </DndContext>
       )}
 
-      {/* Local configs */}
-      <GroupHeader title={t('common.localConfig')} count={localConfigs.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
-      {!localCollapsed && localConfigs.length > 0 && (
+      {/* Local launch items */}
+      <GroupHeader title={t('common.localConfig')} count={localLaunchItems.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      {!localCollapsed && localLaunchItems.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            {localConfigs.map((c, idx) => (
-              <SortableConfigCard key={c.id} config={c} providers={providers} index={syncedConfigs.length + idx + 1} />
+          <SortableContext items={localLaunchItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {localLaunchItems.map((c, idx) => (
+              <SortableLaunchItemCard key={c.id} launchItem={c} providers={providers} index={syncedLaunchItems.length + idx + 1} />
             ))}
           </SortableContext>
         </DndContext>
       )}
 
-      <ConfigFormModal
+      <LaunchItemFormModal
         open={addOpen}
-        title={t('cxLaunch.newConfig')}
+        title={t('cxLaunch.newLaunchItem')}
         providers={providers}
         initialValues={{
           providerId: firstProvider?.id ?? '',

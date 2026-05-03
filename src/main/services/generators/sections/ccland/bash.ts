@@ -1,5 +1,5 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
-import type { ConfigSet, Provider, ProviderEndpoint } from '@shared/types'
+import type { LaunchItem, Provider, ProviderEndpoint } from '@shared/types'
 import { getEndpointUrl } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import type { CCLandSectionData } from './zsh'
@@ -17,7 +17,7 @@ export class CCLandBashGenerator implements SectionGenerator<CCLandSectionData> 
 
     const providerMap = new Map(ccConfig.providers.map((p) => [p.id, p]))
     const enabledProviderIds = new Set(ccConfig.providers.filter((p) => p.enabled).map((p) => p.id))
-    const enabledConfigs = ccConfig.configs.filter((c) => {
+    const enabledConfigs = ccConfig.launchItems.filter((c) => {
       if (!c.enabled) return false
       if (c.passthrough) return true
       return enabledProviderIds.has(c.providerId)
@@ -150,7 +150,7 @@ export class CCLandBashGenerator implements SectionGenerator<CCLandSectionData> 
   private writeFunction(
     lines: string[],
     provider: Provider,
-    config: ConfigSet,
+    config: LaunchItem,
     tokens: Map<string, string>,
     proxyFns: { proxyOn: string; proxyOff: string }
   ): void {
@@ -159,7 +159,7 @@ export class CCLandBashGenerator implements SectionGenerator<CCLandSectionData> 
     const tokenVal = tokens.get(`token:${config.id}`)
     if (!tokenVal) {
       const funcName = assertSafeShellName(config.funcName, config.name || config.id)
-      lines.push(`${funcName}() { echo ${quoteBashLikeLiteral(`错误: 配置项 ${funcName} 未设置 Token.请在 RCLand 中配置`)} >&2; return 1; }`)
+      lines.push(`${funcName}() { echo ${quoteBashLikeLiteral(`错误: 启动项 ${funcName} 未设置 Token.请在 RCLand 中配置`)} >&2; return 1; }`)
       return
     }
 
@@ -195,7 +195,7 @@ export class CCLandBashGenerator implements SectionGenerator<CCLandSectionData> 
 
   private writePassthroughFunction(
     lines: string[],
-    config: ConfigSet,
+    config: LaunchItem,
     proxyFns: { proxyOn: string; proxyOff: string }
   ): void {
     lines.push('')

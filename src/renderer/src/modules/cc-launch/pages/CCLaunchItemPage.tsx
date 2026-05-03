@@ -5,11 +5,11 @@ import { ShopOutlined, SettingOutlined, MenuOutlined, AppstoreOutlined } from '@
 import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
 import { useClaudeEnvDictStore } from '@renderer/stores/useClaudeEnvDictStore'
 import { ProviderTab } from '../components/ProviderTab'
-import { ConfigTab } from '../components/ConfigTab'
+import { LaunchItemTab } from '../components/LaunchItemTab'
 import { SelectorTab } from '../components/SelectorTab'
 import { EnvDictTab } from '@renderer/modules/claude-env-dict/components/EnvDictTab'
 
-export default function CCConfigPage(): React.ReactElement {
+export default function CCLaunchItemPage(): React.ReactElement {
   const { t } = useTranslation()
   const loadData = useCCLaunchStore((s) => s.loadData)
   const dataLoaded = useCCLaunchStore((s) => s.dataLoaded)
@@ -40,9 +40,9 @@ export default function CCConfigPage(): React.ReactElement {
       items={[
         {
           key: 'configs',
-          label: t('ccLaunch.configTab'),
+          label: t('ccLaunch.launchItemTab'),
           icon: <SettingOutlined />,
-          children: <ConfigTab />
+          children: <LaunchItemTab />
         },
         {
           key: 'providers',

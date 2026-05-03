@@ -1,7 +1,7 @@
 import { app, dialog } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import type { AppSettings, CCLaunchData, CXLandData, Provider, ConfigSet, LocalCCLaunchData, CXProvider, CXConfigSet, LocalCXLandData } from '@shared/types'
+import type { AppSettings, CCLaunchData, CXLandData, Provider, LaunchItem, LocalCCLaunchData, CXProvider, CXLaunchItem, LocalCXLandData } from '@shared/types'
 import { createEmptyCXLandData, normalizeCXLandData } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import { assertAppSettings, assertCCLaunchData, assertCXLandData } from '@shared/ipc-contracts'
@@ -98,7 +98,10 @@ export function loadData(): string | null {
 
   // Merge: local items get localOnly=true
   const localProviders = markLocalItems(localData.providers)
-  const localConfigs = markLocalItems(localData.configs)
+  const localLaunchItems = markLocalItems(localData.launchItems)
+
+  // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new) from disk
+  const syncedLaunchItems = (syncedData as any)?.launchItems ?? (syncedData as any)?.configs ?? []
 
   // Combine synced + local
   const rawSelector = syncedData?.selector ?? { funcName: 'cc', promptTitle: '选择启动器' }
@@ -109,12 +112,12 @@ export function loadData(): string | null {
   const merged: CCLaunchData = {
     version: 5,
     providers: [...(syncedData?.providers ?? []), ...localProviders],
-    configs: [...(syncedData?.configs ?? []), ...localConfigs],
+    launchItems: [...syncedLaunchItems, ...localLaunchItems],
     selector
   }
 
   // Return null if no data at all
-  if (merged.providers.length === 0 && merged.configs.length === 0 && !syncedData) {
+  if (merged.providers.length === 0 && merged.launchItems.length === 0 && !syncedData) {
     return null
   }
 
@@ -130,14 +133,14 @@ export function saveData(json: string): void {
   // Split providers
   const { synced: syncedProviders, local: localProviders } = splitLocalItems(data.providers)
 
-  // Split configs
-  const { synced: syncedConfigs, local: localConfigs } = splitLocalItems(data.configs)
+  // Split launch items
+  const { synced: syncedLaunchItems, local: localLaunchItems } = splitLocalItems(data.launchItems)
 
   // Save synced data (without localOnly field)
   const syncedData: CCLaunchData = {
     version: 5,
     providers: syncedProviders as Provider[],
-    configs: syncedConfigs as ConfigSet[],
+    launchItems: syncedLaunchItems as LaunchItem[],
     selector: data.selector
   }
   writeFileSync(join(settings.configDir, DATA_FILENAME), JSON.stringify(syncedData, null, 2), 'utf-8')
@@ -146,7 +149,7 @@ export function saveData(json: string): void {
   const localData: LocalCCLaunchData = {
     version: 1,
     providers: localProviders.map(p => { const { localOnly: _, ...rest } = p; return rest }) as Provider[],
-    configs: localConfigs.map(c => { const { localOnly: _, ...rest } = c; return rest }) as ConfigSet[]
+    launchItems: localLaunchItems.map(c => { const { localOnly: _, ...rest } = c; return rest }) as LaunchItem[]
   }
   saveLocalCCConfig(localData)
 }
@@ -185,7 +188,10 @@ export function loadCXLandData(): CXLandData {
 
   const localData = loadLocalCXConfig()
   const localProviders = markLocalItems(localData.providers)
-  const localConfigs = markLocalItems(localData.configs)
+  const localLaunchItems = markLocalItems(localData.launchItems)
+
+  // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new) from disk
+  const syncedLaunchItems = (syncedData as any)?.launchItems ?? (syncedData as any)?.configs ?? []
 
   const empty = createEmptyCXLandData()
   const rawCXSelector = syncedData?.selector ?? empty.selector
@@ -196,7 +202,7 @@ export function loadCXLandData(): CXLandData {
   const merged: CXLandData = {
     version: 3,
     providers: [...(syncedData?.providers ?? []), ...localProviders],
-    configs: [...(syncedData?.configs ?? []), ...localConfigs],
+    launchItems: [...syncedLaunchItems, ...localLaunchItems],
     selector: cxSelector
   }
 
@@ -210,12 +216,12 @@ export function saveCXLandData(data: CXLandData): void {
   ensureConfigDir(settings.configDir)
 
   const { synced: syncedProviders, local: localProviders } = splitLocalItems(data.providers)
-  const { synced: syncedConfigs, local: localConfigs } = splitLocalItems(data.configs)
+  const { synced: syncedLaunchItems, local: localLaunchItems } = splitLocalItems(data.launchItems)
 
   const syncedData: CXLandData = {
     version: 3,
     providers: syncedProviders as CXProvider[],
-    configs: syncedConfigs as CXConfigSet[],
+    launchItems: syncedLaunchItems as CXLaunchItem[],
     selector: data.selector
   }
   writeFileSync(join(settings.configDir, CX_DATA_FILENAME), JSON.stringify(syncedData, null, 2), 'utf-8')
@@ -223,7 +229,7 @@ export function saveCXLandData(data: CXLandData): void {
   const localData: LocalCXLandData = {
     version: 1,
     providers: localProviders.map(p => { const { localOnly: _, ...rest } = p; return rest }) as CXProvider[],
-    configs: localConfigs.map(c => { const { localOnly: _, ...rest } = c; return rest }) as CXConfigSet[]
+    launchItems: localLaunchItems.map(c => { const { localOnly: _, ...rest } = c; return rest }) as CXLaunchItem[]
   }
   saveLocalCXConfig(localData)
 }

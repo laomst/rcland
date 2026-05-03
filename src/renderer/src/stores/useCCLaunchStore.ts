@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Provider, ConfigSet, CCLaunchData, ProviderKey } from '@shared/types'
+import type { Provider, LaunchItem, CCLaunchData, ProviderKey } from '@shared/types'
 import { createTopLevelCrud } from './crud-helpers'
 import { createPersistQueue, toErrorMessage } from './persist'
 
@@ -9,7 +9,7 @@ const persistQueue = createPersistQueue()
 interface AppState {
   // Data
   providers: Provider[]
-  configs: ConfigSet[]
+  launchItems: LaunchItem[]
   selector: CCLaunchData['selector']
   dataLoaded: boolean
   loading: boolean
@@ -30,12 +30,12 @@ interface AppState {
   updateKey: (providerId: string, keyId: string, patch: Partial<ProviderKey>) => void
   removeKey: (providerId: string, keyId: string) => void
 
-  // Config CRUD
-  addConfig: (config: ConfigSet) => void
-  addConfigAfter: (afterId: string, config: ConfigSet) => void
-  updateConfig: (configId: string, patch: Partial<ConfigSet>) => void
-  removeConfig: (configId: string) => void
-  reorderConfigs: (activeId: string, overId: string) => void
+  // Launch Item CRUD
+  addLaunchItem: (item: LaunchItem) => void
+  addLaunchItemAfter: (afterId: string, item: LaunchItem) => void
+  updateLaunchItem: (itemId: string, patch: Partial<LaunchItem>) => void
+  removeLaunchItem: (itemId: string) => void
+  reorderLaunchItems: (activeId: string, overId: string) => void
 
   // Selector
   updateSelector: (patch: Partial<CCLaunchData['selector']>) => void
@@ -43,31 +43,31 @@ interface AppState {
 
 export const useCCLaunchStore = create<AppState>((set, get) => {
   const providerCrud = createTopLevelCrud<Provider>('providers', get, set)
-  const configCrud = createTopLevelCrud<ConfigSet>('configs', get, set)
+  const launchItemCrud = createTopLevelCrud<LaunchItem>('launchItems', get, set)
 
   return {
   // ---- Data ----
   providers: [],
-  configs: [],
+  launchItems: [],
   selector: DEFAULT_SELECTOR,
   dataLoaded: false,
   loading: false,
   saveError: null,
 
   loadData: async (force = false) => {
-    if (get().loading || (!force && get().dataLoaded)) return // 避免重复加载
+    if (get().loading || (!force && get().dataLoaded)) return
     set({ loading: true })
     const data = await window.electronAPI.loadData()
     if (data) {
-      set({ providers: data.providers, configs: data.configs, selector: data.selector ?? DEFAULT_SELECTOR, dataLoaded: true, loading: false })
+      set({ providers: data.providers, launchItems: data.launchItems, selector: data.selector ?? DEFAULT_SELECTOR, dataLoaded: true, loading: false })
     } else {
-      set({ providers: [], configs: [], selector: DEFAULT_SELECTOR, dataLoaded: true, loading: false })
+      set({ providers: [], launchItems: [], selector: DEFAULT_SELECTOR, dataLoaded: true, loading: false })
     }
   },
 
   saveData: async () => {
-    const { providers, configs, selector } = get()
-    const data: CCLaunchData = { version: 5, providers, configs, selector }
+    const { providers, launchItems, selector } = get()
+    const data: CCLaunchData = { version: 5, providers, launchItems, selector }
     await persistQueue.enqueue(async () => {
       await window.electronAPI.saveData(data)
     }).then(() => {
@@ -91,7 +91,7 @@ export const useCCLaunchStore = create<AppState>((set, get) => {
   removeProvider: (id) => {
     set((s) => ({
       providers: s.providers.filter((p) => p.id !== id),
-      configs: s.configs.filter((c) => c.providerId !== id)
+      launchItems: s.launchItems.filter((c) => c.providerId !== id)
     }))
     void get().saveData().catch(() => undefined)
   },
@@ -130,12 +130,12 @@ export const useCCLaunchStore = create<AppState>((set, get) => {
     void get().saveData().catch(() => undefined)
   },
 
-  // ---- Config CRUD ----
-  addConfig: configCrud.add,
-  addConfigAfter: configCrud.addAfter,
-  updateConfig: configCrud.update,
-  removeConfig: configCrud.remove,
-  reorderConfigs: configCrud.reorder,
+  // ---- Launch Item CRUD ----
+  addLaunchItem: launchItemCrud.add,
+  addLaunchItemAfter: launchItemCrud.addAfter,
+  updateLaunchItem: launchItemCrud.update,
+  removeLaunchItem: launchItemCrud.remove,
+  reorderLaunchItems: launchItemCrud.reorder,
 
   // ---- Selector ----
   updateSelector: (patch) => {
@@ -145,9 +145,8 @@ export const useCCLaunchStore = create<AppState>((set, get) => {
   }
 })
 
-/** Helper: create empty config with all env vars disabled */
-export function createEmptyConfig(providerId: string, endpointId: string, keyId: string): ConfigSet {
-  const envVars: ConfigSet['envVars'] = {}
+export function createEmptyLaunchItem(providerId: string, endpointId: string, keyId: string): LaunchItem {
+  const envVars: LaunchItem['envVars'] = {}
   return {
     id: crypto.randomUUID(),
     providerId,

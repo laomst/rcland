@@ -46,7 +46,7 @@ const claudeEnvDict = {
     DISABLE_PROMPT_CACHING: '设为 1 关闭所有模型的 Prompt 缓存（优先级高于按模型的设置）。',
   },
 
-  // 渲染降级标签：当 ConfigSet.envVars 中出现字典里没有的 key 时显示
+  // 渲染降级标签：当 LaunchItem.envVars 中出现字典里没有的 key 时显示
   unknownVariable: '未知变量',
 }
 

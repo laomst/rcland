@@ -85,7 +85,7 @@ export function ProviderTab(): React.ReactElement {
     })
   )
 
-  const handleAdd = (values: { name: string; color: string; kanbanUrl: string; endpoints: ProviderEndpoint[]; keys: ProviderKey[]; template: { envVars: EnvVarsMap } }) => {
+  const handleAdd = (values: { name: string; color: string; kanbanUrl?: string; endpoints: ProviderEndpoint[]; keys: ProviderKey[]; template: { envVars: EnvVarsMap } }) => {
     addProvider({
       id: crypto.randomUUID(),
       name: values.name.trim(),

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { splitLocalItems, markLocalItems } from '../src/main/services/local-sync'
-import type { CXProvider, CXConfigSet } from '../src/shared/types'
+import type { CXProvider, CXLaunchItem } from '../src/shared/types'
 
 test('splitLocalItems separates localOnly CX providers from synced ones', () => {
   const providers: CXProvider[] = [
@@ -17,7 +17,7 @@ test('splitLocalItems separates localOnly CX providers from synced ones', () => 
 })
 
 test('splitLocalItems separates localOnly CX configs from synced ones', () => {
-  const configs: CXConfigSet[] = [
+  const configs: CXLaunchItem[] = [
     { id: 'c1', providerId: 'p1', endpointId: 'e1', keyId: 'k1', name: 'c1', funcName: 'cx-c1', enabled: true },
     { id: 'c2', providerId: 'p1', endpointId: 'e1', keyId: 'k1', name: 'c2', funcName: 'cx-c2', enabled: true, localOnly: true }
   ]

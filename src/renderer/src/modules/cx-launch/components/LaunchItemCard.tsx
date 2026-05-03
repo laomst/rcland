@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Space, Switch, Typography, Tooltip, App, Select, Tag } from 'antd'
 import { EditOutlined, DeleteOutlined, WarningOutlined, CopyOutlined, GlobalOutlined } from '@ant-design/icons'
-import type { ConfigSet, Provider } from '@shared/types'
-import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
-import { ConfigFormModal } from './ConfigFormModal'
+import type { CXLaunchItem, CXProvider } from '@shared/types'
+import { useCXLandStore } from '@renderer/stores/useCXLandStore'
+import { LaunchItemFormModal } from './LaunchItemFormModal'
 import { ItemRow } from '@renderer/components/ItemRow'
-import { createConfigUpdatePatch } from './config-update'
 
 const { Text } = Typography
 
@@ -19,51 +18,48 @@ const flexCol = (flex: number): React.CSSProperties => ({
   whiteSpace: 'nowrap'
 })
 
-export function ConfigCard({
-  config,
+export function LaunchItemCard({
+  launchItem,
   providers,
   index,
   isDragging,
   dragHandleProps
 }: {
-  config: ConfigSet
-  providers: Provider[]
+  launchItem: CXLaunchItem
+  providers: CXProvider[]
   index?: number
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }): React.ReactElement {
   const { t } = useTranslation()
   const { modal } = App.useApp()
-  const updateConfig = useCCLaunchStore((s) => s.updateConfig)
+  const updateLaunchItem = useCXLandStore((s) => s.updateLaunchItem)
   const [editOpen, setEditOpen] = useState(false)
 
-  const provider = providers.find((p) => p.id === config.providerId)
+  const provider = providers.find((p) => p.id === launchItem.providerId)
   const accent = provider?.color || '#1677ff'
-  const providerDisabled = !provider?.enabled && !config.passthrough
+  const providerDisabled = !provider?.enabled && !launchItem.passthrough
 
-  const key = provider?.keys.find((k) => k.id === config.keyId)
-  const keyMissing = !key && config.keyId
-
-  const configName = config.name || config.funcName
+  const launchItemName = launchItem.name || launchItem.funcName
 
   return (
     <>
       <ItemRow
         index={index}
         isDragging={isDragging}
-        enabled={config.enabled}
-        borderColor={config.passthrough ? '#52c41a' : providerDisabled ? '#faad14' : accent}
-        background={!config.enabled ? '#f0f0f0' : providerDisabled ? '#fff7e6' : '#f6f8fa'}
+        enabled={launchItem.enabled}
+        borderColor={launchItem.passthrough ? '#52c41a' : providerDisabled ? '#faad14' : accent}
+        background={!launchItem.enabled ? '#f0f0f0' : providerDisabled ? '#fff7e6' : '#f6f8fa'}
         dragHandleProps={dragHandleProps}
         actions={<>
-          {!config.passthrough && (
+          {!launchItem.passthrough && (
             <>
               {/* Endpoint Selector */}
               <Select
                 size="small"
                 variant="borderless"
-                value={config.endpointId}
-                onChange={(val) => updateConfig(config.id, { endpointId: val })}
+                value={launchItem.endpointId}
+                onChange={(val) => updateLaunchItem(launchItem.id, { endpointId: val })}
                 style={{ width: 140, textAlign: 'right' }}
                 popupMatchSelectWidth={false}
                 placeholder={t('ccLaunch.selectEndpoint')}
@@ -77,12 +73,11 @@ export function ConfigCard({
               <Select
                 size="small"
                 variant="borderless"
-                value={config.keyId}
-                onChange={(val) => updateConfig(config.id, { keyId: val })}
+                value={launchItem.keyId}
+                onChange={(val) => updateLaunchItem(launchItem.id, { keyId: val })}
                 style={{ width: 90, textAlign: 'right' }}
                 popupMatchSelectWidth={false}
                 placeholder={t('ccLaunch.selectKey')}
-                status={keyMissing ? 'error' : undefined}
                 options={(provider?.keys ?? []).map((k) => ({
                   value: k.id,
                   label: <span style={{ fontSize: 12 }}>{k.label}</span>
@@ -99,11 +94,11 @@ export function ConfigCard({
           {/* Action Buttons */}
           <Tooltip title={t('common.copy')}>
             <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => {
-              const { id, ...rest } = config
-              useCCLaunchStore.getState().addConfigAfter(config.id, {
+              const { id, ...rest } = launchItem
+              useCXLandStore.getState().addLaunchItem({
                 ...rest,
                 id: crypto.randomUUID(),
-                funcName: config.funcName + '-copy'
+                funcName: launchItem.funcName + '-copy'
               })
             }} />
           </Tooltip>
@@ -114,19 +109,19 @@ export function ConfigCard({
             <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => {
               modal.confirm({
                 title: t('common.confirmDelete'),
-                content: t('ccLaunch.deleteConfigConfirm', { name: config.funcName }),
+                content: t('ccLaunch.deleteConfigConfirm', { name: launchItem.funcName }),
                 okText: t('common.delete'),
                 okType: 'danger',
                 cancelText: t('common.cancel'),
-                onOk: () => useCCLaunchStore.getState().removeConfig(config.id)
+                onOk: () => useCXLandStore.getState().removeLaunchItem(launchItem.id)
               })
             }} />
           </Tooltip>
           <Select
             size="small"
             variant="borderless"
-            value={config.localOnly ? 'local' : 'sync'}
-            onChange={(val) => updateConfig(config.id, { localOnly: val === 'local' })}
+            value={launchItem.localOnly ? 'local' : 'sync'}
+            onChange={(val) => updateLaunchItem(launchItem.id, { localOnly: val === 'local' })}
             style={{ width: 70 }}
             options={[
               { value: 'sync', label: t('common.synced') },
@@ -135,21 +130,21 @@ export function ConfigCard({
           />
           <Switch
             size="small"
-            checked={config.enabled}
-            onChange={(checked) => updateConfig(config.id, { enabled: checked })}
+            checked={launchItem.enabled}
+            onChange={(checked) => updateLaunchItem(launchItem.id, { enabled: checked })}
           />
         </>}
       >
-        {config.passthrough ? (
+        {launchItem.passthrough ? (
           <>
             <Tag color="green" style={{ fontSize: 11, margin: 0, flexShrink: 0 }}>透传</Tag>
-            <Tooltip title={`${configName} (${config.funcName})`}>
+            <Tooltip title={`${launchItemName} (${launchItem.funcName})`}>
               <div style={{ ...flexCol(1), display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Text strong style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>{configName}</Text>
-                <Text code style={{ fontSize: 11, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>({config.funcName})</Text>
+                <Text strong style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>{launchItemName}</Text>
+                <Text code style={{ fontSize: 11, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>({launchItem.funcName})</Text>
               </div>
             </Tooltip>
-            {config.useSystemProxy && (
+            {launchItem.useSystemProxy && (
               <Tooltip title="系统代理已启用">
                 <GlobalOutlined style={{ fontSize: 14, color: '#52c41a', flexShrink: 0 }} />
               </Tooltip>
@@ -167,36 +162,63 @@ export function ConfigCard({
 
             <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>|</Text>
 
-            {/* 2. Config Name + Function Name - flexible */}
-            <Tooltip title={`${configName} (${config.funcName})`}>
+            {/* 2. wireApi tag */}
+            {provider && (
+              <Tag color={provider.wireApi === 'responses' ? 'green' : 'blue'} style={{ fontSize: 11, margin: 0, flexShrink: 0 }}>
+                {provider.wireApi}
+              </Tag>
+            )}
+
+            {/* 3. LaunchItem Name + Function Name - flexible */}
+            <Tooltip title={`${launchItemName} (${launchItem.funcName})`}>
               <div style={{ ...flexCol(1), display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Text strong style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>{configName}</Text>
-                <Text code style={{ fontSize: 11, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>({config.funcName})</Text>
+                <Text strong style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>{launchItemName}</Text>
+                <Text code style={{ fontSize: 11, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1, minWidth: 0 }}>({launchItem.funcName})</Text>
               </div>
             </Tooltip>
+
+            {/* 4. Model (if set) */}
+            {launchItem.model && (
+              <>
+                <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>|</Text>
+                <Tooltip title={`model: ${launchItem.model}`}>
+                  <Tag style={{ fontSize: 11, margin: 0, flexShrink: 0 }}>{launchItem.model}</Tag>
+                </Tooltip>
+              </>
+            )}
           </>
         )}
       </ItemRow>
 
-      <ConfigFormModal
+      <LaunchItemFormModal
         open={editOpen}
-        title={t('ccLaunch.editConfigTitle', { name: configName })}
+        title={t('ccLaunch.editConfigTitle', { name: launchItemName })}
         providers={providers}
         initialValues={{
-          providerId: config.providerId,
-          endpointId: config.endpointId,
-          keyId: config.keyId,
-          name: config.name || '',
-          funcName: config.funcName,
-          envVars: { ...config.envVars },
-          passthrough: config.passthrough ?? false,
-          useSystemProxy: config.useSystemProxy ?? false,
-          localOnly: config.localOnly ?? false
+          providerId: launchItem.providerId,
+          endpointId: launchItem.endpointId,
+          keyId: launchItem.keyId,
+          name: launchItem.name || '',
+          funcName: launchItem.funcName,
+          model: launchItem.model || '',
+          passthrough: launchItem.passthrough ?? false,
+          useSystemProxy: launchItem.useSystemProxy ?? false,
+          localOnly: launchItem.localOnly ?? false
         }}
         okText={t('common.save')}
         onCancel={() => setEditOpen(false)}
         onOk={(values) => {
-          updateConfig(config.id, createConfigUpdatePatch(values))
+          updateLaunchItem(launchItem.id, {
+            providerId: values.providerId,
+            endpointId: values.endpointId,
+            keyId: values.keyId,
+            name: values.name,
+            funcName: values.funcName,
+            model: values.model?.trim() || undefined,
+            passthrough: values.passthrough,
+            useSystemProxy: values.useSystemProxy,
+            localOnly: values.localOnly
+          })
           setEditOpen(false)
         }}
       />

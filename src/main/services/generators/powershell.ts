@@ -1,5 +1,5 @@
 import { BaseShellGenerator, type DecryptedValues } from './base'
-import type { CCLaunchData, ConfigSet, Provider } from '@shared/types'
+import type { CCLaunchData, LaunchItem, Provider } from '@shared/types'
 import { getEndpointUrl } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 
@@ -18,7 +18,7 @@ export class PowerShellGenerator extends BaseShellGenerator {
 
     const providerMap = new Map(data.providers.map((p) => [p.id, p]))
     const enabledProviderIds = new Set(data.providers.filter((p) => p.enabled).map((p) => p.id))
-    const enabledConfigs = data.configs.filter((c) => c.enabled && enabledProviderIds.has(c.providerId))
+    const enabledConfigs = data.launchItems.filter((c) => c.enabled && enabledProviderIds.has(c.providerId))
 
     if (enabledConfigs.length > 0) {
       lines.push(this.separator('Launcher Functions'))
@@ -91,7 +91,7 @@ export class PowerShellGenerator extends BaseShellGenerator {
   private writeFunction(
     lines: string[],
     provider: Provider,
-    config: ConfigSet,
+    config: LaunchItem,
     values: DecryptedValues
   ): void {
     lines.push('')
@@ -100,7 +100,7 @@ export class PowerShellGenerator extends BaseShellGenerator {
     const tokenVal = values.get(`token:${config.id}`)
     if (!tokenVal) {
       lines.push(`function ${config.funcName} {`)
-      lines.push(`    Write-Error "配置项 ${config.funcName} 未设置 Token，请在 RCLand 中配置"`)
+      lines.push(`    Write-Error "启动项 ${config.funcName} 未设置 Token，请在 RCLand 中配置"`)
       lines.push('}')
       return
     }

@@ -30,7 +30,7 @@ export interface CXProvider {
   kanbanUrl?: string
 }
 
-export interface CXConfigSet {
+export interface CXLaunchItem {
   id: string
   /** Foreign key to CXProvider */
   providerId: string
@@ -75,7 +75,7 @@ export interface CXSelector {
 export interface CXLandData {
   version: 3
   providers: CXProvider[]
-  configs: CXConfigSet[]
+  launchItems: CXLaunchItem[]
   selector: CXSelector
 }
 
@@ -83,7 +83,7 @@ export function createEmptyCXLandData(): CXLandData {
   return {
     version: 3,
     providers: [],
-    configs: [],
+    launchItems: [],
     selector: { funcName: 'cx', promptTitle: '选择 Codex 供应商', kanban: { funcName: 'show-cx-usage', enabled: false } }
   }
 }
@@ -91,8 +91,17 @@ export function createEmptyCXLandData(): CXLandData {
 export function normalizeCXLandData(data: unknown): CXLandData {
   if (!data || typeof data !== 'object') return createEmptyCXLandData()
   const obj = data as Partial<CXLandData>
-  if (obj.version !== 3 || !Array.isArray(obj.providers) || !Array.isArray(obj.configs)) {
+  if (obj.version !== 3 || !Array.isArray(obj.providers)) {
     return createEmptyCXLandData()
+  }
+  // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new)
+  const rawObj = obj as unknown as Record<string, unknown>
+  if (!Array.isArray(rawObj.launchItems) && !Array.isArray(rawObj.configs)) {
+    return createEmptyCXLandData()
+  }
+  // Map old 'configs' field to 'launchItems'
+  if (!Array.isArray(rawObj.launchItems) && Array.isArray(rawObj.configs)) {
+    rawObj.launchItems = rawObj.configs
   }
   // Clean up legacy selector fields
   if (obj.selector) {

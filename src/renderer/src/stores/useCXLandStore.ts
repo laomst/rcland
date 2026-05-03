@@ -5,7 +5,7 @@ import {
   type CXProvider,
   type CXProviderKey,
   type CXEndpoint,
-  type CXConfigSet,
+  type CXLaunchItem,
   type CXSelector
 } from '@shared/types'
 import { createTopLevelCrud } from './crud-helpers'
@@ -15,7 +15,7 @@ const persistQueue = createPersistQueue()
 
 interface CXLandState {
   providers: CXProvider[]
-  configs: CXConfigSet[]
+  launchItems: CXLaunchItem[]
   selector: CXSelector
   dataLoaded: boolean
   loading: boolean
@@ -32,7 +32,7 @@ interface CXLandState {
   removeProvider: (id: string) => void
   reorderProviders: (activeId: string, overId: string) => void
 
-  // Endpoint CRUD (within provider) — kept handwritten because crud-helpers does not model nested updates
+  // Endpoint CRUD (within provider)
   addEndpoint: (providerId: string, endpoint: CXEndpoint) => void
   updateEndpoint: (providerId: string, endpointId: string, patch: Partial<CXEndpoint>) => void
   removeEndpoint: (providerId: string, endpointId: string) => void
@@ -42,12 +42,12 @@ interface CXLandState {
   updateKey: (providerId: string, keyId: string, patch: Partial<CXProviderKey>) => void
   removeKey: (providerId: string, keyId: string) => void
 
-  // Config CRUD
-  addConfig: (config: CXConfigSet) => void
-  addConfigAfter: (afterId: string, config: CXConfigSet) => void
-  updateConfig: (configId: string, patch: Partial<CXConfigSet>) => void
-  removeConfig: (configId: string) => void
-  reorderConfigs: (activeId: string, overId: string) => void
+  // Launch Item CRUD
+  addLaunchItem: (item: CXLaunchItem) => void
+  addLaunchItemAfter: (afterId: string, item: CXLaunchItem) => void
+  updateLaunchItem: (itemId: string, patch: Partial<CXLaunchItem>) => void
+  removeLaunchItem: (itemId: string) => void
+  reorderLaunchItems: (activeId: string, overId: string) => void
 
   // Selector
   updateSelector: (patch: Partial<CXSelector>) => void
@@ -55,11 +55,11 @@ interface CXLandState {
 
 export const useCXLandStore = create<CXLandState>((set, get) => {
   const providerCrud = createTopLevelCrud<CXProvider>('providers', get, set)
-  const configCrud = createTopLevelCrud<CXConfigSet>('configs', get, set)
+  const launchItemCrud = createTopLevelCrud<CXLaunchItem>('launchItems', get, set)
 
   return {
     providers: [],
-    configs: [],
+    launchItems: [],
     selector: createEmptyCXLandData().selector,
     dataLoaded: false,
     loading: false,
@@ -72,7 +72,7 @@ export const useCXLandStore = create<CXLandState>((set, get) => {
       const eff = data ?? createEmptyCXLandData()
       set({
         providers: eff.providers,
-        configs: eff.configs,
+        launchItems: eff.launchItems,
         selector: eff.selector,
         dataLoaded: true,
         loading: false
@@ -80,8 +80,8 @@ export const useCXLandStore = create<CXLandState>((set, get) => {
     },
 
     saveData: async () => {
-      const { providers, configs, selector } = get()
-      const data: CXLandData = { version: 3, providers, configs, selector }
+      const { providers, launchItems, selector } = get()
+      const data: CXLandData = { version: 3, providers, launchItems, selector }
       await persistQueue.enqueue(async () => {
         await window.electronAPI.saveCXLandData(data)
       }).then(() => {
@@ -105,7 +105,7 @@ export const useCXLandStore = create<CXLandState>((set, get) => {
     removeProvider: (id) => {
       set((s) => ({
         providers: s.providers.filter((p) => p.id !== id),
-        configs: s.configs.filter((c) => c.providerId !== id)
+        launchItems: s.launchItems.filter((c) => c.providerId !== id)
       }))
       void get().saveData().catch(() => undefined)
     },
@@ -168,12 +168,12 @@ export const useCXLandStore = create<CXLandState>((set, get) => {
       void get().saveData().catch(() => undefined)
     },
 
-    // ---- Config CRUD ----
-    addConfig: configCrud.add,
-    addConfigAfter: configCrud.addAfter,
-    updateConfig: configCrud.update,
-    removeConfig: configCrud.remove,
-    reorderConfigs: configCrud.reorder,
+    // ---- Launch Item CRUD ----
+    addLaunchItem: launchItemCrud.add,
+    addLaunchItemAfter: launchItemCrud.addAfter,
+    updateLaunchItem: launchItemCrud.update,
+    removeLaunchItem: launchItemCrud.remove,
+    reorderLaunchItems: launchItemCrud.reorder,
 
     // ---- Selector ----
     updateSelector: (patch) => {

@@ -1,1 +1,1 @@
-export { CXConfigPage } from './pages/CXConfigPage'
+export { CXLaunchItemPage } from './pages/CXLaunchItemPage'

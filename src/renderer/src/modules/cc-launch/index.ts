@@ -1,1 +1,1 @@
-export { default as CCConfigPage } from './pages/CCConfigPage'
+export { default as CCLaunchItemPage } from './pages/CCLaunchItemPage'

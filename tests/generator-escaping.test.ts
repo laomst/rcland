@@ -21,7 +21,7 @@ const systemProxy: SystemProxyConfig = {
 }
 
 function sampleData(
-  overrides: Partial<CCLandSectionData['ccConfig']['configs'][number]> = {},
+  overrides: Partial<CCLandSectionData['ccConfig']['launchItems'][number]> = {},
   endpointOverrides: Partial<CCLandSectionData['ccConfig']['providers'][number]['endpoints'][number]> = {}
 ): CCLandSectionData {
   const config = {
@@ -56,7 +56,7 @@ function sampleData(
         }],
         keys: []
       }],
-      configs: [config],
+      launchItems: [config],
       selector: {
         funcName: 'cc',
         promptTitle: 'Choose "$(touch /tmp/rcland-title)"'

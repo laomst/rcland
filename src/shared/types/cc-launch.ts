@@ -47,7 +47,7 @@ export interface Provider {
   kanbanUrl?: string
 }
 
-export interface ConfigSet {
+export interface LaunchItem {
   id: string
   /** Foreign key to Provider */
   providerId: string
@@ -73,7 +73,7 @@ export interface ConfigSet {
 export interface CCLaunchData {
   version: 5
   providers: Provider[]
-  configs: ConfigSet[]
+  launchItems: LaunchItem[]
   selector: {
     funcName: string
     promptTitle: string

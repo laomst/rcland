@@ -24,7 +24,7 @@ function makeData(overrides: Partial<CXLandData> = {}): CXLandData {
       endpoints: [{ id: 'e1', label: 'default', url: 'https://api.example.com/v1' }],
       keys: [{ id: 'k1', label: 'main', token: 'enc:v1:abc' }]
     }],
-    configs: [{
+    launchItems: [{
       id: 'c1',
       providerId: 'p1',
       endpointId: 'e1',
@@ -52,9 +52,9 @@ test('buildBashLikeCXContent emits one function per enabled config with -c args'
   assert.match(out, /-c 'model="gpt-5\.4"'/)
 })
 
-test('buildBashLikeCXContent omits -c model when ConfigSet.model is empty', () => {
+test('buildBashLikeCXContent omits -c model when LaunchItem.model is empty', () => {
   const data = makeData()
-  data.configs[0].model = undefined
+  data.launchItems[0].model = undefined
   const tokens = new Map([['cx-token:c1', 'tok']])
   const out = build(data, tokens)
   assert.doesNotMatch(out, /-c 'model="/)
@@ -69,7 +69,7 @@ test('buildBashLikeCXContent emits error stub when token is empty', () => {
 
 test('buildBashLikeCXContent emits error stub when provider is missing', () => {
   const data = makeData()
-  data.configs[0].providerId = 'unknown'
+  data.launchItems[0].providerId = 'unknown'
   const tokens = new Map([['cx-token:c1', 'tok']])
   const out = build(data, tokens)
   assert.match(out, /cx-glm5\(\) \{ echo .+/)
@@ -127,15 +127,15 @@ test('buildBashLikeCXContent parses -n for OSC title and strips from args', () =
   assert.match(out, /"\$\{_filtered\[@\]\}"/)
 })
 
-test('buildBashLikeCXContent skips disabled configs', () => {
+test('buildBashLikeCXContent skips disabled launchItems', () => {
   const data = makeData()
-  data.configs[0].enabled = false
+  data.launchItems[0].enabled = false
   const tokens = new Map([['cx-token:c1', 'tok']])
   const out = build(data, tokens)
   assert.doesNotMatch(out, /cx-glm5\(\)/)
 })
 
-test('buildBashLikeCXContent skips configs whose provider is disabled', () => {
+test('buildBashLikeCXContent skips launchItems whose provider is disabled', () => {
   const data = makeData()
   data.providers[0].enabled = false
   const tokens = new Map([['cx-token:c1', 'tok']])

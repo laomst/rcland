@@ -21,7 +21,7 @@ test('buildCXDecryptedMap decrypts tokens for each enabled CX config', () => {
       endpoints: [{ id: 'e1', label: 'a', url: 'https://api.example.com/v1' }],
       keys: [{ id: 'k1', label: 'main', token: encrypt('secret-token') }]
     }],
-    configs: [{
+    launchItems: [{
       id: 'c1',
       providerId: 'p1',
       endpointId: 'e1',
@@ -48,7 +48,7 @@ test('buildCXDecryptedMap sets empty token and decryptFailed=true on bad key', (
       endpoints: [],
       keys: [{ id: 'k1', label: 'main', token: encrypt('secret') }]
     }],
-    configs: [{
+    launchItems: [{
       id: 'c1',
       providerId: 'p1',
       endpointId: 'e1',
@@ -75,7 +75,7 @@ test('buildCXDecryptedMap returns empty token when key reference is missing', ()
       endpoints: [],
       keys: []
     }],
-    configs: [{
+    launchItems: [{
       id: 'c1',
       providerId: 'p1',
       endpointId: 'e1',

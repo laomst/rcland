@@ -9,15 +9,15 @@ import {
   createEmptyCXKey,
   type CXLandData,
   type CXProvider,
-  type CXConfigSet
+  type CXLaunchItem
 } from '../src/shared/types'
 
 test('createEmptyCXLandData returns v3 with empty arrays and default selector', () => {
   const data = createEmptyCXLandData()
   assert.equal(data.version, 3)
   assert.deepEqual(data.providers, [])
-  assert.deepEqual(data.configs, [])
-  assert.deepEqual(data.selector, { funcName: 'cx', promptTitle: '选择 Codex 供应商' })
+  assert.deepEqual(data.launchItems, [])
+  assert.deepEqual(data.selector, { funcName: 'cx', promptTitle: '选择 Codex 供应商', kanban: { funcName: 'show-cx-usage', enabled: false } })
 })
 
 test('normalizeCXLandData discards v2 data and returns empty v3', () => {
@@ -39,7 +39,7 @@ test('normalizeCXLandData accepts well-formed v3 data unchanged', () => {
     endpoints: [{ id: 'e1', label: 'default', url: 'https://api.example.com/v1' }],
     keys: [{ id: 'k1', label: 'main', token: 'enc:v1:abc' }]
   }
-  const config: CXConfigSet = {
+  const config: CXLaunchItem = {
     id: 'c1',
     name: 'GLM5',
     funcName: 'cx-glm5',
@@ -51,7 +51,7 @@ test('normalizeCXLandData accepts well-formed v3 data unchanged', () => {
   const v3: CXLandData = {
     version: 3,
     providers: [provider],
-    configs: [config],
+    launchItems: [config],
     selector: { funcName: 'cx', promptTitle: '选择' }
   }
   const result = normalizeCXLandData(v3)
@@ -110,7 +110,7 @@ test('createEmptyLocalCXLandData returns v1 with empty arrays', () => {
   const data = createEmptyLocalCXLandData()
   assert.equal(data.version, 1)
   assert.deepEqual(data.providers, [])
-  assert.deepEqual(data.configs, [])
+  assert.deepEqual(data.launchItems, [])
 })
 
 test('getCXKey returns key when found', () => {

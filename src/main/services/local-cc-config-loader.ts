@@ -12,8 +12,12 @@ export function loadLocalCCConfigFrom(filePath: string): LocalCCLaunchData {
   if (!existsSync(filePath)) return createEmptyLocalCCLaunchData()
   try {
     const parsed = JSON.parse(readFileSync(filePath, 'utf-8'))
-    if (parsed?.version !== 1 || !Array.isArray(parsed.providers) || !Array.isArray(parsed.configs)) {
+    if (parsed?.version !== 1 || !Array.isArray(parsed.providers) || !Array.isArray(parsed.launchItems ?? parsed.configs)) {
       return createEmptyLocalCCLaunchData()
+    }
+    // Map old 'configs' field to 'launchItems'
+    if (!parsed.launchItems && parsed.configs) {
+      parsed.launchItems = parsed.configs
     }
     return parsed as LocalCCLaunchData
   } catch {

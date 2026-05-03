@@ -18,8 +18,12 @@ export function loadLocalCXConfig(): LocalCXLandData {
   try {
     const raw = readFileSync(p, 'utf-8')
     const parsed = JSON.parse(raw)
-    if (parsed?.version !== 1 || !Array.isArray(parsed.providers) || !Array.isArray(parsed.configs)) {
+    if (parsed?.version !== 1 || !Array.isArray(parsed.providers) || !Array.isArray(parsed.launchItems ?? parsed.configs)) {
       return createEmptyLocalCXLandData()
+    }
+    // Map old 'configs' field to 'launchItems'
+    if (!parsed.launchItems && parsed.configs) {
+      parsed.launchItems = parsed.configs
     }
     return parsed as LocalCXLandData
   } catch {

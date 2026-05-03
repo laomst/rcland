@@ -24,7 +24,7 @@ export function buildDecryptedMap(
     }
   }
 
-  for (const config of data.configs) {
+  for (const config of data.launchItems) {
     const tokenKey = `${config.providerId}:${config.keyId}`
     const encryptedToken = keyTokenMap.get(tokenKey)
 
@@ -76,7 +76,7 @@ export function buildCXDecryptedMap(
     }
   }
 
-  for (const config of data.configs) {
+  for (const config of data.launchItems) {
     const tokenKey = `${config.providerId}:${config.keyId}`
     const encryptedToken = keyTokenMap.get(tokenKey)
     const mapKey = `cx-token:${config.id}`

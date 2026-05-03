@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadLocalCCConfigFrom } from '../src/main/services/local-cc-config-loader'
 
-const EMPTY = { version: 1, providers: [], configs: [] }
+const EMPTY = { version: 1, providers: [], launchItems: [] }
 
 function withTempFile(contents: string | null, fn: (filePath: string) => void) {
   const dir = mkdtempSync(join(tmpdir(), 'rcland-cc-local-'))
@@ -31,13 +31,13 @@ test('returns empty data when JSON is corrupt', () => {
 })
 
 test('returns empty data when version is wrong', () => {
-  withTempFile(JSON.stringify({ version: 99, providers: [], configs: [] }), (filePath) => {
+  withTempFile(JSON.stringify({ version: 99, providers: [], launchItems: [] }), (filePath) => {
     assert.deepEqual(loadLocalCCConfigFrom(filePath), EMPTY)
   })
 })
 
 test('returns empty data when providers is not an array', () => {
-  withTempFile(JSON.stringify({ version: 1, providers: 'oops', configs: [] }), (filePath) => {
+  withTempFile(JSON.stringify({ version: 1, providers: 'oops', launchItems: [] }), (filePath) => {
     assert.deepEqual(loadLocalCCConfigFrom(filePath), EMPTY)
   })
 })
@@ -46,7 +46,7 @@ test('returns parsed data when file is valid', () => {
   const valid = {
     version: 1,
     providers: [{ id: 'p1', name: 'X', enabled: true, endpoints: [], keys: [] }],
-    configs: []
+    launchItems: []
   }
   withTempFile(JSON.stringify(valid), (filePath) => {
     assert.deepEqual(loadLocalCCConfigFrom(filePath), valid)

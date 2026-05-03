@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input, Modal, Form, ColorPicker, Button, Space, App, Switch, Typography, Radio } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
-import type { CXEndpoint, CXProviderKey, CXConfigSet } from '@shared/types'
+import type { CXEndpoint, CXProviderKey, CXLaunchItem } from '@shared/types'
 import { KeyEditModal } from '@renderer/modules/shared/launcher/KeyEditModal'
 
 const PRESET_COLORS = ['#1677ff', '#52c41a', '#fa8c16', '#722ed1', '#eb2f96', '#13c2c2', '#faad14', '#f5222d']
@@ -24,14 +24,14 @@ export function ProviderFormModal({
   title,
   onCancel,
   onOk,
-  existingConfigs = []
+  existingLaunchItems = []
 }: {
   open: boolean
   initialValues: CXProviderFormValues
   title: string
   onCancel: () => void
   onOk: (values: CXProviderFormValues) => void
-  existingConfigs?: CXConfigSet[]
+  existingLaunchItems?: CXLaunchItem[]
 }): React.ReactElement {
   const { t } = useTranslation()
   const { modal } = App.useApp()
@@ -84,19 +84,19 @@ export function ProviderFormModal({
 
   const removeKey = (keyId: string, keyLabel: string) => {
     const providerId = form.id
-    const usedConfigs = existingConfigs.filter(
+    const usedLaunchItems = existingLaunchItems.filter(
       (c) => c.providerId === providerId && c.keyId === keyId
     )
 
-    if (usedConfigs.length > 0) {
-      const configNames = usedConfigs.map((c) => c.funcName).join('、')
+    if (usedLaunchItems.length > 0) {
+      const launchItemNames = usedLaunchItems.map((c) => c.funcName).join('、')
       modal.confirm({
         title: t('ccLaunch.keyInUse'),
         content: (
           <div>
             <p>{t('ccLaunch.keyInUseDesc', { label: keyLabel })}</p>
             <p style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}>
-              {configNames}
+              {launchItemNames}
             </p>
             <p>{t('ccLaunch.keyInUseWarning')}</p>
           </div>

@@ -16,19 +16,19 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useCCLaunchStore, createEmptyConfig } from '@renderer/stores/useCCLaunchStore'
-import { ConfigCard } from './ConfigCard'
-import { ConfigFormModal } from './ConfigFormModal'
+import { useCCLaunchStore, createEmptyLaunchItem } from '@renderer/stores/useCCLaunchStore'
+import { LaunchItemCard } from './LaunchItemCard'
+import { LaunchItemFormModal } from './LaunchItemFormModal'
 import { GroupHeader } from '@renderer/components/GroupHeader'
-import type { ConfigSet, Provider } from '@shared/types'
+import type { LaunchItem, Provider } from '@shared/types'
 
-interface SortableConfigCardProps {
-  config: ConfigSet
+interface SortableLaunchItemCardProps {
+  config: LaunchItem
   providers: Provider[]
   index: number
 }
 
-function SortableConfigCard({ config, providers, index }: SortableConfigCardProps) {
+function SortableLaunchItemCard({ config, providers, index }: SortableLaunchItemCardProps) {
   const {
     attributes,
     listeners,
@@ -45,7 +45,7 @@ function SortableConfigCard({ config, providers, index }: SortableConfigCardProp
 
   return (
     <div ref={setNodeRef} style={style}>
-      <ConfigCard
+      <LaunchItemCard
         config={config}
         providers={providers}
         index={index}
@@ -56,12 +56,12 @@ function SortableConfigCard({ config, providers, index }: SortableConfigCardProp
   )
 }
 
-export function ConfigTab(): React.ReactElement {
+export function LaunchItemTab(): React.ReactElement {
   const { t } = useTranslation()
-  const configs = useCCLaunchStore((s) => s.configs)
+  const launchItems = useCCLaunchStore((s) => s.launchItems)
   const providers = useCCLaunchStore((s) => s.providers)
-  const addConfig = useCCLaunchStore((s) => s.addConfig)
-  const reorderConfigs = useCCLaunchStore((s) => s.reorderConfigs)
+  const addLaunchItem = useCCLaunchStore((s) => s.addLaunchItem)
+  const reorderLaunchItems = useCCLaunchStore((s) => s.reorderLaunchItems)
   const [syncCollapsed, setSyncCollapsed] = useState(false)
   const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -81,7 +81,7 @@ export function ConfigTab(): React.ReactElement {
   const firstProvider = providers[0]
   const firstEndpointId = firstProvider?.endpoints?.[0]?.id ?? ''
   const firstKeyId = firstProvider?.keys?.[0]?.id ?? ''
-  const firstTemplateEnvVars = firstProvider?.template?.envVars ?? createEmptyConfig(firstProvider?.id ?? '', '', '').envVars
+  const firstTemplateEnvVars = firstProvider?.template?.envVars ?? createEmptyLaunchItem(firstProvider?.id ?? '', '', '').envVars
 
   const handleAdd = (localOnly: boolean) => {
     setAddLocalOnly(localOnly)
@@ -94,13 +94,13 @@ export function ConfigTab(): React.ReactElement {
     keyId: string
     name: string
     funcName: string
-    envVars: typeof configs[number]['envVars']
+    envVars: typeof launchItems[number]['envVars']
     passthrough?: boolean
     useSystemProxy?: boolean
     localOnly?: boolean
   }) => {
     if (values.passthrough) {
-      addConfig({
+      addLaunchItem({
         id: crypto.randomUUID(),
         providerId: '',
         endpointId: '',
@@ -114,9 +114,9 @@ export function ConfigTab(): React.ReactElement {
         localOnly: values.localOnly
       })
     } else {
-      const config = createEmptyConfig(values.providerId, values.endpointId, values.keyId)
-      addConfig({
-        ...config,
+      const launchItem = createEmptyLaunchItem(values.providerId, values.endpointId, values.keyId)
+      addLaunchItem({
+        ...launchItem,
         name: values.name.trim(),
         funcName: values.funcName.trim(),
         envVars: values.envVars,
@@ -133,43 +133,43 @@ export function ConfigTab(): React.ReactElement {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
-      reorderConfigs(active.id as string, over.id as string)
+      reorderLaunchItems(active.id as string, over.id as string)
     }
   }
 
   // Split into synced and local groups
-  const syncedConfigs = configs.filter((c) => !c.localOnly)
-  const localConfigs = configs.filter((c) => c.localOnly)
+  const syncedLaunchItems = launchItems.filter((c) => !c.localOnly)
+  const localLaunchItems = launchItems.filter((c) => c.localOnly)
 
   return (
     <div>
-      {/* 同步配置 */}
-      <GroupHeader title={t('common.syncedConfig')} count={syncedConfigs.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
-      {!syncCollapsed && syncedConfigs.length > 0 && (
+      {/* 同步启动项 */}
+      <GroupHeader title={t('common.syncedConfig')} count={syncedLaunchItems.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
+      {!syncCollapsed && syncedLaunchItems.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={syncedConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            {syncedConfigs.map((c, idx) => (
-              <SortableConfigCard key={c.id} config={c} providers={providers} index={idx + 1} />
+          <SortableContext items={syncedLaunchItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {syncedLaunchItems.map((c, idx) => (
+              <SortableLaunchItemCard key={c.id} config={c} providers={providers} index={idx + 1} />
             ))}
           </SortableContext>
         </DndContext>
       )}
 
-      {/* 本机配置 */}
-      <GroupHeader title={t('common.localConfig')} count={localConfigs.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
-      {!localCollapsed && localConfigs.length > 0 && (
+      {/* 本机启动项 */}
+      <GroupHeader title={t('common.localConfig')} count={localLaunchItems.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      {!localCollapsed && localLaunchItems.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={localConfigs.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            {localConfigs.map((c, idx) => (
-              <SortableConfigCard key={c.id} config={c} providers={providers} index={syncedConfigs.length + idx + 1} />
+          <SortableContext items={localLaunchItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {localLaunchItems.map((c, idx) => (
+              <SortableLaunchItemCard key={c.id} config={c} providers={providers} index={syncedLaunchItems.length + idx + 1} />
             ))}
           </SortableContext>
         </DndContext>
       )}
 
-      <ConfigFormModal
+      <LaunchItemFormModal
         open={addOpen}
-        title={t('ccLaunch.newConfig')}
+        title={t('ccLaunch.newLaunchItem')}
         providers={providers}
         initialValues={{
           providerId: firstProvider?.id ?? '',

@@ -1,5 +1,5 @@
 /**
- * Sanitize a ConfigSet funcName into a Codex-safe provider ID.
+ * Sanitize a LaunchItem funcName into a Codex-safe provider ID.
  * Example: "cx-glm5" → "ccland_cx_glm5"
  */
 export function sanitizeCodexProviderId(funcName: string): string {

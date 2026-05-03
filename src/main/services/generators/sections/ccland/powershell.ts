@@ -1,5 +1,5 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
-import type { ConfigSet, Provider, ProviderEndpoint } from '@shared/types'
+import type { LaunchItem, Provider, ProviderEndpoint } from '@shared/types'
 import { getEndpointUrl } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import type { CCLandSectionData } from './zsh'
@@ -18,7 +18,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
 
     const providerMap = new Map(ccConfig.providers.map((p) => [p.id, p]))
     const enabledProviderIds = new Set(ccConfig.providers.filter((p) => p.enabled).map((p) => p.id))
-    const enabledConfigs = ccConfig.configs.filter((c) => {
+    const enabledConfigs = ccConfig.launchItems.filter((c) => {
       if (!c.enabled) return false
       if (c.passthrough) return true
       return enabledProviderIds.has(c.providerId)
@@ -135,7 +135,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
   private writeFunction(
     lines: string[],
     provider: Provider,
-    config: ConfigSet,
+    config: LaunchItem,
     tokens: Map<string, string>
   ): void {
     lines.push('')
@@ -144,7 +144,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
     if (!tokenVal) {
       const funcName = assertSafeShellName(config.funcName, config.name || config.id)
       lines.push(`function ${funcName} {`)
-      lines.push(`    Write-Error ${quotePowerShellLiteral(`配置项 ${funcName} 未设置 Token.请在 RCLand 中配置`)}`)
+      lines.push(`    Write-Error ${quotePowerShellLiteral(`启动项 ${funcName} 未设置 Token.请在 RCLand 中配置`)}`)
       lines.push('}')
       return
     }
@@ -167,7 +167,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
     if (endpoint?.useSystemProxy) {
       lines.push('        $proxyEntries = _rcland_ReadOsProxy')
       lines.push('        if ($null -eq $proxyEntries) {')
-      lines.push(`            Write-Error ${quotePowerShellLiteral(`配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
+      lines.push(`            Write-Error ${quotePowerShellLiteral(`启动项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
       lines.push('            return')
       lines.push('        }')
       lines.push('        foreach ($key in $proxyEntries.Keys) {')
@@ -206,7 +206,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
 
   private writePassthroughFunction(
     lines: string[],
-    config: ConfigSet
+    config: LaunchItem
   ): void {
     lines.push('')
     const funcName = assertSafeShellName(config.funcName, config.name || config.id)
@@ -220,7 +220,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
     if (config.useSystemProxy) {
       lines.push('        $proxyEntries = _rcland_ReadOsProxy')
       lines.push('        if ($null -eq $proxyEntries) {')
-      lines.push(`            Write-Error ${quotePowerShellLiteral(`配置项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
+      lines.push(`            Write-Error ${quotePowerShellLiteral(`启动项 ${funcName} 启用了系统代理但未检测到系统代理设置`)}`)
       lines.push('            return')
       lines.push('        }')
       lines.push('        foreach ($key in $proxyEntries.Keys) {')

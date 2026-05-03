@@ -4,8 +4,8 @@ import enUSAntd from 'antd/locale/en_US'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { EyeOutlined, ThunderboltOutlined, SettingOutlined, CopyOutlined } from '@ant-design/icons'
 import { ModuleNav, SettingsModal, PreviewModal, usePreview, KeyModals, type KeyModalsHandle } from './components'
-import { CCConfigPage } from './modules/cc-launch'
-import { CXConfigPage } from './modules/cx-launch'
+import { CCLaunchItemPage } from './modules/cc-launch'
+import { CXLaunchItemPage } from './modules/cx-launch'
 import { SystemProxyPage } from './modules/system-proxy'
 import { EnvVarPage } from './modules/shell-env'
 import { PathPage } from './modules/shell-path'
@@ -127,8 +127,8 @@ function AppLayout(): React.ReactElement {
               <Route path="/functions" element={<FunctionPage />} />
               <Route path="/aliases" element={<AliasPage />} />
               <Route path="/system-proxy" element={<SystemProxyPage />} />
-              <Route path="/ccland" element={<CCConfigPage />} />
-              <Route path="/cxland" element={<CXConfigPage />} />
+              <Route path="/ccland" element={<CCLaunchItemPage />} />
+              <Route path="/cxland" element={<CXLaunchItemPage />} />
             </Routes>
           </Content>
           <Footer className="action-bar">

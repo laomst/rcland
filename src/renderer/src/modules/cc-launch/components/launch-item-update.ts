@@ -1,12 +1,12 @@
-import type { ConfigSet } from '@shared/types'
+import type { LaunchItem } from '@shared/types'
 
-export type ConfigFormValues = Pick<
-  ConfigSet,
+export type LaunchItemFormValues = Pick<
+  LaunchItem,
   'providerId' | 'endpointId' | 'keyId' | 'name' | 'funcName' | 'envVars' | 'localOnly' | 'passthrough' | 'useSystemProxy'
 >
 
-export function createConfigUpdatePatch(values: ConfigFormValues): Partial<ConfigSet> {
-  const patch: Partial<ConfigSet> = {
+export function createLaunchItemUpdatePatch(values: LaunchItemFormValues): Partial<LaunchItem> {
+  const patch: Partial<LaunchItem> = {
     providerId: values.providerId,
     endpointId: values.endpointId,
     keyId: values.keyId,

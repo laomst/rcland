@@ -1,35 +1,28 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Input, Modal, Form, Space, Select, Typography, Switch } from 'antd'
-import { LockOutlined } from '@ant-design/icons'
-import type { CXProvider } from '@shared/types'
+import { Input, Modal, Form, Space, Select, Divider, Typography, Button, Switch } from 'antd'
+import { PlusOutlined, LockOutlined } from '@ant-design/icons'
+import type { Provider, EnvVarSetting } from '@shared/types'
+import { EnvVarEditor } from './EnvVarEditor'
+import type { LaunchItemFormValues } from './launch-item-update'
 
 const { Text } = Typography
 
-export interface CXConfigFormValues {
-  providerId: string
-  endpointId: string
-  keyId: string
-  name: string
-  funcName: string
-  model?: string
-  passthrough?: boolean
-  useSystemProxy?: boolean
-  localOnly?: boolean
-}
+type FormValues = LaunchItemFormValues
 
-interface ConfigFormModalProps {
+interface LaunchItemFormModalProps {
   open: boolean
   title: string
-  providers: CXProvider[]
-  initialValues: CXConfigFormValues
+  providers: Provider[]
+  initialValues: FormValues
   okText: string
   okDisabled?: boolean
   onCancel: () => void
-  onOk: (values: CXConfigFormValues) => void
+  onOk: (values: FormValues) => void
+  onAddKey?: () => void
 }
 
-export function ConfigFormModal({
+export function LaunchItemFormModal({
   open,
   title,
   providers,
@@ -37,24 +30,48 @@ export function ConfigFormModal({
   okText,
   okDisabled,
   onCancel,
-  onOk
-}: ConfigFormModalProps): React.ReactElement {
+  onOk,
+  onAddKey
+}: LaunchItemFormModalProps): React.ReactElement {
   const { t } = useTranslation()
-  const [form, setForm] = useState<CXConfigFormValues>(initialValues)
+  const [form, setForm] = useState<FormValues>(initialValues)
 
   const handleOpen = () => setForm(initialValues)
+
+  const handleEnvVarChange = (key: string, setting: EnvVarSetting) => {
+    setForm((f) => ({ ...f, envVars: { ...f.envVars, [key]: setting } }))
+  }
+
+  const handleEnvVarRemove = (key: string) => {
+    setForm((f) => {
+      const { [key]: _, ...rest } = f.envVars
+      return { ...f, envVars: rest }
+    })
+  }
+
+  const handleEnvVarAdd = (keys: string[]) => {
+    setForm((f) => {
+      const next = { ...f.envVars }
+      for (const k of keys) {
+        if (!(k in next)) next[k] = { value: '', enabled: false }
+      }
+      return { ...f, envVars: next }
+    })
+  }
 
   const handleProviderChange = (providerId: string) => {
     const newProvider = providers.find((p) => p.id === providerId)
     const firstEndpointId = newProvider?.endpoints?.[0]?.id ?? ''
     const firstKeyId = newProvider?.keys?.[0]?.id ?? ''
+    // 切换供应商时清空所有关联字段
+    const templateEnvVars = newProvider?.template?.envVars ?? {}
     setForm({
       providerId,
       endpointId: firstEndpointId,
       keyId: firstKeyId,
       name: '',
       funcName: '',
-      model: form.model,
+      envVars: { ...templateEnvVars },
       passthrough: form.passthrough,
       useSystemProxy: form.useSystemProxy,
       localOnly: form.localOnly
@@ -81,7 +98,7 @@ export function ConfigFormModal({
       okText={okText}
       cancelText={t('common.cancel')}
       okButtonProps={{ disabled: okDisabled ?? !isValid }}
-      width={600}
+      width={700}
     >
       <Form
         labelCol={{ span: 5 }}
@@ -98,7 +115,7 @@ export function ConfigFormModal({
             />
             {isPassthrough && (
               <Text type="secondary" style={{ fontSize: 12 }}>
-                直接透传到 codex，不设置 API 密钥和端点
+                直接透传到 claude，不设置 API 密钥和端点
               </Text>
             )}
           </Space>
@@ -106,27 +123,27 @@ export function ConfigFormModal({
 
         {isPassthrough ? (
           <>
-            <Form.Item label={t('ccLaunch.configName')} required>
+            <Form.Item label={t('ccLaunch.launchItemName')} required>
               <Input
                 value={form.name ?? ''}
                 onChange={(e) => {
                   const name = e.target.value
                   setForm((f) => {
-                    const shouldAutoGen = !f.funcName || f.funcName.startsWith('cx-')
+                    const shouldAutoGen = !f.funcName || f.funcName.startsWith('cc-')
                     const autoFuncName = name.trim()
-                      ? `cx-${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/\s+/g, '-')}`
+                      ? `cc-${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/\s+/g, '-')}`
                       : ''
                     return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
                   })
                 }}
-                placeholder={t('ccLaunch.configNamePlaceholder')}
+                placeholder={t('ccLaunch.launchItemNamePlaceholder')}
               />
             </Form.Item>
             <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
               <Input
                 value={form.funcName ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, funcName: e.target.value }))}
-                placeholder="cx-direct"
+                placeholder={t('ccLaunch.funcNamePlaceholder')}
                 style={{ fontFamily: 'monospace' }}
               />
             </Form.Item>
@@ -169,58 +186,58 @@ export function ConfigFormModal({
               />
             </Form.Item>
             <Form.Item label={t('ccLaunch.key')} required>
-              <Select
-                value={form.keyId}
-                onChange={(val) => setForm((f) => ({ ...f, keyId: val }))}
-                placeholder={hasNoKeys ? t('ccLaunch.noKeyHint') : t('ccLaunch.selectKey')}
-                style={{ width: '100%' }}
-                status={!selectedKey && form.keyId ? 'error' : undefined}
-                options={(provider?.keys ?? []).map((k) => ({
-                  value: k.id,
-                  label: (
-                    <Space>
-                      <LockOutlined style={{ color: '#999' }} />
-                      {k.label}
-                      {k.token && <Text type="success" style={{ fontSize: 11 }}>{t('ccLaunch.keyEncrypted')}</Text>}
-                    </Space>
-                  )
-                }))}
-              />
+              <Space.Compact style={{ width: '100%' }}>
+                <Select
+                  value={form.keyId}
+                  onChange={(val) => setForm((f) => ({ ...f, keyId: val }))}
+                  placeholder={hasNoKeys ? t('ccLaunch.noKeyHint') : t('ccLaunch.selectKey')}
+                  style={{ flex: 1 }}
+                  status={!selectedKey && form.keyId ? 'error' : undefined}
+                  options={(provider?.keys ?? []).map((k) => ({
+                    value: k.id,
+                    label: (
+                      <Space>
+                        <LockOutlined style={{ color: '#999' }} />
+                        {k.label}
+                        {k.token && <Text type="success" style={{ fontSize: 11 }}>{t('ccLaunch.keyEncrypted')}</Text>}
+                      </Space>
+                    )
+                  }))}
+                />
+                {onAddKey && (
+                  <Button icon={<PlusOutlined />} onClick={onAddKey}>
+                    {t('common.new')}
+                  </Button>
+                )}
+              </Space.Compact>
               {!selectedKey && form.keyId && (
                 <Text type="danger" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
                   {t('ccLaunch.keyDeletedError')}
                 </Text>
               )}
             </Form.Item>
-            <Form.Item label={t('ccLaunch.configName')} required>
+            <Form.Item label={t('ccLaunch.launchItemName')} required>
               <Input
                 value={form.name ?? ''}
                 onChange={(e) => {
                   const name = e.target.value
                   setForm((f) => {
-                    const shouldAutoGen = !f.funcName || f.funcName.startsWith('cx-')
+                    const shouldAutoGen = !f.funcName || f.funcName.startsWith('cc-')
                     const autoFuncName = name.trim()
-                      ? `cx-${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/\s+/g, '-')}`
+                      ? `cc-${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/\s+/g, '-')}`
                       : ''
                     return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
                   })
                 }}
-                placeholder={t('ccLaunch.configNamePlaceholder')}
+                placeholder={t('ccLaunch.launchItemNamePlaceholder')}
               />
             </Form.Item>
             <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
               <Input
                 value={form.funcName ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, funcName: e.target.value }))}
-                placeholder="cx-glm5"
+                placeholder={t('ccLaunch.funcNamePlaceholder')}
                 style={{ fontFamily: 'monospace' }}
-              />
-            </Form.Item>
-            <Form.Item label={t('cxLaunch.model')}>
-              <Input
-                value={form.model ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
-                placeholder="gpt-5.4 (可选)"
               />
             </Form.Item>
           </>
@@ -238,6 +255,17 @@ export function ConfigFormModal({
             )}
           </Space>
         </Form.Item>
+        {!isPassthrough && (
+          <>
+            <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>
+            <EnvVarEditor
+            envVars={form.envVars}
+            onChange={handleEnvVarChange}
+            onRemove={handleEnvVarRemove}
+            onAdd={handleEnvVarAdd}
+          />
+          </>
+        )}
       </Form>
     </Modal>
   )

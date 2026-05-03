@@ -73,7 +73,7 @@ export function ProviderTab(): React.ReactElement {
     })
   )
 
-  const handleAdd = (values: { name: string; color: string; kanbanUrl: string; wireApi: 'responses' | 'chat'; endpoints: CXEndpoint[]; keys: CXProviderKey[] }) => {
+  const handleAdd = (values: { name: string; color: string; kanbanUrl?: string; wireApi: 'responses' | 'chat'; endpoints: CXEndpoint[]; keys: CXProviderKey[] }) => {
     addProvider({
       id: crypto.randomUUID(),
       name: values.name.trim(),
