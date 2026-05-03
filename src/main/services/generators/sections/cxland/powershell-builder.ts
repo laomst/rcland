@@ -68,6 +68,19 @@ export function buildPowerShellCXContent(
     }
   }
 
+  // kanban function
+  if (data.selector.kanban?.enabled) {
+    const kanbanFuncName = data.selector.kanban.funcName || 'show-cx-usage'
+    lines.push('')
+    lines.push(`function ${kanbanFuncName} {`)
+    lines.push('  if (-not $env:CCLAND_CX_TOKEN_KANBAN) {')
+    lines.push('    Write-Error "错误：未配置看板 URL，请在供应商管理中设置"')
+    lines.push('    return')
+    lines.push('  }')
+    lines.push('  Start-Process $env:CCLAND_CX_TOKEN_KANBAN')
+    lines.push('}')
+  }
+
   return lines.join('\n')
 }
 
@@ -102,7 +115,7 @@ function writeFunction(
   const providerId = sanitizeCodexProviderId(funcName)
 
   // Collect scoped env keys for save/restore
-  const scopedKeys = ['OPENAI_API_KEY']
+  const scopedKeys = ['OPENAI_API_KEY', 'CCLAND_CX_TOKEN_KANBAN']
   if (endpoint?.useSystemProxy) {
     scopedKeys.push(...SYSTEM_PROXY_ENV_NAMES)
   }
@@ -111,6 +124,10 @@ function writeFunction(
   lines.push(`function ${funcName} {`)
 
   lines.push(`    $previous_key = [Environment]::GetEnvironmentVariable('OPENAI_API_KEY', 'Process')`)
+
+  if (provider.kanbanUrl) {
+    lines.push(`    $previous_kanban = [Environment]::GetEnvironmentVariable('CCLAND_CX_TOKEN_KANBAN', 'Process')`)
+  }
 
   // Save proxy vars if endpoint uses system proxy
   if (endpoint?.useSystemProxy) {
@@ -159,6 +176,10 @@ function writeFunction(
   // Set OPENAI_API_KEY
   lines.push(`        $env:OPENAI_API_KEY = ${quotePowerShellLiteral(tokenVal)}`)
 
+  if (provider.kanbanUrl) {
+    lines.push(`        $env:CCLAND_CX_TOKEN_KANBAN = ${quotePowerShellLiteral(provider.kanbanUrl)}`)
+  }
+
   // Build codex command with -c args using backtick line continuation
   lines.push('        codex `')
   lines.push(`            -c ${buildPowerShellCodexConfigArg(`model_providers.${providerId}.name`, provider.name)} \``)
@@ -178,6 +199,12 @@ function writeFunction(
   // Restore OPENAI_API_KEY
   lines.push('        if ($null -eq $previous_key) { Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue }')
   lines.push('        else { $env:OPENAI_API_KEY = $previous_key }')
+
+  // Restore kanban env var
+  if (provider.kanbanUrl) {
+    lines.push('        if ($null -eq $previous_kanban) { Remove-Item Env:CCLAND_CX_TOKEN_KANBAN -ErrorAction SilentlyContinue }')
+    lines.push('        else { $env:CCLAND_CX_TOKEN_KANBAN = $previous_kanban }')
+  }
 
   // Restore proxy vars if endpoint uses system proxy
   if (endpoint?.useSystemProxy) {

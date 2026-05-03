@@ -73,7 +73,7 @@ export function ProviderTab(): React.ReactElement {
     })
   )
 
-  const handleAdd = (values: { name: string; color: string; wireApi: 'responses' | 'chat'; endpoints: CXEndpoint[]; keys: CXProviderKey[] }) => {
+  const handleAdd = (values: { name: string; color: string; kanbanUrl: string; wireApi: 'responses' | 'chat'; endpoints: CXEndpoint[]; keys: CXProviderKey[] }) => {
     addProvider({
       id: crypto.randomUUID(),
       name: values.name.trim(),
@@ -81,7 +81,8 @@ export function ProviderTab(): React.ReactElement {
       wireApi: values.wireApi,
       endpoints: values.endpoints.filter((ep) => ep.url.trim()),
       keys: values.keys ?? [],
-      color: values.color || '#1677ff'
+      color: values.color || '#1677ff',
+      kanbanUrl: values.kanbanUrl
     })
     setAddOpen(false)
   }
@@ -125,6 +126,7 @@ export function ProviderTab(): React.ReactElement {
           name: '',
           color: '#1677ff',
           wireApi: 'chat',
+          kanbanUrl: '',
           endpoints: [{ id: crypto.randomUUID(), label: t('ccLaunch.defaultEndpoint'), url: '', useSystemProxy: false }],
           keys: []
         }}

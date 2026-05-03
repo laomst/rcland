@@ -3,7 +3,7 @@ import type { Provider, ConfigSet, CCLaunchData, ProviderKey } from '@shared/typ
 import { createTopLevelCrud } from './crud-helpers'
 import { createPersistQueue, toErrorMessage } from './persist'
 
-const DEFAULT_SELECTOR = { funcName: 'cc', promptTitle: '选择启动器' }
+const DEFAULT_SELECTOR = { funcName: 'cc', promptTitle: '选择启动器', kanban: { funcName: 'show-cc-usage', enabled: false } }
 const persistQueue = createPersistQueue()
 
 interface AppState {

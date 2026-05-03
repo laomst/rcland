@@ -66,6 +66,19 @@ export function buildBashLikeCXContent(
     }
   }
 
+  // kanban function
+  if (data.selector.kanban?.enabled) {
+    const kanbanFuncName = data.selector.kanban.funcName || 'show-cx-usage'
+    lines.push('')
+    lines.push(`${kanbanFuncName}() {`)
+    lines.push('  if [ -z "$CCLAND_CX_TOKEN_KANBAN" ]; then')
+    lines.push('    echo "\\033[31m错误：未配置看板 URL，请在供应商管理中设置\\033[0m" >&2')
+    lines.push('    return 1')
+    lines.push('  fi')
+    lines.push('  (open "$CCLAND_CX_TOKEN_KANBAN" 2>/dev/null || xdg-open "$CCLAND_CX_TOKEN_KANBAN" 2>/dev/null) &')
+    lines.push('}')
+  }
+
   return lines.join('\n')
 }
 
@@ -131,6 +144,11 @@ function writeFunction(
   lines.push(`      printf '\\033]0;%s\\007' "CX 🔸 $_safe_sn"`)
   lines.push('    fi')
   lines.push(`    export OPENAI_API_KEY=${quoteBashLikeLiteral(tokenVal)}`)
+
+  if (provider.kanbanUrl) {
+    lines.push(`    export CCLAND_CX_TOKEN_KANBAN=${quoteBashLikeLiteral(provider.kanbanUrl)}`)
+  }
+
   lines.push('    codex \\')
 
   // -c args: provider config

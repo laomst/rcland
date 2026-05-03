@@ -26,6 +26,8 @@ export interface CXProvider {
   color?: string
   /** Only stored locally, not synced */
   localOnly?: boolean
+  /** Usage dashboard URL for this provider */
+  kanbanUrl?: string
 }
 
 export interface CXConfigSet {
@@ -64,6 +66,10 @@ export interface CXSelector {
     aliasEnabled?: boolean
     requireSessionName?: boolean
   }
+  kanban?: {
+    funcName: string
+    enabled: boolean
+  }
 }
 
 export interface CXLandData {
@@ -78,7 +84,7 @@ export function createEmptyCXLandData(): CXLandData {
     version: 3,
     providers: [],
     configs: [],
-    selector: { funcName: 'cx', promptTitle: '选择 Codex 供应商' }
+    selector: { funcName: 'cx', promptTitle: '选择 Codex 供应商', kanban: { funcName: 'show-cx-usage', enabled: false } }
   }
 }
 

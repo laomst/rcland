@@ -10,7 +10,7 @@ export function SelectorTab(): React.ReactElement {
       selector={selector}
       onChange={updateSelector}
       i18nPrefix="ccLaunch"
-      defaults={{ funcName: 'cc', promptTitle: '选择启动器', localFuncName: 'ccl' }}
+      defaults={{ funcName: 'cc', promptTitle: '选择启动器', localFuncName: 'ccl', kanbanFuncName: 'show-cc-usage' }}
     />
   )
 }

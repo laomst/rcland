@@ -74,6 +74,19 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
       }
     }
 
+    // kanban function
+    if (data.ccConfig.selector.kanban?.enabled) {
+      const kanbanFuncName = data.ccConfig.selector.kanban.funcName || 'show-cc-usage'
+      lines.push('')
+      lines.push(`${kanbanFuncName}() {`)
+      lines.push('  if [ -z "$CCLAND_CC_TOKEN_KANBAN" ]; then')
+      lines.push('    echo "\\033[31m错误：未配置看板 URL，请在供应商管理中设置\\033[0m" >&2')
+      lines.push('    return 1')
+      lines.push('  fi')
+      lines.push('  (open "$CCLAND_CC_TOKEN_KANBAN" 2>/dev/null || xdg-open "$CCLAND_CC_TOKEN_KANBAN" 2>/dev/null) &')
+      lines.push('}')
+    }
+
     return lines.join('\n')
   }
 
@@ -168,6 +181,10 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
 
     lines.push(`    export ANTHROPIC_AUTH_TOKEN=${quoteBashLikeLiteral(tokenVal)}`)
     lines.push(`    export ANTHROPIC_BASE_URL=${quoteBashLikeLiteral(getEndpointUrl(provider, config.endpointId))}`)
+
+    if (provider.kanbanUrl) {
+      lines.push(`    export CCLAND_CC_TOKEN_KANBAN=${quoteBashLikeLiteral(provider.kanbanUrl)}`)
+    }
 
     for (const key of Object.keys(config.envVars)) {
       const setting = config.envVars[key]

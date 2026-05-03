@@ -12,6 +12,7 @@ export interface CXProviderFormValues {
   id?: string
   name: string
   color: string
+  kanbanUrl?: string
   wireApi: 'responses' | 'chat'
   endpoints: CXEndpoint[]
   keys: CXProviderKey[]
@@ -214,6 +215,14 @@ export function ProviderFormModal({
                 {t('ccLaunch.addEndpoint')}
               </Button>
             </div>
+          </Form.Item>
+          <Form.Item label={t('cxLaunch.kanbanUrl')}>
+            <Input
+              value={form.kanbanUrl ?? ''}
+              onChange={(e) => setForm((f) => ({ ...f, kanbanUrl: e.target.value }))}
+              placeholder="https://..."
+              style={{ fontFamily: 'monospace' }}
+            />
           </Form.Item>
           <Form.Item label={t('ccLaunch.tokenLabel')}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -85,7 +85,7 @@ export function ProviderTab(): React.ReactElement {
     })
   )
 
-  const handleAdd = (values: { name: string; color: string; endpoints: ProviderEndpoint[]; keys: ProviderKey[]; template: { envVars: EnvVarsMap } }) => {
+  const handleAdd = (values: { name: string; color: string; kanbanUrl: string; endpoints: ProviderEndpoint[]; keys: ProviderKey[]; template: { envVars: EnvVarsMap } }) => {
     addProvider({
       id: crypto.randomUUID(),
       name: values.name.trim(),
@@ -93,6 +93,7 @@ export function ProviderTab(): React.ReactElement {
       endpoints: values.endpoints.filter((ep) => ep.url.trim()),
       keys: values.keys ?? [],
       color: values.color || '#1677ff',
+      kanbanUrl: values.kanbanUrl,
       template: values.template
     })
     setAddOpen(false)
@@ -136,6 +137,7 @@ export function ProviderTab(): React.ReactElement {
         initialValues={{
           name: '',
           color: '#1677ff',
+          kanbanUrl: '',
           endpoints: [{ id: crypto.randomUUID(), label: t('ccLaunch.defaultEndpoint'), url: '', useSystemProxy: false }],
           keys: [],
           template: { envVars: buildDefaultTemplateEnvVars() }

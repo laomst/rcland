@@ -10,7 +10,7 @@ export function SelectorTab(): React.ReactElement {
       selector={selector}
       onChange={updateSelector}
       i18nPrefix="cxLaunch"
-      defaults={{ funcName: 'cx', promptTitle: '选择 Codex 供应商', localFuncName: 'cxl' }}
+      defaults={{ funcName: 'cx', promptTitle: '选择 Codex 供应商', localFuncName: 'cxl', kanbanFuncName: 'show-cx-usage' }}
     />
   )
 }

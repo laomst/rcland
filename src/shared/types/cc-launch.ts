@@ -43,6 +43,8 @@ export interface Provider {
   template?: ProviderTemplate
   /** Only stored locally, not synced */
   localOnly?: boolean
+  /** Usage dashboard URL for this provider */
+  kanbanUrl?: string
 }
 
 export interface ConfigSet {
@@ -84,6 +86,10 @@ export interface CCLaunchData {
       promptTitle?: string
       aliasEnabled?: boolean
       requireSessionName?: boolean
+    }
+    kanban?: {
+      funcName: string
+      enabled: boolean
     }
   }
 }

@@ -24,4 +24,8 @@ export interface BaseSelector {
   aliasEnabled?: boolean
   requireSessionName?: boolean
   localSelector?: BaseLocalSelector
+  kanban?: {
+    funcName: string
+    enabled: boolean
+  }
 }

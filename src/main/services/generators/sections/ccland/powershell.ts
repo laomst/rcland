@@ -70,6 +70,19 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
       }
     }
 
+    // kanban function
+    if (data.ccConfig.selector.kanban?.enabled) {
+      const kanbanFuncName = data.ccConfig.selector.kanban.funcName || 'show-cc-usage'
+      lines.push('')
+      lines.push(`function ${kanbanFuncName} {`)
+      lines.push('  if (-not $env:CCLAND_CC_TOKEN_KANBAN) {')
+      lines.push('    Write-Error "错误：未配置看板 URL，请在供应商管理中设置"')
+      lines.push('    return')
+      lines.push('  }')
+      lines.push('  Start-Process $env:CCLAND_CC_TOKEN_KANBAN')
+      lines.push('}')
+    }
+
     return lines.join('\n')
   }
 
@@ -142,6 +155,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
       ...SYSTEM_PROXY_ENV_NAMES,
       'ANTHROPIC_AUTH_TOKEN',
       'ANTHROPIC_BASE_URL',
+      'CCLAND_CC_TOKEN_KANBAN',
       ...Object.keys(config.envVars)
     ]
     lines.push(`function ${funcName} {`)
@@ -165,6 +179,10 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
 
     lines.push(`        $env:ANTHROPIC_AUTH_TOKEN = ${quotePowerShellLiteral(tokenVal)}`)
     lines.push(`        $env:ANTHROPIC_BASE_URL = ${quotePowerShellLiteral(getEndpointUrl(provider, config.endpointId))}`)
+
+    if (provider.kanbanUrl) {
+      lines.push(`        $env:CCLAND_CC_TOKEN_KANBAN = ${quotePowerShellLiteral(provider.kanbanUrl)}`)
+    }
 
     for (const key of Object.keys(config.envVars)) {
       const setting = config.envVars[key]

@@ -12,6 +12,7 @@ interface SelectorTabProps {
     funcName: string
     promptTitle: string
     localFuncName: string
+    kanbanFuncName: string
   }
 }
 
@@ -116,6 +117,23 @@ export function SelectorTab({
               </Text>
             )}
           </Space>
+        </Form.Item>
+
+        <Divider style={{ margin: '8px 0' }}>{t(k('kanban'))}</Divider>
+
+        <Form.Item label={t(k('kanbanEnabled'))}>
+          <Switch
+            checked={selector.kanban?.enabled ?? false}
+            onChange={(checked) => onChange({ kanban: { funcName: selector.kanban?.funcName ?? defaults.kanbanFuncName, enabled: checked } })}
+          />
+        </Form.Item>
+        <Form.Item label={t(k('kanbanFuncName'))}>
+          <Input
+            value={selector.kanban?.funcName ?? ''}
+            onChange={(e) => onChange({ kanban: { funcName: e.target.value, enabled: selector.kanban?.enabled ?? false } })}
+            placeholder={defaults.kanbanFuncName}
+            disabled={!selector.kanban?.enabled}
+          />
         </Form.Item>
       </Form>
     </Card>

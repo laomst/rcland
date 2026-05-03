@@ -133,6 +133,7 @@ export function ProviderCard({
           id: provider.id,
           name: provider.name,
           wireApi: provider.wireApi,
+          kanbanUrl: provider.kanbanUrl ?? '',
           endpoints: (provider.endpoints ?? []).map((ep) => ({ ...ep })),
           keys: (provider.keys ?? []).map((k) => ({ ...k })),
           color: accent
