@@ -15,6 +15,28 @@
 - **系统代理** — 读取 OS 代理设置，生成切换函数（`proxy-on` / `proxy-off` / `proxy-status`）
 - **云同步友好** — 任何项目可标记 local-only；可同步的 JSON 配置可跨机器共享
 
+## 工作原理
+
+RCLand 支持 Zsh、Bash、PowerShell 三种 Shell，自动检测操作系统。每种 Shell 生成独立的脚本文件：
+
+| Shell | 输出文件 | Profile 注入 |
+|-------|----------|-------------|
+| Zsh | `~/.rcland/zshrc` | `source` 写入 `~/.zshrc` |
+| Bash | `~/.rcland/bashrc` | `source` 写入 `~/.bashrc` |
+| PowerShell | `~/.rcland/profile.ps1` | `. ` 写入 `$PROFILE` |
+
+```bash
+# >>> RCLand >>>                 # Zsh / Bash
+source ~/.rcland/zshrc
+# <<< RCLand <<<
+
+# >>> RCLand >>>                 # PowerShell
+. "$HOME/.rcland/profile.ps1"
+# <<< RCLand <<<
+```
+
+使用底部操作栏可以在应用前预览生成的脚本。
+
 ## 安装
 
 <!-- TODO: 发布后添加下载链接 -->
@@ -74,6 +96,8 @@ cc-opus                    # 使用其他模型/Provider 启动
 
 **交互式选择器：**
 
+所有选择器函数名均可在选择器标签页自定义。默认值：
+
 ```bash
 cc                         # 弹出菜单选择已同步的启动项
 ccd                        # 等同于: cc --dangerously-skip-permissions
@@ -86,7 +110,7 @@ ccld                       # 等同于: ccl --dangerously-skip-permissions
 - **Provider** — 定义 API 服务（名称、Endpoint、加密密钥、默认模板、Kanban URL）
 - **启动项** — 组合 Provider + Endpoint + Key + 环境变量生成 Shell 函数。支持 **Passthrough 模式**（直接运行 `claude`，不注入 Provider 凭据）
 - **环境变量字典** — 13 个内置 Claude Code 环境变量（`ANTHROPIC_MODEL`、`MAX_THINKING_TOKENS`、`CLAUDE_CODE_DISABLE_THINKING`、`API_TIMEOUT_MS`、`ANTHROPIC_BETAS` 等），含描述和 `defaultInTemplate` 开关
-- **选择器** — 配置 `cc` / `ccl` 交互式菜单函数
+- **选择器** — 配置交互式菜单的函数名和提示标题
 
 ## CX Launch
 
@@ -132,18 +156,6 @@ cxl                        # 本地专属启动项选择器
 **Shell 别名** — `alias name='command'`，按 Shell 筛选，描述字段。
 
 **预设** — 内置包：常用别名、Git 快捷方式、SDK 路径。通过导入按钮一键导入。
-
-## 工作原理
-
-RCLand 生成 Shell 脚本到 `~/.rcland/`，并在 Shell profile 中注入 source 行：
-
-```bash
-# >>> RCLand >>>
-source ~/.rcland/zshrc
-# <<< RCLand <<<
-```
-
-使用底部操作栏可以在应用前预览生成的脚本。
 
 ## 加密
 

@@ -15,6 +15,28 @@ A desktop application for managing [Claude Code](https://claude.ai/code) CLI and
 - **System Proxy** — Read OS proxy settings, generate toggle functions (`proxy-on` / `proxy-off` / `proxy-status`)
 - **Cloud Sync Friendly** — Local-only flag on any item; syncable JSON configs can be shared across machines
 
+## How It Works
+
+RCLand supports Zsh, Bash, and PowerShell with automatic OS detection. Each shell gets its own generated script:
+
+| Shell | Output file | Profile injection |
+|-------|-------------|-------------------|
+| Zsh | `~/.rcland/zshrc` | `source` in `~/.zshrc` |
+| Bash | `~/.rcland/bashrc` | `source` in `~/.bashrc` |
+| PowerShell | `~/.rcland/profile.ps1` | `. ` in `$PROFILE` |
+
+```bash
+# >>> RCLand >>>                 # Zsh / Bash
+source ~/.rcland/zshrc
+# <<< RCLand <<<
+
+# >>> RCLand >>>                 # PowerShell
+. "$HOME/.rcland/profile.ps1"
+# <<< RCLand <<<
+```
+
+Use the bottom action bar to preview the generated script before applying.
+
 ## Installation
 
 <!-- TODO: Add download links when releases are published -->
@@ -74,6 +96,8 @@ cc-opus                    # Launch with different model/provider
 
 **Interactive Selector:**
 
+All selector function names are customizable in the Selector tab. Defaults:
+
 ```bash
 cc                         # Show menu to pick from synced launch items
 ccd                        # Same as: cc --dangerously-skip-permissions
@@ -86,7 +110,7 @@ ccld                       # Same as: ccl --dangerously-skip-permissions
 - **Providers** — Define API services (name, endpoints, encrypted keys, default template, kanban URL)
 - **Launch Items** — Combine provider + endpoint + key + env vars into a shell function. Supports **Passthrough mode** (runs `claude` directly without provider credentials)
 - **Env Dictionary** — 13 built-in Claude Code env vars (`ANTHROPIC_MODEL`, `MAX_THINKING_TOKENS`, `CLAUDE_CODE_DISABLE_THINKING`, `API_TIMEOUT_MS`, `ANTHROPIC_BETAS`, etc.) with descriptions and `defaultInTemplate` toggle
-- **Selector** — Configure `cc` / `ccl` interactive menu functions
+- **Selector** — Configure interactive menu function names and prompt title
 
 ## CX Launch
 
@@ -132,18 +156,6 @@ Supports two `wireApi` modes: `responses` (OpenAI official) / `chat` (third-part
 **Shell Aliases** — Simple `alias name='command'` with per-shell targeting and descriptions.
 
 **Presets** — Built-in packs: common aliases, Git shortcuts, SDK paths. Import via the Import button.
-
-## How It Works
-
-RCLand generates shell scripts to `~/.rcland/` and injects a `source` line into your shell profile:
-
-```bash
-# >>> RCLand >>>
-source ~/.rcland/zshrc
-# <<< RCLand <<<
-```
-
-Use the bottom action bar to preview the generated script before applying.
 
 ## Encryption
 
