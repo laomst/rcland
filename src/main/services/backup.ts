@@ -1,13 +1,12 @@
 import { join } from 'path'
+import { homedir } from 'os'
 import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync, copyFileSync } from 'fs'
-import { loadSettings } from './config'
 import { resolveHomePath } from './path-utils'
 import type { ShellType } from '@shared/shell'
 import type { BackupEntry } from '@shared/shell-types'
 
 function getBackupDir(shellType: ShellType): string {
-  const settings = loadSettings()
-  return join(settings.configDir, 'backups', shellType)
+  return join(homedir(), '.rcland', 'backups', shellType)
 }
 
 function ensureBackupDir(shellType: ShellType): string {
