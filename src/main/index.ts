@@ -91,6 +91,7 @@ app.whenReady().then(() => {
   registerIpcHandlers()
 
   // Set application menu
+  // Edit menu is required on macOS for standard shortcuts (Cmd+C/V/X/A/Z) to work
   const isMac = platform() === 'darwin'
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(isMac ? [{
@@ -106,6 +107,18 @@ app.whenReady().then(() => {
       ]
     }] : []),
     {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' }
+      ]
+    },
+    {
       label: 'View',
       submenu: [
         { role: 'reload' },
@@ -113,7 +126,6 @@ app.whenReady().then(() => {
       ]
     }
   ]
-  Menu.setApplicationMenu(null)
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 
   createWindow()
