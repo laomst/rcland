@@ -39,6 +39,24 @@ export function loadShellConfig(): string {
   // 2. 加载本机配置
   const localConfig = loadLocalShellConfig()
 
+  // 2.5 迁移：synced 文件中残留的 pathEntries/pathVariables 合并到 local
+  if (syncedConfig.pathEntries.length > 0 || syncedConfig.pathVariables.length > 0) {
+    const existingIds = new Set([
+      ...localConfig.pathEntries.map((e) => e.id),
+      ...localConfig.pathVariables.map((v) => v.id)
+    ])
+    const newEntries = syncedConfig.pathEntries.filter((e) => !existingIds.has(e.id))
+    const newVars = syncedConfig.pathVariables.filter((v) => !existingIds.has(v.id))
+    if (newEntries.length > 0 || newVars.length > 0) {
+      localConfig.pathEntries = [...localConfig.pathEntries, ...newEntries]
+      localConfig.pathVariables = [...localConfig.pathVariables, ...newVars]
+      saveLocalShellConfig(localConfig)
+    }
+    syncedConfig.pathEntries = []
+    syncedConfig.pathVariables = []
+    writeFileSync(p, JSON.stringify(syncedConfig, null, 2), 'utf-8')
+  }
+
   // 3. 为本机项标记 localOnly: true
   // 4. 合并（同步在前、本机在后，各组内按 order 排序）
   const sortByOrder = <T extends { order: number }>(items: T[]): T[] =>
@@ -61,8 +79,8 @@ export function loadShellConfig(): string {
   const merged: ShellConfigData = {
     ...syncedConfig,
     variables: [...sortByOrder(syncedConfig.variables), ...sortByOrder(markLocalItems(localConfig.variables))],
-    pathVariables: [...sortByOrder(syncedConfig.pathVariables), ...sortByOrder(localConfig.pathVariables)].map((v) => ({ ...v, localOnly: true })),
-    pathEntries: [...sortByOrder(syncedConfig.pathEntries), ...sortByOrder(localConfig.pathEntries)].map((e) => ({ ...e, localOnly: true })),
+    pathVariables: sortByOrder(localConfig.pathVariables),
+    pathEntries: sortByOrder(localConfig.pathEntries),
     functions: [...mergedBuiltIns, ...sortByOrder(userFunctions)],
     aliases: [...sortByOrder(syncedConfig.aliases), ...sortByOrder(markLocalItems(localConfig.aliases))]
   }
@@ -76,19 +94,17 @@ export function loadShellConfig(): string {
 export function saveShellConfig(json: string): void {
   const config: ShellConfigData = JSON.parse(json)
 
-  // 拆分五个数组
+  // 拆分三个可同步数组
   const vars = splitLocalItems(config.variables)
-  const pathVars = splitLocalItems(config.pathVariables)
-  const paths = splitLocalItems(config.pathEntries)
   const funcs = splitLocalItems(config.functions)
   const aliases = splitLocalItems(config.aliases)
 
-  // 写入同步文件
+  // 写入同步文件（pathVariables 和 pathEntries 不参与同步）
   const syncedConfig: ShellConfigData = {
     ...config,
     variables: vars.synced,
-    pathVariables: pathVars.synced,
-    pathEntries: paths.synced,
+    pathVariables: [],
+    pathEntries: [],
     functions: funcs.synced,
     aliases: aliases.synced
   }
@@ -97,12 +113,12 @@ export function saveShellConfig(json: string): void {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   writeFileSync(getShellDataPath(), JSON.stringify(syncedConfig, null, 2), 'utf-8')
 
-  // 写入本机文件
+  // 写入本机文件（pathVariables 和 pathEntries 全部存 local）
   const localConfig: LocalShellConfigData = {
     version: 1,
     variables: vars.local,
-    pathVariables: pathVars.local,
-    pathEntries: paths.local,
+    pathVariables: config.pathVariables,
+    pathEntries: config.pathEntries,
     functions: funcs.local,
     aliases: aliases.local
   }

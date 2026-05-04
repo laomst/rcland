@@ -100,6 +100,35 @@ export function findReferencingEntries(
   return results
 }
 
+/**
+ * Check if changing a variable to localOnly would break any synced variable.
+ * Returns an array of synced variable keys that reference the target.
+ */
+export function findSyncedReferencers(
+  targetKey: string,
+  variables: ShellVariable[]
+): string[] {
+  return variables
+    .filter((v) => !v.localOnly && v.enabled && v.key !== targetKey)
+    .filter((v) => v.value.includes(`{{${targetKey}}}`))
+    .map((v) => v.key)
+}
+
+/**
+ * Check if a synced variable's value references any local-only variable.
+ * Returns an array of local-only variable keys that are referenced.
+ */
+export function findLocalRefs(
+  value: string,
+  variables: ShellVariable[]
+): string[] {
+  const refNames = extractVarRefs(value)
+  return refNames.filter((name) => {
+    const v = variables.find((vv) => vv.key === name)
+    return v?.localOnly
+  })
+}
+
 /** 拓扑排序路径变量，被引用的排在前面 */
 export function topoSortPathVariables(pathVariables: PathVariable[]): PathVariable[] {
   const enabled = pathVariables.filter((v) => v.enabled && v.key)
@@ -135,30 +164,6 @@ export function topoSortPathVariables(pathVariables: PathVariable[]): PathVariab
   const sortedVars = sorted.map((k) => keyToVar.get(k)!).filter(Boolean)
   const disabled = pathVariables.filter((v) => !v.enabled)
   return [...sortedVars, ...disabled]
-}
-
-/** 将路径变量引用 {{VAR}} 替换为字面值（支持嵌套引用，按拓扑序逐层展开） */
-export function resolvePathVarRefs(text: string, pathVariables: PathVariable[]): string {
-  const enabledVars = pathVariables.filter((v) => v.enabled && v.key)
-  if (enabledVars.length === 0) return text
-
-  // 先将路径变量自身按拓扑排序展开（被引用的先解析）
-  const sorted = topoSortPathVariables(enabledVars)
-  const resolvedMap = new Map<string, string>()
-
-  for (const v of sorted) {
-    let resolved = v.value
-    for (const [key, val] of resolvedMap) {
-      resolved = resolved.replaceAll(`{{${key}}}`, val)
-    }
-    resolvedMap.set(v.key, resolved)
-  }
-
-  // 用展开后的值替换文本中的引用
-  return text.replace(new RegExp(VAR_REF_RE.source, 'g'), (full, name) => {
-    const literal = resolvedMap.get(name)
-    return literal !== undefined ? literal : full
-  })
 }
 
 /** 将 {{VAR}} 转换为目标 shell 的引用语法 */

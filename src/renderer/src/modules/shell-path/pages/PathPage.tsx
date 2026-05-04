@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Typography, Spin, Tabs } from 'antd'
+import { Typography, Spin, Tabs, Alert } from 'antd'
 import { EnvironmentOutlined, ToolOutlined } from '@ant-design/icons'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { createEmptyPathEntry } from '@shared/builtin-functions'
@@ -50,6 +50,7 @@ export function PathPage(): React.ReactElement {
   return (
     <div>
       <Title level={4} style={{ marginBottom: 16 }}>{t('shellPath.title')}</Title>
+      <Alert message={t('shellPath.localOnlyHint')} type="info" showIcon style={{ marginBottom: 16 }} />
 
       <Tabs
         defaultActiveKey="entries"

@@ -74,8 +74,8 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
     await updateSettings(editSettings)
 
     if (configDirChanged) {
-      await loadData(true)
-      await loadShellConfig(true)
+      window.location.reload()
+      return
     }
 
     onClose()

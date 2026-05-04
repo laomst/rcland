@@ -14,12 +14,12 @@ const SETTINGS_FILENAME = 'settings.json'
 const DATA_FILENAME = 'rcland.config.claudecode.json'
 const CX_DATA_FILENAME = 'rcland.config.codex.json'
 
-function getUserDataDir(): string {
-  return app.getPath('userData')
+function getLocalDir(): string {
+  return join(app.getPath('home'), '.rcland', 'local_config')
 }
 
 function getSettingsPath(): string {
-  return join(getUserDataDir(), SETTINGS_FILENAME)
+  return join(getLocalDir(), SETTINGS_FILENAME)
 }
 
 // ============================================================
@@ -55,7 +55,7 @@ export function loadSettings(): AppSettings {
 
 export function saveSettings(settings: AppSettings): void {
   assertAppSettings(settings)
-  const dir = getUserDataDir()
+  const dir = getLocalDir()
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   writeFileSync(getSettingsPath(), JSON.stringify(settings, null, 2), 'utf-8')
 }
@@ -101,7 +101,7 @@ export function loadData(): string | null {
   const localLaunchItems = markLocalItems(localData.launchItems)
 
   // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new) from disk
-  const syncedLaunchItems = (syncedData as any)?.launchItems ?? (syncedData as any)?.configs ?? []
+  const syncedLaunchItems = syncedData?.launchItems ?? []
 
   // Combine synced + local
   const rawSelector = syncedData?.selector ?? { funcName: 'cc', promptTitle: '选择启动器' }
@@ -191,7 +191,7 @@ export function loadCXLandData(): CXLandData {
   const localLaunchItems = markLocalItems(localData.launchItems)
 
   // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new) from disk
-  const syncedLaunchItems = (syncedData as any)?.launchItems ?? (syncedData as any)?.configs ?? []
+  const syncedLaunchItems = syncedData?.launchItems ?? []
 
   const empty = createEmptyCXLandData()
   const rawCXSelector = syncedData?.selector ?? empty.selector

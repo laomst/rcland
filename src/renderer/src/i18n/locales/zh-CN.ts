@@ -129,6 +129,8 @@ const zhCN = {
     valuePlaceholder: '输入变量值',
     encryptStorage: '加密存储',
     encryptStorageHint: '值将被加密存储',
+    cannotSetLocalReferenced: '无法切换为仅本机，同步变量 {{keys}} 引用了此变量',
+    syncedVarCannotRefLocal: '同步变量的值不能引用仅本机变量：{{keys}}',
   },
 
   shellPath: {
@@ -143,6 +145,7 @@ const zhCN = {
     selectDir: '选择目录',
     pathHint: '支持手动输入或选择目录，可使用 $VAR 或 ${VAR} 形式的变量引用',
     pathShellHint: 'PATH 路径格式与操作系统相关，仅显示当前系统支持的 Shell',
+    localOnlyHint: 'PATH 设置不支持同步，仅存储在本机',
   },
 
   shellFunctions: {

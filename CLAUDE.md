@@ -90,10 +90,9 @@ npx esbuild tests/generator-escaping.test.ts --bundle --platform=node --format=c
 |------|------|------|--------|
 | `rcland.config.claudecode.json` | CC providers、launchItems、selector | v5 | 是 |
 | `rcland.config.codex.json` | CX providers、launchItems、selector | v3 | 是 |
-| `rcland.config.shell.json` | 变量、PATH、函数、别名 | v1 | 是 |
+| `rcland.config.shell.json` | 变量、函数、别名（pathVariables/pathEntries 仅存本地） | v1 | 是 |
 | `rcland.claude-env-dict.json` | 环境变量字典（用户条目 + 覆盖） | v1 | 是 |
-| `local/` | local-only 数据（CC + CX） | v1 | 否 |
-| Electron userData | AppSettings（shell profiles、密钥路径、语言） | — | 否 |
+| `~/.rcland/local_config/` | local-only 数据（settings、CC/CX/Shell 本机配置） | v1 | 否 |
 
 ## 关键模式
 
@@ -103,7 +102,7 @@ npx esbuild tests/generator-escaping.test.ts --bundle --platform=node --format=c
 
 **Section-based 编排**：7 个 section（variables → path → functions → aliases → systemProxy → ccland → cxland），每个 section 为每种 Shell 实现独立的 `SectionGenerator`（共 21 个生成器）。`orchestrator.ts` 按固定顺序组装成完整脚本。
 
-**生成流程**：generate → 写入 `~/.rcland/{shell}rc` → 注入 source 行到 shell profile（marker: `# >>> RCLand >>>`） → 备份旧文件。
+**生成流程**：generate → 写入 `~/.rcland/{shell}rc.{ext}`（zsh→`.zsh`、bash→`.bash`、powershell→`.ps1`）→ 注入 source 行到 shell profile（marker: `# >>> RCLand >>>`） → 备份旧文件。头部包含 shebang、生成时间和 "Do not edit manually" 提示。
 
 ### CRUD + 自动保存
 

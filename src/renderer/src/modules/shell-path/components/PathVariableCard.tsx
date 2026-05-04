@@ -61,8 +61,10 @@ export function PathVariableCard({
 
             <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>=</Text>
 
-            <Tooltip title={item.value}>
-              <VariableRefDisplay text={item.value || t('common.empty')} maxLength={30} style={{ flex: 1, minWidth: 0, fontSize: 12, fontFamily: 'monospace' }} />
+            <Tooltip title={item.value} mouseEnterDelay={0.3}>
+              <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                <VariableRefDisplay text={item.value || t('common.empty')} maxLength={30} style={{ fontSize: 12, fontFamily: 'monospace' }} />
+              </div>
             </Tooltip>
 
             {item.description && (

@@ -166,9 +166,11 @@ export function EnvDictTab(): React.ReactElement {
                       </Text>
                     </Tooltip>
                     {item.exampleValue && (
-                      <Text type="secondary" style={{ fontSize: 11, fontFamily: 'monospace' }}>
-                        {item.exampleValue}
-                      </Text>
+                      <Tooltip title={item.exampleValue}>
+                        <Text type="secondary" style={{ fontSize: 11, fontFamily: 'monospace', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.exampleValue}
+                        </Text>
+                      </Tooltip>
                     )}
                   </div>
                   <div>

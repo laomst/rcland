@@ -129,6 +129,8 @@ const en = {
     valuePlaceholder: 'Enter value',
     encryptStorage: 'Encrypt Storage',
     encryptStorageHint: 'Value will be stored encrypted',
+    cannotSetLocalReferenced: 'Cannot set to local only: synced variable(s) {{keys}} reference this variable',
+    syncedVarCannotRefLocal: 'Synced variable cannot reference local-only variable(s): {{keys}}',
   },
 
   shellPath: {
@@ -143,6 +145,7 @@ const en = {
     selectDir: 'Select Directory',
     pathHint: 'Supports manual input or directory selection, use $VAR or ${VAR} for variable references',
     pathShellHint: 'PATH format is OS-dependent, only showing Shells supported on this system',
+    localOnlyHint: 'PATH settings cannot be synced and are stored locally only',
   },
 
   shellFunctions: {

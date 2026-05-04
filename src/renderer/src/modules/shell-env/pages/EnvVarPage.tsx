@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Typography, Spin } from 'antd'
+import { Typography, Spin, App } from 'antd'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { createEmptyVariable } from '@shared/builtin-functions'
 import { ALL_SHELL_TYPES } from '@shared/shell'
+import { findLocalRefs } from '@shared/var-refs'
 import { EnvVarCard } from '../components/EnvVarCard'
 import { EnvVarFormModal, type EnvVarFormValues } from '../components/EnvVarFormModal'
 import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
@@ -12,6 +13,7 @@ const { Title } = Typography
 
 export function EnvVarPage(): React.ReactElement {
   const { t } = useTranslation()
+  const { modal } = App.useApp()
   const variables = useShellConfigStore((s) => s.shellConfig.variables)
   const dataLoaded = useShellConfigStore((s) => s.dataLoaded)
   const loadShellConfig = useShellConfigStore((s) => s.loadShellConfig)
@@ -101,6 +103,17 @@ export function EnvVarPage(): React.ReactElement {
         }}
         onOk={(values) => {
           if (editingVarId) {
+            if (!values.localOnly) {
+              const localRefs = findLocalRefs(values.value, variables)
+              if (localRefs.length > 0) {
+                modal.error({
+                  title: t('common.operationFailed'),
+                  content: t('shellEnv.syncedVarCannotRefLocal', { keys: localRefs.join(', ') }),
+                  okText: t('common.confirm')
+                })
+                return
+              }
+            }
             useShellConfigStore.getState().updateVariable(editingVarId, {
               key: values.key.trim(),
               value: values.value,

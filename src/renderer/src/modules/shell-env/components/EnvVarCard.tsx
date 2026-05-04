@@ -2,6 +2,7 @@ import { Space, Tooltip, Typography, App } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { LockOutlined } from '@ant-design/icons'
 import type { ShellVariable } from '@shared/shell-types'
+import { findSyncedReferencers, findLocalRefs } from '@shared/var-refs'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { EnvVarFormModal } from './EnvVarFormModal'
 import { BaseItemCard } from '@renderer/components/BaseItemCard'
@@ -24,6 +25,16 @@ export function EnvVarCard({
   const { modal } = App.useApp()
   const updateVariable = useShellConfigStore((s) => s.updateVariable)
 
+  const validateLocalOnlyChange = (newLocalOnly: boolean): string | undefined => {
+    if (!newLocalOnly) return undefined
+    const variables = useShellConfigStore.getState().shellConfig.variables
+    const referencers = findSyncedReferencers(variable.key, variables)
+    if (referencers.length > 0) {
+      return t('shellEnv.cannotSetLocalReferenced', { keys: referencers.join(', ') })
+    }
+    return undefined
+  }
+
   return (
     <BaseItemCard
       item={variable}
@@ -31,6 +42,7 @@ export function EnvVarCard({
       isDragging={isDragging}
       dragHandleProps={dragHandleProps}
       deleteConfirmContent={t('shellEnv.deleteConfirm', { name: variable.key })}
+      validateLocalOnlyChange={validateLocalOnlyChange}
       onUpdate={updateVariable}
       onRemove={(id) => {
         useShellConfigStore.getState().removeVariable(id)
@@ -68,14 +80,16 @@ export function EnvVarCard({
 
             <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>=</Text>
 
-            <Tooltip title={item.encrypted ? t('common.encrypted') : item.value}>
-              <Space size={4} style={{ flex: 1, minWidth: 0 }}>
-                {item.encrypted && <LockOutlined style={{ fontSize: 12, color: '#999' }} />}
-                {item.encrypted
-                  ? <Text style={{ fontSize: 12 }}>{displayValue}</Text>
-                  : <VariableRefDisplay text={displayValue} maxLength={30} style={{ fontSize: 12 }} />
-                }
-              </Space>
+            <Tooltip title={item.encrypted ? t('common.encrypted') : item.value} mouseEnterDelay={0.3}>
+              <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                <Space size={4}>
+                  {item.encrypted && <LockOutlined style={{ fontSize: 12, color: '#999' }} />}
+                  {item.encrypted
+                    ? <Text style={{ fontSize: 12 }}>{displayValue}</Text>
+                    : <VariableRefDisplay text={displayValue} maxLength={30} style={{ fontSize: 12 }} />
+                  }
+                </Space>
+              </div>
             </Tooltip>
 
             {/* Description */}
@@ -105,6 +119,18 @@ export function EnvVarCard({
           okText={t('common.save')}
           onCancel={onClose}
           onOk={(values) => {
+            if (!values.localOnly) {
+              const variables = useShellConfigStore.getState().shellConfig.variables
+              const localRefs = findLocalRefs(values.value, variables)
+              if (localRefs.length > 0) {
+                modal.error({
+                  title: t('common.operationFailed'),
+                  content: t('shellEnv.syncedVarCannotRefLocal', { keys: localRefs.join(', ') }),
+                  okText: t('common.confirm')
+                })
+                return
+              }
+            }
             updateVariable(variable.id, {
               key: values.key,
               value: values.value,

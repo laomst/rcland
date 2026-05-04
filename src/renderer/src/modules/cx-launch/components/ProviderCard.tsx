@@ -59,9 +59,11 @@ export function ProviderCard({
           <Space size={2}>
             {(provider.endpoints ?? []).map((ep, i) => (
               <Space key={ep.id} size={2}>
-                <Text type="secondary" style={{ fontSize: 11, lineHeight: '20px' }}>
-                  {i > 0 ? ' / ' : ''}{ep.label || ep.url}
-                </Text>
+                <Tooltip title={ep.url}>
+                  <Text type="secondary" style={{ fontSize: 11, lineHeight: '20px' }}>
+                    {i > 0 ? ' / ' : ''}{ep.label || ep.url}
+                  </Text>
+                </Tooltip>
                 {ep.useSystemProxy && <Tag style={{ marginInlineEnd: 0 }}>{t('ccLaunch.systemProxyShort')}</Tag>}
               </Space>
             ))}

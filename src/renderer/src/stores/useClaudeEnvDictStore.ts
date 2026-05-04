@@ -10,7 +10,7 @@ interface ClaudeEnvDictState {
   loaded: boolean
   loading: boolean
 
-  load: () => Promise<void>
+  load: (force?: boolean) => Promise<void>
   addUserItem: (item: UserClaudeEnvDictItem) => Promise<void>
   updateUserItem: (item: UserClaudeEnvDictItem) => Promise<void>
   deleteUserItem: (key: string) => Promise<void>
@@ -27,8 +27,8 @@ export const useClaudeEnvDictStore = create<ClaudeEnvDictState>((set, get) => ({
   loaded: false,
   loading: false,
 
-  load: async () => {
-    if (get().loading || get().loaded) return
+  load: async (force = false) => {
+    if (get().loading || (!force && get().loaded)) return
     set({ loading: true })
     try {
       const items = await window.electronAPI.loadClaudeEnvDict()

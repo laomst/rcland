@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs'
 import { dirname } from 'path'
 import type { ShellType } from '@shared/shell'
 import { getShellOutputPath } from '@shared/shell'
@@ -64,6 +64,12 @@ export function applyConfigWithKey(input: ApplyConfigInput): { appliedShells: Sh
     if (!profile?.enabled) continue
 
     const outputPath = resolveHomePath(getShellOutputPath(shellType))
+
+    // Clean up legacy files without extension (e.g. ~/.rcland/zshrc → ~/.rcland/zshrc.zsh)
+    const legacyPath = resolveHomePath(`~/.rcland/${shellType}rc`)
+    if (legacyPath !== outputPath && existsSync(legacyPath)) {
+      unlinkSync(legacyPath)
+    }
     input.createBackup?.(shellType, getShellOutputPath(shellType))
     const generated = generateConfigWithKey({ ...input, shellType })
 

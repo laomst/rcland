@@ -11,6 +11,8 @@ interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
   deleteConfirmContent: string
   hideSyncToggle?: boolean
+  /** Return an error message to prevent localOnly change, or undefined to allow */
+  validateLocalOnlyChange?: (newLocalOnly: boolean) => string | undefined
   onUpdate: (id: string, patch: Partial<T>) => void
   onRemove: (id: string) => void
   onDuplicate?: (item: T) => void
@@ -26,6 +28,7 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
   dragHandleProps,
   deleteConfirmContent,
   hideSyncToggle,
+  validateLocalOnlyChange,
   onUpdate,
   onRemove,
   onDuplicate,
@@ -34,7 +37,7 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
   renderEditModal
 }: BaseItemCardProps<T>): React.ReactElement {
   const { t } = useTranslation()
-  const { modal } = App.useApp()
+  const { modal, message } = App.useApp()
   const [editOpen, setEditOpen] = useState(false)
 
   const handleDelete = (): void => {
@@ -50,6 +53,13 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
 
   const handleLocalOnlyChange = (val: string): void => {
     const newLocalOnly = val === 'local'
+    if (newLocalOnly && validateLocalOnlyChange) {
+      const error = validateLocalOnlyChange(true)
+      if (error) {
+        message.warning(error)
+        return
+      }
+    }
     const allItems = getAllItems()
     const targetGroup = allItems.filter((i) => !!i.localOnly === newLocalOnly)
     const maxOrder = targetGroup.length > 0 ? Math.max(...targetGroup.map((i) => i.order ?? 0)) + 1 : 0

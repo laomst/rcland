@@ -45,8 +45,10 @@ export function PathCard({
           <>
             <FolderOutlined style={{ fontSize: 14, color: '#999', flexShrink: 0 }} />
 
-            <Tooltip title={item.path}>
-              <VariableRefDisplay text={item.path || t('common.notSet')} maxLength={50} style={{ flex: 1, fontSize: 12, fontFamily: 'monospace' }} />
+            <Tooltip title={item.path} mouseEnterDelay={0.3}>
+              <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                <VariableRefDisplay text={item.path || t('common.notSet')} maxLength={50} style={{ fontSize: 12, fontFamily: 'monospace' }} />
+              </div>
             </Tooltip>
 
             {item.description && (

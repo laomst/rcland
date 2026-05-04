@@ -1,13 +1,17 @@
 import { join } from 'path'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { app } from 'electron'
 import type { LocalShellConfigData } from '@shared/shell-types'
 import { createEmptyLocalShellConfig } from '@shared/builtin-functions'
 
 const LOCAL_SHELL_DATA_FILENAME = 'rcland.config.shell.local.json'
 
+function getLocalDir(): string {
+  return join(app.getPath('home'), '.rcland', 'local_config')
+}
+
 function getLocalShellDataPath(): string {
-  return join(app.getPath('userData'), LOCAL_SHELL_DATA_FILENAME)
+  return join(getLocalDir(), LOCAL_SHELL_DATA_FILENAME)
 }
 
 export function loadLocalShellConfig(): LocalShellConfigData {
@@ -30,5 +34,6 @@ export function loadLocalShellConfig(): LocalShellConfigData {
 }
 
 export function saveLocalShellConfig(data: LocalShellConfigData): void {
+  mkdirSync(getLocalDir(), { recursive: true })
   writeFileSync(getLocalShellDataPath(), JSON.stringify(data, null, 2), 'utf-8')
 }

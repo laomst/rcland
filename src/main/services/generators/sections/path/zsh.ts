@@ -1,7 +1,7 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { PathEntry } from '@shared/shell-types'
 import type { ShellType } from '@shared/shell'
-import { resolvePathVarRefs, topoSortPathVariables } from '@shared/var-refs'
+import { resolveVarRefs, topoSortPathVariables } from '@shared/var-refs'
 import { assertSafeEnvName } from '../../shell-syntax'
 
 export class PathZshGenerator implements SectionGenerator<PathEntry[]> {
@@ -21,7 +21,7 @@ export class PathZshGenerator implements SectionGenerator<PathEntry[]> {
     if (enabledPathVars.length > 0) {
       const sorted = topoSortPathVariables(enabledPathVars)
       for (const v of sorted) {
-        const resolved = resolvePathVarRefs(v.value, ctx.pathVariables)
+        const resolved = resolveVarRefs(v.value, 'zsh')
         lines.push(`export ${assertSafeEnvName(v.key, v.id)}="${ctx.escapeValue(resolved)}"`)
       }
     }
@@ -30,7 +30,7 @@ export class PathZshGenerator implements SectionGenerator<PathEntry[]> {
     lines.push('CUSTOM_PATHS=(')
 
     for (const e of items) {
-      const resolved = resolvePathVarRefs(e.path, ctx.pathVariables)
+      const resolved = resolveVarRefs(e.path, 'zsh')
       lines.push(`  "${ctx.escapeValue(resolved)}"`)
     }
 

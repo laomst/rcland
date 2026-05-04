@@ -1,8 +1,7 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
 import type { PathEntry } from '@shared/shell-types'
 import type { ShellType } from '@shared/shell'
-import { quotePowerShellLiteral } from '../../shell-syntax'
-import { resolvePathVarRefs, topoSortPathVariables } from '@shared/var-refs'
+import { resolveVarRefs, topoSortPathVariables } from '@shared/var-refs'
 import { assertSafeEnvName } from '../../shell-syntax'
 
 export class PathPowerShellGenerator implements SectionGenerator<PathEntry[]> {
@@ -22,16 +21,16 @@ export class PathPowerShellGenerator implements SectionGenerator<PathEntry[]> {
     if (enabledPathVars.length > 0) {
       const sorted = topoSortPathVariables(enabledPathVars)
       for (const v of sorted) {
-        const resolved = resolvePathVarRefs(v.value, ctx.pathVariables)
-        lines.push(`$env:${assertSafeEnvName(v.key, v.id)} = ${quotePowerShellLiteral(resolved)}`)
+        const resolved = resolveVarRefs(v.value, 'powershell')
+        lines.push(`$env:${assertSafeEnvName(v.key, v.id)} = "${resolved}"`)
       }
     }
 
     lines.push('$customPaths = @(')
 
     for (const e of items) {
-      const resolved = resolvePathVarRefs(e.path, ctx.pathVariables)
-      lines.push(`    @{Path=${quotePowerShellLiteral(resolved)}; Condition=''}`)
+      const resolved = resolveVarRefs(e.path, 'powershell')
+      lines.push(`    @{Path="${resolved}"; Condition=''}`)
     }
 
     lines.push(')')
