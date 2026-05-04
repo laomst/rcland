@@ -22,7 +22,7 @@ export interface PresetItemBase {
   tags?: string[]
 }
 
-/** Function preset - body without ID/order/enabled */
+/** Function preset - body without ID/enabled */
 export interface FunctionPreset extends PresetItemBase {
   type: 'function'
   /** Function bodies per shell type */
@@ -33,7 +33,7 @@ export interface FunctionPreset extends PresetItemBase {
   }
 }
 
-/** Alias preset - command without ID/order/enabled */
+/** Alias preset - command without ID/enabled */
 export interface AliasPreset extends PresetItemBase {
   type: 'alias'
   /** Alias name */
@@ -44,7 +44,7 @@ export interface AliasPreset extends PresetItemBase {
   shells?: ShellType[]
 }
 
-/** Variable preset - key/value without ID/order/enabled */
+/** Variable preset - key/value without ID/enabled */
 export interface VariablePreset extends PresetItemBase {
   type: 'variable'
   /** Environment variable name */
@@ -92,8 +92,7 @@ export function functionPresetToShellFunction(preset: FunctionPreset): ShellFunc
     category: preset.category,
     description: preset.description,
     body: { ...preset.body },
-    enabled: true,
-    order: 0
+    enabled: true
   }
 }
 
@@ -105,7 +104,6 @@ export function aliasPresetToShellAlias(preset: AliasPreset): ShellAlias {
     command: preset.command,
     description: preset.description,
     enabled: true,
-    order: 0,
     shells: preset.shells ? [...preset.shells] : undefined
   }
 }
@@ -119,7 +117,6 @@ export function variablePresetToShellVariable(preset: VariablePreset): ShellVari
     encrypted: preset.encrypted ?? false,
     description: preset.description,
     enabled: true,
-    order: 0,
     shells: preset.shells ? [...preset.shells] : undefined
   }
 }

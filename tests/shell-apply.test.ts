@@ -34,8 +34,7 @@ const shellConfig: ShellConfigData = {
     key: 'RCLAND_TEST_VAR',
     value: 'present',
     encrypted: false,
-    enabled: true,
-    order: 0
+    enabled: true
   }],
   pathEntries: [],
   functions: [],

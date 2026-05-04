@@ -49,8 +49,7 @@ export function createEmptyVariable(): ShellVariable {
     key: '',
     value: '',
     encrypted: false,
-    enabled: true,
-    order: 0
+    enabled: true
   }
 }
 
@@ -58,8 +57,7 @@ export function createEmptyPathEntry(): PathEntry {
   return {
     id: generateUUID(),
     path: '',
-    enabled: true,
-    order: 0
+    enabled: true
   }
 }
 
@@ -68,8 +66,7 @@ export function createEmptyPathVariable(): PathVariable {
     id: generateUUID(),
     key: '',
     value: '',
-    enabled: true,
-    order: 0
+    enabled: true
   }
 }
 
@@ -79,8 +76,7 @@ export function createEmptyFunction(): ShellFunction {
     name: '',
     category: 'custom',
     body: {},
-    enabled: true,
-    order: 0
+    enabled: true
   }
 }
 
@@ -89,8 +85,7 @@ export function createEmptyAlias(): ShellAlias {
     id: generateUUID(),
     alias: '',
     command: '',
-    enabled: true,
-    order: 0
+    enabled: true
   }
 }
 
@@ -127,7 +122,6 @@ export const BUILTIN_FUNCTIONS: ShellFunction[] = [
     },
     funcNames: { zsh: 'set_main_task_name', bash: 'set_main_task_name', powershell: 'set_main_task_name' },
     enabled: true,
-    order: -3,
     builtIn: true
   },
   {
@@ -184,7 +178,6 @@ export const BUILTIN_FUNCTIONS: ShellFunction[] = [
     },
     funcNames: { zsh: 'pathls', bash: 'pathls', powershell: 'pathls' },
     enabled: true,
-    order: -2,
     builtIn: true
   },
   {
@@ -228,7 +221,6 @@ export const BUILTIN_FUNCTIONS: ShellFunction[] = [
     },
     funcNames: { zsh: 'check-env-exists', bash: 'check-env-exists', powershell: 'check-env-exists' },
     enabled: true,
-    order: -1,
     builtIn: true
   },
   {
@@ -493,7 +485,6 @@ export const BUILTIN_FUNCTIONS: ShellFunction[] = [
     },
     funcNames: { zsh: 'prompt-select', bash: 'prompt-select', powershell: 'prompt-select' },
     enabled: true,
-    order: -1,
     builtIn: true
   }
 ]

@@ -44,8 +44,7 @@ export function EnvVarPage(): React.ReactElement {
     const newVar = createEmptyVariable()
     addVariable({
       ...newVar,
-      localOnly,
-      order: variables.length
+      localOnly
     })
     setEditingVarId(newVar.id)
     setInitialFormValues({

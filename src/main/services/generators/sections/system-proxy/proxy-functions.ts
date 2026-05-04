@@ -106,6 +106,8 @@ export function buildPowerShellSystemProxyFunctions(names: { proxyOn: string; pr
     ].join('\n')
   }).join('\n')
 
+  // PowerShell hashtables are case-insensitive, so use lowercase keys only
+  // and set both cases when applying
   return [
     '',
     'function _rcland_ReadOsProxy {',
@@ -121,10 +123,8 @@ export function buildPowerShellSystemProxyFunctions(names: { proxyOn: string; pr
     '    $server = "http://$server"',
     '  }',
     '  @{',
-    '    http_proxy   = $server',
-    '    HTTP_PROXY   = $server',
-    '    https_proxy  = $server',
-    '    HTTPS_PROXY  = $server',
+    '    http_proxy  = $server',
+    '    https_proxy = $server',
     '  }',
     '}',
     '',
@@ -135,7 +135,9 @@ export function buildPowerShellSystemProxyFunctions(names: { proxyOn: string; pr
     '    return',
     '  }',
     '  foreach ($key in $entries.Keys) {',
-    '    Set-Item "Env:$key" $entries[$key]',
+    '    $val = $entries[$key]',
+    '    Set-Item "Env:$key" $val',
+    '    Set-Item "Env:$($key.ToUpper())" $val',
     '  }',
     '}',
     '',

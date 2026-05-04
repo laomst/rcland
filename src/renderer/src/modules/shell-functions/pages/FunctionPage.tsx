@@ -85,7 +85,6 @@ export default function FunctionPage(): React.ReactElement {
 
   const handleAdd = (localOnly: boolean) => {
     const newFunc = createEmptyFunction()
-    newFunc.order = functions.length
     newFunc.localOnly = localOnly
     addFunction(newFunc)
     setEditingFuncId(newFunc.id)

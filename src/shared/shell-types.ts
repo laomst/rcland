@@ -23,7 +23,6 @@ export interface ShellVariable {
   encrypted: boolean
   description?: string
   enabled: boolean
-  order: number
   shells?: ShellType[]
   /** 仅本机配置，不同步到其他设备 */
   localOnly?: boolean
@@ -36,7 +35,6 @@ export interface PathVariable {
   value: string
   description?: string
   enabled: boolean
-  order: number
   /** 仅本机配置，不同步到其他设备 */
   localOnly?: boolean
 }
@@ -47,7 +45,6 @@ export interface PathEntry {
   path: string
   description?: string
   enabled: boolean
-  order: number
   shells?: ShellType[]
   /** 仅本机配置，不同步到其他设备 */
   localOnly?: boolean
@@ -73,7 +70,6 @@ export interface ShellFunction {
     powershell?: string
   }
   enabled: boolean
-  order: number
   /** 内置函数标记，不可删除/编辑 */
   builtIn?: boolean
   /** 仅本机配置，不同步到其他设备 */
@@ -87,7 +83,6 @@ export interface ShellAlias {
   command: string
   description?: string
   enabled: boolean
-  order: number
   shells?: ShellType[]
   /** 仅本机配置，不同步到其他设备 */
   localOnly?: boolean

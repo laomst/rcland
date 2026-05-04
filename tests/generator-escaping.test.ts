@@ -169,8 +169,7 @@ test('zsh alias generator allows dot aliases', () => {
       alias: '..',
       command: 'cd ..',
       description: '返回上级目录',
-      enabled: true,
-      order: 0
+      enabled: true
     }
   ], createGenerateContext('zsh', 'unused'))
 
@@ -184,8 +183,7 @@ test('zsh alias generator allows tilde aliases', () => {
       alias: '~',
       command: 'cd ~',
       description: '回到主目录',
-      enabled: true,
-      order: 0
+      enabled: true
     }
   ], createGenerateContext('zsh', 'unused'))
 
@@ -199,8 +197,7 @@ test('zsh alias generator rejects shell metacharacters in alias names', () => {
         id: 'alias-bad',
         alias: 'bad;touch',
         command: 'pwd',
-        enabled: true,
-        order: 0
+        enabled: true
       }
     ], createGenerateContext('zsh', 'unused')),
     /Invalid shell alias name/

@@ -24,10 +24,7 @@ export function PathVariableSection(): React.ReactElement {
 
   const handleAdd = () => {
     const newVar = createEmptyPathVariable()
-    addPathVariable({
-      ...newVar,
-      order: pathVariables.length
-    })
+    addPathVariable(newVar)
     setEditingVarId(newVar.id)
     setInitialFormValues({
       key: '',

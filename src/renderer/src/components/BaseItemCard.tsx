@@ -4,7 +4,7 @@ import { Button, Switch, Tooltip, App, Select } from 'antd'
 import { ItemRow } from './ItemRow'
 import { useTranslation } from 'react-i18next'
 
-interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly?: boolean; order?: number }> {
+interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly?: boolean }> {
   item: T
   index?: number
   isDragging?: boolean
@@ -21,7 +21,7 @@ interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly
   renderEditModal: (open: boolean, onClose: () => void) => ReactNode
 }
 
-export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnly?: boolean; order?: number }>({
+export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnly?: boolean }>({
   item,
   index,
   isDragging,
@@ -60,10 +60,7 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
         return
       }
     }
-    const allItems = getAllItems()
-    const targetGroup = allItems.filter((i) => !!i.localOnly === newLocalOnly)
-    const maxOrder = targetGroup.length > 0 ? Math.max(...targetGroup.map((i) => i.order ?? 0)) + 1 : 0
-    onUpdate(item.id, { localOnly: newLocalOnly, order: maxOrder } as Partial<T>)
+    onUpdate(item.id, { localOnly: newLocalOnly } as Partial<T>)
   }
 
   return (

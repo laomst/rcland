@@ -32,7 +32,6 @@ export default function AliasPage(): React.ReactElement {
 
   const handleAdd = (localOnly: boolean) => {
     const newAlias = createEmptyAlias()
-    newAlias.order = aliases.length
     newAlias.localOnly = localOnly
     addAlias(newAlias)
     setEditingAliasId(newAlias.id)

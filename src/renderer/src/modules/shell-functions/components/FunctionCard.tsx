@@ -98,10 +98,7 @@ export function FunctionCard({
                 value={func.localOnly ? 'local' : 'sync'}
                 onChange={(val) => {
                   const newLocalOnly = val === 'local'
-                  const allFuncs = useShellConfigStore.getState().shellConfig.functions
-                  const targetGroup = allFuncs.filter((f) => !f.builtIn && !!f.localOnly === newLocalOnly)
-                  const maxOrder = targetGroup.length > 0 ? Math.max(...targetGroup.map((f) => f.order)) + 1 : 0
-                  updateFunction(func.id, { localOnly: newLocalOnly, order: maxOrder })
+                  updateFunction(func.id, { localOnly: newLocalOnly })
                 }}
                 style={{ width: 70 }}
                 options={[

@@ -33,8 +33,7 @@ export function PathPage(): React.ReactElement {
       ...newEntry,
       path: values.path.trim(),
       description: values.description.trim() || undefined,
-      shells: values.shells.length > 0 ? values.shells : undefined,
-      order: pathEntries.length
+      shells: values.shells.length > 0 ? values.shells : undefined
     })
     setAddOpen(false)
   }

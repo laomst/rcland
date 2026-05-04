@@ -58,9 +58,7 @@ export function loadShellConfig(): string {
   }
 
   // 3. 为本机项标记 localOnly: true
-  // 4. 合并（同步在前、本机在后，各组内按 order 排序）
-  const sortByOrder = <T extends { order: number }>(items: T[]): T[] =>
-    items.sort((a, b) => a.order - b.order)
+  // 4. 合并（同步在前、本机在后，保持 JSON 数组顺序）
 
   // 5. 合并内置函数：保留用户的 enabled 状态，其余用内置定义覆盖
   const userFunctions = [...syncedConfig.functions, ...markLocalItems(localConfig.functions)].filter(
@@ -78,11 +76,11 @@ export function loadShellConfig(): string {
 
   const merged: ShellConfigData = {
     ...syncedConfig,
-    variables: [...sortByOrder(syncedConfig.variables), ...sortByOrder(markLocalItems(localConfig.variables))],
-    pathVariables: sortByOrder(localConfig.pathVariables),
-    pathEntries: sortByOrder(localConfig.pathEntries),
-    functions: [...mergedBuiltIns, ...sortByOrder(userFunctions)],
-    aliases: [...sortByOrder(syncedConfig.aliases), ...sortByOrder(markLocalItems(localConfig.aliases))]
+    variables: [...syncedConfig.variables, ...markLocalItems(localConfig.variables)],
+    pathVariables: localConfig.pathVariables,
+    pathEntries: localConfig.pathEntries,
+    functions: [...mergedBuiltIns, ...userFunctions],
+    aliases: [...syncedConfig.aliases, ...markLocalItems(localConfig.aliases)]
   }
 
   return JSON.stringify(merged)
