@@ -2,10 +2,14 @@
   "name": "rcland",
   "productName": "RCLand",
   "version": "0.1.0",
+  "author": {
+    "name": "laomst",
+    "email": "laomst@163.com"
+  },
   "description": "Claude Code CLI 综合管理工具",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "electron-vite dev -- --no-sandbox",
     "typecheck": "tsc -p tsconfig.node.json --noEmit --tsBuildInfoFile /tmp/rcland-tsconfig-node.tsbuildinfo && tsc -p tsconfig.web.json --noEmit --tsBuildInfoFile /tmp/rcland-tsconfig-web.tsbuildinfo",
     "test": "mkdir -p /tmp/rcland-tests && esbuild tests/*.test.ts --bundle --platform=node --format=cjs --outdir=/tmp/rcland-tests --alias:@shared=./src/shared --alias:@renderer=./src/renderer/src && node --test /tmp/rcland-tests/*.js",
     "build": "npm run typecheck && electron-vite build",

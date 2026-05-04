@@ -25,3 +25,5 @@ linux:
   target:
     - AppImage
     - deb
+  executableArgs:
+    - --no-sandbox
