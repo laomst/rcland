@@ -26,8 +26,7 @@ export function SelectorTab({
   const ls: BaseLocalSelector = selector.localSelector ?? {
     enabled: false,
     funcName: defaults.localFuncName,
-    aliasEnabled: true,
-    requireSessionName: true
+    aliasEnabled: true
   }
 
   const k = (key: string) => `${i18nPrefix}.selector.${key}`
@@ -48,12 +47,6 @@ export function SelectorTab({
             value={selector.promptTitle}
             onChange={(e) => onChange({ promptTitle: e.target.value })}
             placeholder={defaults.promptTitle}
-          />
-        </Form.Item>
-        <Form.Item label={t(k('requireSessionName'))} extra={t(k('requireSessionNameHint'))}>
-          <Switch
-            checked={selector.requireSessionName !== false}
-            onChange={(checked) => onChange({ requireSessionName: checked })}
           />
         </Form.Item>
         <Form.Item label={t(k('aliasEnabled'))} extra={t(k('aliasEnabledHint'))}>
@@ -94,13 +87,6 @@ export function SelectorTab({
             value={ls.promptTitle ?? ''}
             onChange={(e) => onChange({ localSelector: { ...ls, promptTitle: e.target.value } })}
             placeholder={selector.promptTitle || defaults.promptTitle}
-            disabled={!ls.enabled}
-          />
-        </Form.Item>
-        <Form.Item label={t(k('localRequireSessionName'))} extra={t(k('localRequireSessionNameHint'))}>
-          <Switch
-            checked={ls.requireSessionName !== false}
-            onChange={(checked) => onChange({ localSelector: { ...ls, requireSessionName: checked } })}
             disabled={!ls.enabled}
           />
         </Form.Item>

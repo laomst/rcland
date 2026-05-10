@@ -78,14 +78,11 @@ export interface CCLaunchData {
     funcName: string
     promptTitle: string
     aliasEnabled?: boolean
-    /** Whether to require -n session name in selector function. Default: true */
-    requireSessionName?: boolean
     localSelector?: {
       enabled: boolean
       funcName: string
       promptTitle?: string
       aliasEnabled?: boolean
-      requireSessionName?: boolean
     }
     kanban?: {
       funcName: string

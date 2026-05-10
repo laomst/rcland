@@ -85,20 +85,6 @@ test('buildBashLikeCXContent emits selector when enabled', () => {
   assert.match(out, /alias cxd='cx --dangerously-bypass-approvals-and-sandbox'/)
 })
 
-test('buildBashLikeCXContent selector enforces -n with OSC title', () => {
-  const data = makeData()
-  data.selector = { funcName: 'cx', promptTitle: '选择' }
-  const tokens = new Map([['cx-token:c1', 'tok']])
-  const out = build(data, tokens)
-  // Selector requires -n
-  assert.match(out, /if \[\[ -z "\$_session_name" \]\]; then/)
-  assert.match(out, /printf '\\033\[31m错误: 必须使用 -n 指定会话名称/)
-  // Selector sets OSC title
-  assert.match(out, /printf '\\033\]0;%s\\007' "CX 🔸 \$_safe_session_name"/)
-  // Selector passes remaining args (not -n) to child
-  assert.match(out, /cx-glm5\)  cx-glm5 "\$\{_remaining\[@\]\}"/)
-})
-
 test('buildBashLikeCXContent calls configured proxy-off when endpoint disables system proxy', () => {
   const data = makeData()
   data.providers[0].endpoints[0].useSystemProxy = false
@@ -113,18 +99,6 @@ test('buildBashLikeCXContent calls configured proxy-on when endpoint enables sys
   const tokens = new Map([['cx-token:c1', 'tok']])
   const out = build(data, tokens)
   assert.match(out, /proxy-on \|\| return 1/)
-})
-
-test('buildBashLikeCXContent parses -n for OSC title and strips from args', () => {
-  const tokens = new Map([['cx-token:c1', 'tok']])
-  const out = build(makeData(), tokens)
-  // Individual function should parse -n and set OSC title
-  assert.match(out, /local _sn=""/)
-  assert.match(out, /local _filtered=/)
-  assert.match(out, /local _safe_sn="\$\(printf '%s' "\$_sn" \| LC_ALL=C tr -d '\\000-\\037\\177'\)"/)
-  assert.match(out, /printf '\\033\]0;%s\\007' "CX 🔸 \$_safe_sn"/)
-  // Should NOT pass -n to codex
-  assert.match(out, /"\$\{_filtered\[@\]\}"/)
 })
 
 test('buildBashLikeCXContent skips disabled launchItems', () => {
@@ -143,17 +117,10 @@ test('buildBashLikeCXContent skips launchItems whose provider is disabled', () =
   assert.doesNotMatch(out, /cx-glm5\(\) \{$/m)
 })
 
-test('buildBashLikeCXContent selector makes -n optional when requireSessionName is false', () => {
+test('buildBashLikeCXContent selector passes all args to child function', () => {
   const data = makeData()
-  data.selector = { funcName: 'cx', promptTitle: '选择', requireSessionName: false }
+  data.selector = { funcName: 'cx', promptTitle: '选择' }
   const tokens = new Map([['cx-token:c1', 'tok']])
   const out = build(data, tokens)
-  // Should NOT enforce -n (no error message about missing -n)
-  assert.doesNotMatch(out, /错误: 必须使用 -n 指定会话名称/)
-  // Should still validate a present -n has a value
-  assert.match(out, /      -n\)\n        if \[\[ \$# -lt 2 \|\| -z "\$2" \]\]; then\n          printf '\\033\[31m错误: -n 需要提供会话名称/)
-  // Should still have OSC title conditionally
-  assert.match(out, /if \[\[ -n "\$_session_name" \]\]; then/)
-  assert.match(out, /local _safe_session_name="\$\(printf '%s' "\$_session_name" \| LC_ALL=C tr -d '\\000-\\037\\177'\)"/)
-  assert.match(out, /printf '\\033\]0;%s\\007' "CX 🔸 \$_safe_session_name"/)
+  assert.match(out, /cx-glm5\)  cx-glm5 "\$\{@\}" ;;/)
 })

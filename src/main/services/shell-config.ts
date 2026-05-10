@@ -109,7 +109,12 @@ export function saveShellConfig(json: string): void {
   const settings = loadSettings()
   const dir = settings.configDir
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  writeFileSync(getShellDataPath(), JSON.stringify(syncedConfig, null, 2), 'utf-8')
+  const syncedPath = getShellDataPath()
+  const syncedJson = JSON.stringify(syncedConfig, null, 2)
+  const existingSynced = existsSync(syncedPath) ? readFileSync(syncedPath, 'utf-8') : ''
+  if (existingSynced !== syncedJson) {
+    writeFileSync(syncedPath, syncedJson, 'utf-8')
+  }
 
   // 写入本机文件（pathVariables 和 pathEntries 全部存 local）
   const localConfig: LocalShellConfigData = {

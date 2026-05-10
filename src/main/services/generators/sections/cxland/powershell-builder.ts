@@ -44,7 +44,7 @@ export function buildPowerShellCXContent(
   // Main selector (always generated when configs exist)
   if (enabledConfigs.length > 0) {
     const selectorFuncName = assertSafeShellName(data.selector.funcName, 'selector')
-    writeSelectorFunction(lines, selectorFuncName, data.selector.promptTitle, enabledConfigs, data.selector.requireSessionName !== false)
+    writeSelectorFunction(lines, selectorFuncName, data.selector.promptTitle, enabledConfigs)
     if (data.selector.aliasEnabled !== false) {
       lines.push('')
       lines.push(`function ${selectorFuncName}d { ${selectorFuncName} --dangerously-bypass-approvals-and-sandbox @args }`)
@@ -57,7 +57,7 @@ export function buildPowerShellCXContent(
     const localFuncName = assertSafeShellName(ls.funcName || 'cxl', 'local-selector')
     const localEntries = enabledConfigs.filter((c) => c.localOnly)
     if (localEntries.length > 0) {
-      writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries, ls.requireSessionName !== false)
+      writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries)
     } else {
       lines.push('')
       lines.push(`function ${localFuncName} { Write-Error ${quotePowerShellLiteral('错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」')} }`)
@@ -154,25 +154,6 @@ function writeFunction(
     lines.push(`        foreach ($key in @(${SYSTEM_PROXY_ENV_NAMES.map((k) => quotePowerShellLiteral(k)).join(', ')})) { Remove-Item "Env:\$key" -ErrorAction SilentlyContinue }`)
   }
 
-  lines.push('        $sn = ""; $filtered = @(); $i = 0')
-  lines.push('        while ($i -lt $args.Count) {')
-  lines.push("            if ($args[$i] -eq '-n') {")
-  lines.push('                if ($i + 1 -ge $args.Count -or [string]::IsNullOrEmpty($args[$i + 1])) {')
-  lines.push("                    Write-Host '错误: -n 需要提供会话名称' -ForegroundColor Red")
-  lines.push('                    return 1')
-  lines.push('                }')
-  lines.push('                $sn = $args[$i + 1]; $i += 2')
-  lines.push("            } elseif ($args[$i] -match '^-n(.+)$') {")
-  lines.push('                $sn = $Matches[1]; $i++')
-  lines.push('            } else {')
-  lines.push('                $filtered += $args[$i]; $i++')
-  lines.push('            }')
-  lines.push('        }')
-  lines.push('        if (-not [string]::IsNullOrEmpty($sn)) {')
-  // Sanitize session name before embedding in OSC sequences (strip C0 controls + DEL).
-  lines.push("            $safeSn = $sn -replace '[\\x00-\\x1F\\x7F]', ''")
-  lines.push('            Write-Host "`e]0;CX 🔸 $safeSn`a" -NoNewline')
-  lines.push('        }')
   // Set OPENAI_API_KEY
   lines.push(`        $env:OPENAI_API_KEY = ${quotePowerShellLiteral(tokenVal)}`)
 
@@ -193,7 +174,7 @@ function writeFunction(
     lines.push(`            -c ${buildPowerShellCodexConfigArg('model', config.model)} \``)
   }
 
-  lines.push('            @filtered')
+  lines.push('            @args')
   lines.push('    } finally {')
 
   // Restore OPENAI_API_KEY
@@ -228,41 +209,10 @@ function writeSelectorFunction(
   lines: string[],
   funcName: string,
   promptTitle: string,
-  entries: CXLaunchItem[],
-  requireN: boolean
+  entries: CXLaunchItem[]
 ): void {
   lines.push('')
   lines.push(`function ${funcName} {`)
-  lines.push('    $session_name = ""')
-  lines.push('    $remaining = @()')
-  lines.push('    $i = 0')
-  lines.push('    while ($i -lt $args.Count) {')
-  lines.push('        if ($args[$i] -eq \'-n\') {')
-  // Always validate missing -n value when -n is provided, even if session name is optional.
-  lines.push('            if ($i + 1 -ge $args.Count -or [string]::IsNullOrEmpty($args[$i + 1])) {')
-  lines.push('                Write-Host \'错误: -n 需要提供会话名称\' -ForegroundColor Red')
-  lines.push('                return 1')
-  lines.push('            }')
-  lines.push('            $session_name = $args[$i + 1]; $i += 2')
-  lines.push('        } elseif ($args[$i] -match \'^-n(.+)$\') {')
-  lines.push('            $session_name = $Matches[1]; $i++')
-  lines.push('        } else {')
-  lines.push('            $remaining += $args[$i]; $i++')
-  lines.push('        }')
-  lines.push('    }')
-  if (requireN) {
-  lines.push('    if ([string]::IsNullOrEmpty($session_name)) {')
-  lines.push('        Write-Host \'错误: 必须使用 -n 指定会话名称\' -ForegroundColor Red')
-  lines.push('        return 1')
-  lines.push('    }')
-  }
-  lines.push('')
-  lines.push('    if (-not [string]::IsNullOrEmpty($session_name)) {')
-  // Sanitize session name before embedding in OSC sequences (strip C0 controls + DEL).
-  lines.push("        $safeSessionName = $session_name -replace '[\\x00-\\x1F\\x7F]', ''")
-  lines.push('        Write-Host "`e]0;CX 🔸 $safeSessionName`a" -NoNewline')
-  lines.push('    }')
-  lines.push('')
   lines.push('    $opts = @(')
   for (const entry of entries) {
     const name = assertSafeShellName(entry.funcName, entry.name || entry.id)
@@ -274,7 +224,7 @@ function writeSelectorFunction(
   lines.push('    switch ($REPLY) {')
   for (const entry of entries) {
     const name = assertSafeShellName(entry.funcName, entry.name || entry.id)
-    lines.push(`        '${name}'  { ${name} @remaining; break }`)
+    lines.push(`        '${name}'  { ${name} @args ; break }`)
   }
   lines.push("        default { Write-Error '无效选择'; return }")
   lines.push('    }')

@@ -42,7 +42,7 @@ export function buildBashLikeCXContent(
   // Main selector (always generated when configs exist)
   if (enabledConfigs.length > 0) {
     const selectorFuncName = assertSafeShellName(data.selector.funcName, 'selector')
-    writeSelectorFunction(lines, selectorFuncName, data.selector.promptTitle, enabledConfigs, data.selector.requireSessionName !== false)
+    writeSelectorFunction(lines, selectorFuncName, data.selector.promptTitle, enabledConfigs)
     if (data.selector.aliasEnabled !== false) {
       lines.push('')
       lines.push(`alias ${selectorFuncName}d='${selectorFuncName} --dangerously-bypass-approvals-and-sandbox'`)
@@ -55,7 +55,7 @@ export function buildBashLikeCXContent(
     const localFuncName = assertSafeShellName(ls.funcName || 'cxl', 'local-selector')
     const localEntries = enabledConfigs.filter((c) => c.localOnly)
     if (localEntries.length > 0) {
-      writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries, ls.requireSessionName !== false)
+      writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries)
     } else {
       lines.push('')
       lines.push(`${localFuncName}() { echo ${quoteBashLikeLiteral(`错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」`)} >&2; return 1; }`)
@@ -123,26 +123,6 @@ function writeFunction(
     lines.push(`    ${proxyFns.proxyOff}`)
   }
 
-  lines.push('    local _sn=""')
-  lines.push('    local _filtered=()')
-  lines.push('    while [[ $# -gt 0 ]]; do')
-  lines.push('      case "$1" in')
-  lines.push('        -n)')
-  lines.push('          if [[ $# -lt 2 || -z "$2" ]]; then')
-  lines.push("            printf '\\033[31m错误: -n 需要提供会话名称\\033[0m\\n' >&2")
-  lines.push('            return 1')
-  lines.push('          fi')
-  lines.push('          _sn="$2"; shift 2')
-  lines.push('          ;;')
-  lines.push('        -n*) _sn="${1#-n}"; shift ;;')
-  lines.push('        *) _filtered+=("$1"); shift ;;')
-  lines.push('      esac')
-  lines.push('    done')
-  lines.push('    if [[ -n "$_sn" ]]; then')
-  // Sanitize session name before embedding in OSC sequences (strip C0 controls + DEL).
-  lines.push('      local _safe_sn="$(printf \'%s\' "$_sn" | LC_ALL=C tr -d \'\\000-\\037\\177\')"')
-  lines.push(`      printf '\\033]0;%s\\007' "CX 🔸 $_safe_sn"`)
-  lines.push('    fi')
   lines.push(`    export OPENAI_API_KEY=${quoteBashLikeLiteral(tokenVal)}`)
 
   if (provider.kanbanUrl) {
@@ -165,7 +145,7 @@ function writeFunction(
     lines.push(`      -c ${buildBashCodexConfigArg('model', config.model)} \\`)
   }
 
-  lines.push('      "${_filtered[@]}"')
+  lines.push('      "${@}"')
   lines.push('  )')
   lines.push('}')
 }
@@ -174,46 +154,10 @@ function writeSelectorFunction(
   lines: string[],
   funcName: string,
   promptTitle: string,
-  entries: CXLaunchItem[],
-  requireN: boolean
+  entries: CXLaunchItem[]
 ): void {
   lines.push('')
   lines.push(`${funcName}() {`)
-  lines.push('  local _session_name=""')
-  lines.push('  local _remaining=()')
-  lines.push('')
-  lines.push('  while [[ $# -gt 0 ]]; do')
-  lines.push('    case "$1" in')
-  lines.push('      -n)')
-  // Always validate missing -n value when -n is provided, even if session name is optional.
-  lines.push('        if [[ $# -lt 2 || -z "$2" ]]; then')
-  lines.push("          printf '\\033[31m错误: -n 需要提供会话名称\\033[0m\\n' >&2")
-  lines.push('          return 1')
-  lines.push('        fi')
-  lines.push('        _session_name="$2"; shift 2')
-  lines.push('        ;;')
-  lines.push('      -n*)')
-  lines.push('        _session_name="${1#-n}"; shift')
-  lines.push('        ;;')
-  lines.push('      *)')
-  lines.push('        _remaining+=("$1"); shift')
-  lines.push('        ;;')
-  lines.push('    esac')
-  lines.push('  done')
-  lines.push('')
-  if (requireN) {
-  lines.push('  if [[ -z "$_session_name" ]]; then')
-  lines.push("    printf '\\033[31m错误: 必须使用 -n 指定会话名称\\033[0m\\n' >&2")
-  lines.push('    return 1')
-  lines.push('  fi')
-  lines.push('')
-  }
-  lines.push('  if [[ -n "$_session_name" ]]; then')
-  // Sanitize session name before embedding in OSC sequences (strip C0 controls + DEL).
-  lines.push('    local _safe_session_name="$(printf \'%s\' "$_session_name" | LC_ALL=C tr -d \'\\000-\\037\\177\')"')
-  lines.push("    printf '\\033]0;%s\\007' \"CX 🔸 $_safe_session_name\"")
-  lines.push('  fi')
-  lines.push('')
   lines.push('  local _opts=(')
   for (const entry of entries) {
     const name = assertSafeShellName(entry.funcName, entry.name || entry.id)
@@ -225,7 +169,7 @@ function writeSelectorFunction(
   lines.push('  case $REPLY in')
   for (const entry of entries) {
     const name = assertSafeShellName(entry.funcName, entry.name || entry.id)
-    lines.push(`    ${name})  ${name} "\${_remaining[@]}" ;;`)
+    lines.push(`    ${name})  ${name} "\${@}" ;;`)
   }
   lines.push('  esac')
   lines.push('}')

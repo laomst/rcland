@@ -98,26 +98,18 @@ test('zsh ccland generator rejects unsafe function names', () => {
   )
 })
 
-test('zsh ccland selector requires session name and sets iTerm2 main task name', () => {
+test('zsh ccland selector passes all args to child function', () => {
   const output = new CCLandZshGenerator().generate(sampleData(), createGenerateContext('zsh', 'unused'))
 
-  assert.match(output, /local session_name=""/)
-  assert.match(output, /local remaining_args=\(\)/)
-  assert.match(output, /while \[\[ \$# -gt 0 \]\]; do/)
-  assert.match(output, /-n\)/)
-  assert.match(output, /-n\*\)/)
-  assert.match(output, /必须使用 -n 指定会话名称/)
-  assert.match(output, /set_main_task_name "CC 🔸 \$session_name"/)
-  assert.match(output, /ccprod\)  ccprod -n "\$session_name" "\$\{remaining_args\[@\]\}" ;;/)
+  assert.match(output, /prompt-select/)
+  assert.match(output, /ccprod\)  ccprod "\$\{@\}" ;;/)
 })
 
-test('bash ccland selector requires session name and forwards remaining args', () => {
+test('bash ccland selector passes all args to child function', () => {
   const output = new CCLandBashGenerator().generate(sampleData(), createGenerateContext('bash', 'unused'))
 
-  assert.match(output, /local session_name=""/)
-  assert.match(output, /local remaining_args=\(\)/)
-  assert.match(output, /set_main_task_name "CC 🔸 \$session_name"/)
-  assert.match(output, /ccprod\)  ccprod -n "\$session_name" "\$\{remaining_args\[@\]\}" ;;/)
+  assert.match(output, /prompt-select/)
+  assert.match(output, /ccprod\)  ccprod "\$\{@\}" ;;/)
 })
 
 test('zsh ccland generator injects system proxy for endpoint when enabled', () => {
@@ -157,9 +149,8 @@ test('powershell ccland generator restores process environment after scoped prox
   assert.match(output, /Set-Item "Env:\$key" \$previous\[\$key\]/)
   // Real function just passes all args to claude
   assert.match(output, /claude @args/)
-  // Selector function also parses -n
-  assert.match(output, /\$session_name = ""/)
-  assert.match(output, /set_main_task_name "CC 🔸 \$session_name"/)
+  // Selector function passes all args to child
+  assert.match(output, /ccprod @args/)
 })
 
 test('zsh alias generator allows dot aliases', () => {
@@ -219,4 +210,14 @@ test('set_main_task_name builtin is generated for zsh, bash and powershell with 
   assert.match(bashOutput, /TERM_PROGRAM/)
   assert.match(powershellOutput, /set_main_task_name/)
   assert.match(powershellOutput, /\[Console\]::Write/)
+})
+
+test('bash prompt-select redraws from a saved cursor anchor', () => {
+  const builtin = BUILTIN_FUNCTIONS.find((fn) => fn.id === 'builtin:prompt-select')
+  assert.ok(builtin)
+
+  const output = new FunctionsBashGenerator().generate([builtin], createGenerateContext('bash', 'unused'))
+
+  assert.ok(output.includes("printf '\\0337'"))
+  assert.ok(output.includes("printf '\\0338\\033[J'"))
 })

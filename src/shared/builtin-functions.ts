@@ -355,16 +355,20 @@ export const BUILTIN_FUNCTIONS: ShellFunction[] = [
   local _sm_old_stty; _sm_old_stty=\$(stty -g 2>/dev/null); stty -echo 2>/dev/null
   local keys=() descs=()
   for opt in "\${options[@]}"; do keys+=("\${opt%%:*}"); descs+=("\${opt#*:}"); done
-  local selected=0 num_options=\${#options[@]} _num_buf="" _menu_lines=\$((num_options + 4)) _menu_drawn=""
+  local selected=0 num_options=\${#options[@]} _num_buf="" _menu_anchor_saved=""
   _sm_cleanup() {
-    [[ -n "\$_menu_drawn" ]] && printf '\\033[%dA\\033[J' "\$_menu_lines"
+    [[ -n "\$_menu_anchor_saved" ]] && printf '\\0338\\033[J'
     tput cnorm 2>/dev/null; stty "\$_sm_old_stty" 2>/dev/null; trap - INT
   }
   trap '_sm_cleanup; return 130' INT
   tput civis 2>/dev/null
   _sm_draw() {
-    [[ -n "\$_menu_drawn" ]] && printf '\\033[%dA' "\$_menu_lines"
-    _menu_drawn=1
+    if [[ -z "\$_menu_anchor_saved" ]]; then
+      printf '\\0337'
+      _menu_anchor_saved=1
+    else
+      printf '\\0338\\033[J'
+    fi
     printf '\\033[K\\n\\033[1;36m  === %s ===\\033[0m\\033[K\\n' "\$title"
     if [[ -n "\$_num_buf" ]]; then
       if (( _num_buf >= 1 && _num_buf <= num_options )); then

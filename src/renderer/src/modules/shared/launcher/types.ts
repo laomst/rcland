@@ -15,14 +15,12 @@ export interface BaseLocalSelector {
   funcName: string
   promptTitle?: string
   aliasEnabled?: boolean
-  requireSessionName?: boolean
 }
 
 export interface BaseSelector {
   funcName: string
   promptTitle: string
   aliasEnabled?: boolean
-  requireSessionName?: boolean
   localSelector?: BaseLocalSelector
   kanban?: {
     funcName: string
