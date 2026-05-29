@@ -47,6 +47,8 @@ export interface CXLaunchItem {
   model?: string
   /** Passthrough mode: just run codex directly without provider/endpoint/key */
   passthrough?: boolean
+  /** Custom command name for passthrough mode (defaults to 'codex') */
+  passthroughCommand?: string
   /** Use system proxy (only meaningful when passthrough=true) */
   useSystemProxy?: boolean
   /** Only stored locally, not synced */

@@ -251,7 +251,8 @@ function writePassthroughFunction(lines: string[], config: CXLaunchItem): void {
   } else {
     lines.push('        foreach ($key in @(' + SYSTEM_PROXY_ENV_NAMES.map((key) => quotePowerShellLiteral(key)).join(', ') + ')) { Remove-Item "Env:$key" -ErrorAction SilentlyContinue }')
   }
-  lines.push('        codex @args')
+  const cmd = config.passthroughCommand?.trim() || 'codex'
+  lines.push(`        ${assertSafeShellName(cmd, funcName)} @args`)
   lines.push('    } finally {')
   lines.push('        foreach ($key in $scopedEnvKeys) {')
   lines.push('            if ($null -eq $previous[$key]) {')

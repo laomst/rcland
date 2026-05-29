@@ -175,7 +175,15 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
       lines.push(`    ${proxyFns.proxyOff}`)
     }
 
-    lines.push('    claude "$@"')
+    for (const key of Object.keys(config.envVars)) {
+      const setting = config.envVars[key]
+      if (setting && setting.enabled && setting.value) {
+        lines.push(`    export ${assertSafeEnvName(key, funcName)}=${quoteBashLikeLiteral(setting.value)}`)
+      }
+    }
+
+    const cmd = config.passthroughCommand?.trim() || 'claude'
+    lines.push(`    ${assertSafeShellName(cmd, funcName)} "$@"`)
     lines.push('  )')
     lines.push('}')
   }

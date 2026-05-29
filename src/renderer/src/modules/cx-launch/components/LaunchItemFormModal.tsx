@@ -14,6 +14,7 @@ export interface CXLaunchItemFormValues {
   funcName: string
   model?: string
   passthrough?: boolean
+  passthroughCommand?: string
   useSystemProxy?: boolean
   localOnly?: boolean
 }
@@ -127,6 +128,14 @@ export function LaunchItemFormModal({
                 value={form.funcName ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, funcName: e.target.value }))}
                 placeholder="cx-direct"
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+            <Form.Item label="透传命令" extra="留空则默认使用 codex">
+              <Input
+                value={form.passthroughCommand ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, passthroughCommand: e.target.value }))}
+                placeholder="codex"
                 style={{ fontFamily: 'monospace' }}
               />
             </Form.Item>

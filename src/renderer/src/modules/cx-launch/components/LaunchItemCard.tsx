@@ -202,6 +202,7 @@ export function LaunchItemCard({
           funcName: launchItem.funcName,
           model: launchItem.model || '',
           passthrough: launchItem.passthrough ?? false,
+          passthroughCommand: launchItem.passthroughCommand ?? '',
           useSystemProxy: launchItem.useSystemProxy ?? false,
           localOnly: launchItem.localOnly ?? false
         }}
@@ -216,6 +217,7 @@ export function LaunchItemCard({
             funcName: values.funcName,
             model: values.model?.trim() || undefined,
             passthrough: values.passthrough,
+            passthroughCommand: values.passthrough ? (values.passthroughCommand?.trim() || undefined) : undefined,
             useSystemProxy: values.useSystemProxy,
             localOnly: values.localOnly
           })

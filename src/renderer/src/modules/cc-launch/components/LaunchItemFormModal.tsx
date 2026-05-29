@@ -147,12 +147,27 @@ export function LaunchItemFormModal({
                 style={{ fontFamily: 'monospace' }}
               />
             </Form.Item>
+            <Form.Item label="透传命令" extra="留空则默认使用 claude">
+              <Input
+                value={form.passthroughCommand ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, passthroughCommand: e.target.value }))}
+                placeholder="claude"
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
             <Form.Item label="系统代理">
               <Switch
                 checked={form.useSystemProxy ?? false}
                 onChange={(checked) => setForm((f) => ({ ...f, useSystemProxy: checked }))}
               />
             </Form.Item>
+            <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>
+            <EnvVarEditor
+              envVars={form.envVars}
+              onChange={handleEnvVarChange}
+              onRemove={handleEnvVarRemove}
+              onAdd={handleEnvVarAdd}
+            />
           </>
         ) : (
           <>
@@ -259,11 +274,11 @@ export function LaunchItemFormModal({
           <>
             <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>
             <EnvVarEditor
-            envVars={form.envVars}
-            onChange={handleEnvVarChange}
-            onRemove={handleEnvVarRemove}
-            onAdd={handleEnvVarAdd}
-          />
+              envVars={form.envVars}
+              onChange={handleEnvVarChange}
+              onRemove={handleEnvVarRemove}
+              onAdd={handleEnvVarAdd}
+            />
           </>
         )}
       </Form>

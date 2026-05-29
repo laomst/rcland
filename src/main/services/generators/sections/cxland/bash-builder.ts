@@ -184,7 +184,8 @@ function writePassthroughFunction(lines: string[], config: CXLaunchItem, proxyFn
   } else {
     lines.push(`    ${proxyFns.proxyOff}`)
   }
-  lines.push('    codex "$@"')
+  const cmd = config.passthroughCommand?.trim() || 'codex'
+  lines.push(`    ${assertSafeShellName(cmd, funcName)} "$@"`)
   lines.push('  )')
   lines.push('}')
 }

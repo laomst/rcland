@@ -190,6 +190,7 @@ export function LaunchItemCard({
           funcName: config.funcName,
           envVars: { ...config.envVars },
           passthrough: config.passthrough ?? false,
+          passthroughCommand: config.passthroughCommand ?? '',
           useSystemProxy: config.useSystemProxy ?? false,
           localOnly: config.localOnly ?? false
         }}

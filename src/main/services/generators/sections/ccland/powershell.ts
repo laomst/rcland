@@ -187,7 +187,11 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
   ): void {
     lines.push('')
     const funcName = assertSafeShellName(config.funcName, config.name || config.id)
-    const scopedKeys = [...SYSTEM_PROXY_ENV_NAMES]
+    const envVarKeys = Object.keys(config.envVars).filter((k) => {
+      const s = config.envVars[k]
+      return s && s.enabled && s.value
+    })
+    const scopedKeys = [...SYSTEM_PROXY_ENV_NAMES, ...envVarKeys]
     lines.push(`function ${funcName} {`)
     lines.push(`    $scopedEnvKeys = @(${scopedKeys.map((key) => quotePowerShellLiteral(key)).join(', ')})`)
     lines.push('    $previous = @{}')
@@ -207,7 +211,13 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
       lines.push('        foreach ($key in @(' + SYSTEM_PROXY_ENV_NAMES.map((key) => quotePowerShellLiteral(key)).join(', ') + ')) { Remove-Item "Env:$key" -ErrorAction SilentlyContinue }')
     }
 
-    lines.push('        claude @args')
+    for (const key of envVarKeys) {
+      const setting = config.envVars[key]
+      lines.push(`        Set-Item "Env:${assertSafeEnvName(key, funcName)}" ${quotePowerShellLiteral(setting.value)}`)
+    }
+
+    const cmd = config.passthroughCommand?.trim() || 'claude'
+    lines.push(`        ${assertSafeShellName(cmd, funcName)} @args`)
     lines.push('    } finally {')
     lines.push('        foreach ($key in $scopedEnvKeys) {')
     lines.push('            if ($null -eq $previous[$key]) {')

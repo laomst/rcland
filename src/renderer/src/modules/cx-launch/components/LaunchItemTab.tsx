@@ -95,6 +95,7 @@ export function LaunchItemTab(): React.ReactElement {
     funcName: string
     model?: string
     passthrough?: boolean
+    passthroughCommand?: string
     useSystemProxy?: boolean
     localOnly?: boolean
   }) => {
@@ -108,6 +109,7 @@ export function LaunchItemTab(): React.ReactElement {
       enabled: true,
       model: values.passthrough ? undefined : (values.model?.trim() || undefined),
       passthrough: values.passthrough,
+      passthroughCommand: values.passthrough ? (values.passthroughCommand?.trim() || undefined) : undefined,
       useSystemProxy: values.passthrough ? values.useSystemProxy : undefined,
       localOnly: values.localOnly
     })
@@ -163,6 +165,7 @@ export function LaunchItemTab(): React.ReactElement {
           funcName: '',
           model: '',
           passthrough: false,
+          passthroughCommand: '',
           useSystemProxy: false,
           localOnly: addLocalOnly
         }}

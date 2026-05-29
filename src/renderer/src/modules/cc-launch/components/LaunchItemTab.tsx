@@ -96,6 +96,7 @@ export function LaunchItemTab(): React.ReactElement {
     funcName: string
     envVars: typeof launchItems[number]['envVars']
     passthrough?: boolean
+    passthroughCommand?: string
     useSystemProxy?: boolean
     localOnly?: boolean
   }) => {
@@ -108,8 +109,9 @@ export function LaunchItemTab(): React.ReactElement {
         name: values.name.trim(),
         funcName: values.funcName.trim(),
         enabled: true,
-        envVars: {},
+        envVars: values.envVars,
         passthrough: true,
+        passthroughCommand: values.passthroughCommand?.trim() || undefined,
         useSystemProxy: values.useSystemProxy,
         localOnly: values.localOnly
       })
@@ -179,6 +181,7 @@ export function LaunchItemTab(): React.ReactElement {
           funcName: '',
           envVars: firstTemplateEnvVars,
           passthrough: false,
+          passthroughCommand: '',
           useSystemProxy: false,
           localOnly: addLocalOnly
         }}

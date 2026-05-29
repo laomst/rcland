@@ -64,6 +64,8 @@ export interface LaunchItem {
   envVars: EnvVarsMap
   /** Passthrough mode: just run claude directly without provider/endpoint/key */
   passthrough?: boolean
+  /** Custom command name for passthrough mode (defaults to 'claude') */
+  passthroughCommand?: string
   /** Use system proxy (only meaningful when passthrough=true) */
   useSystemProxy?: boolean
   /** Only stored locally, not synced */
