@@ -95,36 +95,6 @@ export function createEmptyAlias(): ShellAlias {
 
 export const BUILTIN_FUNCTIONS: ShellFunction[] = [
   {
-    id: 'builtin:set-main-task-name',
-    name: 'set_main_task_name',
-    category: 'builtin',
-    description: '设置终端标签页/窗口标题。iTerm2 使用 OSC 1337 SetUserVar，其他终端使用标准 OSC 0',
-    body: {
-      zsh: `set_main_task_name() {
-  if [[ "\$TERM_PROGRAM" == "iTerm.app" ]]; then
-    command -v base64 >/dev/null 2>&1 || return 0
-    printf "\\033]1337;SetUserVar=mainTask=%s\\007" "\$(printf '%s' "\$*" | base64 | tr -d '\\n')"
-  else
-    printf '\\033]0;%s\\007' "\$*"
-  fi
-}`,
-      bash: `set_main_task_name() {
-  if [[ "\$TERM_PROGRAM" == "iTerm.app" ]]; then
-    command -v base64 >/dev/null 2>&1 || return 0
-    printf "\\033]1337;SetUserVar=mainTask=%s\\007" "\$(printf '%s' "\$*" | base64 | tr -d '\\n')"
-  else
-    printf '\\033]0;%s\\007' "\$*"
-  fi
-}`,
-      powershell: `function set_main_task_name {
-    [Console]::Write([char]27 + "]0;\$args" + [char]7)
-}`
-    },
-    funcNames: { zsh: 'set_main_task_name', bash: 'set_main_task_name', powershell: 'set_main_task_name' },
-    enabled: true,
-    builtIn: true
-  },
-  {
     id: 'builtin:pathls',
     name: 'pathls',
     category: 'builtin',

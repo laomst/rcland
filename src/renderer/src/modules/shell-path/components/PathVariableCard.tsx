@@ -43,7 +43,7 @@ export function PathVariableCard({
         })
       }}
       onDuplicate={(variable) => {
-        useShellConfigStore.getState().addPathVariable({
+        useShellConfigStore.getState().addPathVariableAfter(variable.id, {
           ...variable,
           id: crypto.randomUUID(),
           key: variable.key + '_COPY'

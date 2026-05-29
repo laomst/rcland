@@ -95,7 +95,7 @@ export function LaunchItemCard({
           <Tooltip title={t('common.copy')}>
             <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => {
               const { id, ...rest } = launchItem
-              useCXLandStore.getState().addLaunchItem({
+              useCXLandStore.getState().addLaunchItemAfter(launchItem.id, {
                 ...rest,
                 id: crypto.randomUUID(),
                 funcName: launchItem.funcName + '-copy'

@@ -195,23 +195,6 @@ test('zsh alias generator rejects shell metacharacters in alias names', () => {
   )
 })
 
-test('set_main_task_name builtin is generated for zsh, bash and powershell with terminal detection', () => {
-  const builtin = BUILTIN_FUNCTIONS.find((fn) => fn.id === 'builtin:set-main-task-name')
-  assert.ok(builtin)
-
-  const zshOutput = new FunctionsZshGenerator().generate([builtin], createGenerateContext('zsh', 'unused'))
-  const bashOutput = new FunctionsBashGenerator().generate([builtin], createGenerateContext('bash', 'unused'))
-  const powershellOutput = new FunctionsPowerShellGenerator().generate([builtin], createGenerateContext('powershell', 'unused'))
-
-  assert.match(zshOutput, /set_main_task_name\(\) \{/)
-  assert.match(zshOutput, /SetUserVar=mainTask=%s/)
-  assert.match(zshOutput, /TERM_PROGRAM/)
-  assert.match(bashOutput, /set_main_task_name\(\) \{/)
-  assert.match(bashOutput, /TERM_PROGRAM/)
-  assert.match(powershellOutput, /set_main_task_name/)
-  assert.match(powershellOutput, /\[Console\]::Write/)
-})
-
 test('bash prompt-select redraws from a saved cursor anchor', () => {
   const builtin = BUILTIN_FUNCTIONS.find((fn) => fn.id === 'builtin:prompt-select')
   assert.ok(builtin)

@@ -9,7 +9,6 @@ import { sanitizeCodexProviderId, buildBashCodexConfigArg } from './codex-args'
  * Key differences from CC (Claude Code):
  * - Uses `codex` command, NOT `claude`
  * - Uses `-c key="value"` dynamic config, NOT environment variable templates
- * - `-n` stripped from args and used for OSC title when provided
  * - `OPENAI_API_KEY` env var, not `ANTHROPIC_API_KEY`
  * - `cxd` alias uses `--dangerously-bypass-approvals-and-sandbox`
  */

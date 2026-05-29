@@ -14,7 +14,6 @@ import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg } from './codex-
  * - Backtick for line continuation
  * - `@filtered` instead of `"${_filtered[@]}"`
  * - `Write-Error` instead of `echo ... >&2`
- * - `-n` stripped from args and used for OSC title when provided
  */
 export function buildPowerShellCXContent(
   data: CXLandData,
