@@ -1,5 +1,5 @@
 import * as cryptoService from './crypto'
-import type { CCLaunchData, CXLandData, Provider } from '@shared/types'
+import type { CCLaunchData, CXLandData, OCLandData, Provider } from '@shared/types'
 import type { ShellConfigData } from '@shared/shell-types'
 
 /** Build decrypted token map for all configs, returns { map, decryptFailed } */
@@ -86,6 +86,34 @@ export function buildCXDecryptedMap(
     } else {
       try {
         map.set(mapKey, cryptoService.decrypt(encryptedToken, key))
+      } catch {
+        map.set(mapKey, '')
+        decryptFailed = true
+      }
+    }
+  }
+  return { map, decryptFailed }
+}
+
+/** Build decrypted OC token map. mapKey: oc-token:<launchItemId> */
+export function buildOCDecryptedMap(
+  data: OCLandData,
+  key: string
+): { map: Map<string, string>; decryptFailed: boolean } {
+  const map = new Map<string, string>()
+  let decryptFailed = false
+  const keyTokenMap = new Map<string, string>()
+  for (const provider of data.providers) {
+    for (const k of provider.keys) keyTokenMap.set(`${provider.id}:${k.id}`, k.token)
+  }
+  for (const item of data.launchItems) {
+    const enc = keyTokenMap.get(`${item.providerId}:${item.keyId}`)
+    const mapKey = `oc-token:${item.id}`
+    if (!enc || !cryptoService.isEncrypted(enc)) {
+      map.set(mapKey, '')
+    } else {
+      try {
+        map.set(mapKey, cryptoService.decrypt(enc, key))
       } catch {
         map.set(mapKey, '')
         decryptFailed = true
