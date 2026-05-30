@@ -1,0 +1,166 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Space, Switch, Typography, Button, Tooltip, App, message, Tag } from 'antd'
+import { EditOutlined, DeleteOutlined, LockOutlined, CopyOutlined } from '@ant-design/icons'
+import type { OCProvider } from '@shared/types'
+import { useOCLandStore } from '@renderer/stores/useOCLandStore'
+import { ProviderFormModal } from './ProviderFormModal'
+import { ItemRow } from '@renderer/components/ItemRow'
+
+const { Text } = Typography
+
+const SDK_TYPE_LABEL: Record<OCProvider['sdkType'], string> = {
+  anthropic: 'Anthropic',
+  'openai-compatible': 'OpenAI'
+}
+
+export function ProviderCard({
+  provider,
+  index,
+  isDragging,
+  dragHandleProps
+}: {
+  provider: OCProvider
+  index?: number
+  isDragging?: boolean
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
+}): React.ReactElement {
+  const { t } = useTranslation()
+  const { modal } = App.useApp()
+  const updateProvider = useOCLandStore((s) => s.updateProvider)
+  const addProviderAfter = useOCLandStore((s) => s.addProviderAfter)
+  const launchItems = useOCLandStore((s) => s.launchItems)
+  const [editOpen, setEditOpen] = useState(false)
+
+  const accent = provider.color || '#1677ff'
+  const relatedLaunchItems = launchItems.filter((c) => c.providerId === provider.id)
+  const keyCount = provider.keys?.length ?? 0
+  const modelCount = provider.models?.length ?? 0
+
+  const handleCopy = () => {
+    const { id, ...rest } = provider
+    const newProvider: OCProvider = {
+      ...rest,
+      id: crypto.randomUUID(),
+      name: provider.name + ' ' + t('ccLaunch.copySuffix')
+    }
+    addProviderAfter(provider.id, newProvider)
+    message.success(t('ccLaunch.providerCopied'))
+  }
+
+  return (
+    <>
+      <ItemRow
+        index={index}
+        isDragging={isDragging}
+        enabled={provider.enabled}
+        borderColor={provider.enabled ? accent : '#d9d9d9'}
+        background={provider.enabled ? '#fff' : '#f5f5f5'}
+        dragHandleProps={dragHandleProps}
+        actions={<>
+          {/* SDK type Tag */}
+          <Tag color="blue">{SDK_TYPE_LABEL[provider.sdkType]}</Tag>
+
+          {/* Endpoints */}
+          <Space size={2}>
+            {(provider.endpoints ?? []).map((ep, i) => (
+              <Space key={ep.id} size={2}>
+                <Tooltip title={ep.url}>
+                  <Text type="secondary" style={{ fontSize: 11, lineHeight: '20px' }}>
+                    {i > 0 ? ' / ' : ''}{ep.label || ep.url}
+                  </Text>
+                </Tooltip>
+                {ep.useSystemProxy && <Tag style={{ marginInlineEnd: 0 }}>{t('ccLaunch.systemProxyShort')}</Tag>}
+              </Space>
+            ))}
+          </Space>
+
+          {/* Model count */}
+          {modelCount > 0 && (
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              {modelCount} models
+            </Text>
+          )}
+
+          {/* Key count */}
+          {keyCount > 0 && (
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              <LockOutlined style={{ marginRight: 2 }} />
+              {t('ccLaunch.keyCount', { count: keyCount })}
+            </Text>
+          )}
+
+          <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.relatedConfigs', { count: relatedLaunchItems.length })}</Text>
+          <Tooltip title={t('common.copy')}>
+            <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy} />
+          </Tooltip>
+          <Tooltip title={t('common.edit')}>
+            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
+          </Tooltip>
+          <Tooltip title={t('common.delete')}>
+            <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => {
+              const count = relatedLaunchItems.length
+              modal.confirm({
+                title: t('common.confirmDelete'),
+                content: count > 0
+                  ? (
+                      <div>
+                        <p>{t('ccLaunch.deleteProviderWithConfigs', { name: provider.name, count })}</p>
+                        <div style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}>
+                          {relatedLaunchItems.map((c) => (
+                            <div key={c.id}>{c.name || c.id}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  : t('ccLaunch.deleteProviderConfirm', { name: provider.name }),
+                okText: t('common.delete'),
+                okType: 'danger',
+                cancelText: t('common.cancel'),
+                onOk: () => useOCLandStore.getState().removeProvider(provider.id)
+              })
+            }} />
+          </Tooltip>
+          <Switch
+            size="small"
+            checked={provider.enabled}
+            onChange={(checked) => updateProvider(provider.id, { enabled: checked })}
+          />
+        </>}
+      >
+        {/* Color dot */}
+        <div style={{
+          width: 12, height: 12, borderRadius: '50%',
+          background: provider.enabled ? accent : '#d9d9d9',
+          display: 'inline-block', flexShrink: 0
+        }} />
+
+        {/* Name */}
+        <Text strong style={{ fontSize: 14 }}>{provider.name}</Text>
+
+        {!provider.enabled && <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.providerDisabled')}</Text>}
+      </ItemRow>
+
+      <ProviderFormModal
+        open={editOpen}
+        title={t('ccLaunch.editProviderTitle', { name: provider.name })}
+        initialValues={{
+          id: provider.id,
+          name: provider.name,
+          sdkType: provider.sdkType,
+          kanbanUrl: provider.kanbanUrl ?? '',
+          endpoints: (provider.endpoints ?? []).map((ep) => ({ ...ep })),
+          keys: (provider.keys ?? []).map((k) => ({ ...k })),
+          models: (provider.models ?? []).map((m) => ({ ...m })),
+          color: accent
+        }}
+        existingLaunchItems={launchItems}
+        onCancel={() => setEditOpen(false)}
+        onOk={(values) => {
+          updateProvider(provider.id, values)
+          setEditOpen(false)
+        }}
+      />
+    </>
+  )
+}
