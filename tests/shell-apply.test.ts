@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { generateConfigWithKey } from '../src/main/services/shell-apply'
-import { createEmptyCXLandData, type CCLaunchData } from '../src/shared/types'
+import { createEmptyCXLandData, createEmptyOCLandData, type CCLaunchData } from '../src/shared/types'
 
 import type { ShellConfigData } from '../src/shared/shell-types'
 
@@ -48,6 +48,7 @@ test('temporary key generation uses full shell config pipeline', () => {
     shellType: 'zsh',
     ccData,
     cxData: createEmptyCXLandData(),
+    ocData: createEmptyOCLandData(),
     shellConfig,
     keyPassphrase: 'temporary-key',
     decryptedTokens: new Map([['token:config-1', 'token-value']])
