@@ -2,10 +2,11 @@ import type { ShellType } from '@shared/shell'
 import type { SectionGenerator } from './section-types'
 import type { GenerateContext } from './section-types'
 import type { ShellConfigData } from '@shared/shell-types'
-import type { CCLaunchData, CXLandData } from '@shared/types'
+import type { CCLaunchData, CXLandData, OCLandData } from '@shared/types'
 
 import type { CCLandSectionData } from './sections/ccland/zsh'
 import type { CXLandSectionData } from './sections/cxland/zsh'
+import type { OCLandSectionData } from './sections/ocland/zsh'
 
 // Section generators
 import { VariablesZshGenerator } from './sections/variables/zsh'
@@ -26,12 +27,15 @@ import { CCLandPowerShellGenerator } from './sections/ccland/powershell'
 import { CXLandZshGenerator } from './sections/cxland/zsh'
 import { CXLandBashGenerator } from './sections/cxland/bash'
 import { CXLandPowerShellGenerator } from './sections/cxland/powershell'
+import { OCLandZshGenerator } from './sections/ocland/zsh'
+import { OCLandBashGenerator } from './sections/ocland/bash'
+import { OCLandPowerShellGenerator } from './sections/ocland/powershell'
 import { SystemProxyZshGenerator } from './sections/system-proxy/zsh'
 import { SystemProxyBashGenerator } from './sections/system-proxy/bash'
 import { SystemProxyPowerShellGenerator } from './sections/system-proxy/powershell'
 
 /** Fixed generation order */
-const SECTION_ORDER = ['variables', 'path', 'functions', 'aliases', 'systemProxy', 'ccland', 'cxland'] as const
+const SECTION_ORDER = ['variables', 'path', 'functions', 'aliases', 'systemProxy', 'ccland', 'cxland', 'ocland'] as const
 
 type SectionName = (typeof SECTION_ORDER)[number]
 
@@ -62,6 +66,9 @@ reg(new CCLandPowerShellGenerator())
 reg(new CXLandZshGenerator())
 reg(new CXLandBashGenerator())
 reg(new CXLandPowerShellGenerator())
+reg(new OCLandZshGenerator())
+reg(new OCLandBashGenerator())
+reg(new OCLandPowerShellGenerator())
 reg(new SystemProxyZshGenerator())
 reg(new SystemProxyBashGenerator())
 reg(new SystemProxyPowerShellGenerator())
@@ -94,6 +101,7 @@ function getSectionData(
   shellConfig: ShellConfigData,
   cclandData: CCLandSectionData,
   cxlandData: CXLandData,
+  ocConfig: OCLandData,
   decryptedTokens: Map<string, string>
 ): unknown {
   switch (name) {
@@ -110,6 +118,10 @@ function getSectionData(
       }
       return result
     }
+    case 'ocland': {
+      const result: OCLandSectionData = { ocConfig, decryptedTokens }
+      return result
+    }
   }
 }
 
@@ -122,6 +134,7 @@ export function generateFullConfig(
   shellConfig: ShellConfigData,
   ccConfig: CCLaunchData,
   cxConfig: CXLandData,
+  ocConfig: OCLandData,
   decryptedTokens: Map<string, string>,
   ctx: GenerateContext
 ): string {
@@ -135,7 +148,7 @@ export function generateFullConfig(
     const gen = getSection(sectionName, shellType)
     if (!gen) continue
 
-    const data = getSectionData(sectionName, shellConfig, cclandData, cxConfig, decryptedTokens)
+    const data = getSectionData(sectionName, shellConfig, cclandData, cxConfig, ocConfig, decryptedTokens)
     const output = gen.generate(data, ctx)
     if (output) {
       parts.push(output)
