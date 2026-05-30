@@ -3,7 +3,7 @@ import {
   type OCEndpoint, type ProxyFunctionNames, getOCEndpointUrl
 } from '@shared/types'
 import { quoteBashLikeLiteral, assertSafeShellName } from '../../shell-syntax'
-import { ocKeyEnvVarName } from '../../oc-config'
+import { ocKeyEnvVarName, assertSafeOCConfigId } from '../../oc-config'
 
 /**
  * Build bash/zsh shell content for all enabled OCLaunchItems and optional selector.
@@ -99,7 +99,7 @@ function writeFunction(
   else lines.push(`    ${proxyFns.proxyOff}`)
   lines.push(`    export ${envVar}=${quoteBashLikeLiteral(tokenVal)}`)
   if (provider.kanbanUrl) lines.push(`    export CCLAND_OC_TOKEN_KANBAN=${quoteBashLikeLiteral(provider.kanbanUrl)}`)
-  lines.push(`    export OPENCODE_CONFIG="$HOME/.rcland/opencode/${item.id}.json"`)
+  lines.push(`    export OPENCODE_CONFIG="$HOME/.rcland/opencode/${assertSafeOCConfigId(item.id)}.json"`)
   const cmd = item.modelId
     ? `opencode -m ${quoteBashLikeLiteral(`${provider.id}/${item.modelId}`)} "\${@}"`
     : `opencode "\${@}"`
