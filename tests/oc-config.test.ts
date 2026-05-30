@@ -1,6 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildOCConfigContent, ocKeyEnvVarName, buildOCConfigFiles } from '../src/main/services/generators/oc-config'
+import { mkdtempSync, rmSync, existsSync, writeFileSync, readFileSync, readdirSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join as pjoin } from 'node:path'
+import { buildOCConfigContent, ocKeyEnvVarName, buildOCConfigFiles, writeOCConfigFiles } from '../src/main/services/generators/oc-config'
 import type { OCLandData, OCProvider, OCLaunchItem } from '../src/shared/types/oc-launch'
 
 function provider(over: Partial<OCProvider> = {}): OCProvider {
@@ -88,4 +91,29 @@ test('buildOCConfigContent emits empty models object when provider has no models
 test('ocKeyEnvVarName rejects unsafe ids', () => {
   assert.throws(() => ocKeyEnvVarName('../evil'))
   assert.throws(() => ocKeyEnvVarName('a b'))
+})
+
+test('writeOCConfigFiles writes files and prunes orphans', () => {
+  const dir = mkdtempSync(pjoin(tmpdir(), 'oc-cfg-'))
+  try {
+    writeFileSync(pjoin(dir, 'old-orphan.json'), '{}')
+    const files = [{ filePath: pjoin(dir, 'item-1.json'), content: '{"a":1}' }]
+    writeOCConfigFiles(files, dir)
+    assert.equal(readFileSync(pjoin(dir, 'item-1.json'), 'utf-8'), '{"a":1}')
+    assert.ok(!existsSync(pjoin(dir, 'old-orphan.json')), 'orphan removed')
+    assert.deepEqual(readdirSync(dir).sort(), ['item-1.json'])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('writeOCConfigFiles creates dir if missing and empty files clears all json', () => {
+  const dir = pjoin(mkdtempSync(pjoin(tmpdir(), 'oc-cfg2-')), 'nested')
+  try {
+    writeOCConfigFiles([], dir)
+    assert.ok(existsSync(dir))
+    assert.deepEqual(readdirSync(dir), [])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

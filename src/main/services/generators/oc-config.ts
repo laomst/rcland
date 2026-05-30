@@ -1,5 +1,6 @@
 import { homedir } from 'os'
-import { join } from 'path'
+import { join, basename } from 'path'
+import { existsSync, mkdirSync, writeFileSync, readdirSync, unlinkSync } from 'fs'
 import type { OCLandData, OCProvider, OCLaunchItem } from '@shared/types'
 import { sdkTypeToNpm, getOCEndpointUrl } from '@shared/types'
 
@@ -56,6 +57,23 @@ export function buildOCConfigContent(provider: OCProvider, item: OCLaunchItem): 
 export interface OCConfigFile {
   filePath: string
   content: string
+}
+
+/**
+ * Write config files to disk and prune orphan *.json no longer in `files`.
+ * `dir` defaults to OC_CONFIG_DIR (override for tests).
+ */
+export function writeOCConfigFiles(files: OCConfigFile[], dir: string = OC_CONFIG_DIR): void {
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+  const keep = new Set(files.map((f) => basename(f.filePath)))
+  for (const existing of readdirSync(dir)) {
+    if (existing.endsWith('.json') && !keep.has(existing)) {
+      unlinkSync(join(dir, existing))
+    }
+  }
+  for (const f of files) {
+    writeFileSync(f.filePath, f.content, 'utf-8')
+  }
 }
 
 /** Emit one config file per enabled, non-passthrough launch item with a valid provider. */
