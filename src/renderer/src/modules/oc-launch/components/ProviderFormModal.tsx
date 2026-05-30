@@ -114,17 +114,17 @@ export function ProviderFormModal({
     if (usedLaunchItems.length > 0) {
       const launchItemNames = usedLaunchItems.map((c) => c.funcName).join('、')
       modal.confirm({
-        title: t('ccLaunch.keyInUse'),
+        title: t('ocLaunch.keyInUse'),
         content: (
           <div>
-            <p>{t('ccLaunch.keyInUseDesc', { label: keyLabel })}</p>
+            <p>{t('ocLaunch.keyInUseDesc', { label: keyLabel })}</p>
             <p style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}>
               {launchItemNames}
             </p>
-            <p>{t('ccLaunch.keyInUseWarning')}</p>
+            <p>{t('ocLaunch.keyInUseWarning')}</p>
           </div>
         ),
-        okText: t('ccLaunch.forceDelete'),
+        okText: t('ocLaunch.forceDelete'),
         okType: 'danger',
         cancelText: t('common.cancel'),
         onOk: () => {
@@ -155,14 +155,14 @@ export function ProviderFormModal({
 
     // Validate models: each must have non-empty id and name.
     if (models.some((m) => !m.id || !m.name)) {
-      message.error('每个 Model 的 ID 和名称都必填')
+      message.error(t('ocLaunch.modelIdRequired'))
       return
     }
 
     // Validate models: ids must be unique.
     const uniqueIds = new Set(models.map((m) => m.id))
     if (uniqueIds.size < models.length) {
-      message.error('Model ID 不能重复')
+      message.error(t('ocLaunch.duplicateModelId'))
       return
     }
 
@@ -189,24 +189,24 @@ export function ProviderFormModal({
           colon={false}
           style={{ marginTop: 16 }}
         >
-          <Form.Item label={t('ccLaunch.providerName')} required style={{ marginBottom: 12 }}>
+          <Form.Item label={t('ocLaunch.providerName')} required style={{ marginBottom: 12 }}>
             <Space.Compact style={{ width: '100%' }}>
               <Input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder={t('ccLaunch.providerNamePlaceholder')}
+                placeholder={t('ocLaunch.providerNamePlaceholder')}
                 style={{ flex: 1 }}
               />
               <ColorPicker
                 value={form.color}
-                presets={[{ label: t('ccLaunch.presetColor'), colors: PRESET_COLORS }]}
+                presets={[{ label: t('ocLaunch.presetColor'), colors: PRESET_COLORS }]}
                 onChangeComplete={(color) => setForm((f) => ({ ...f, color: color.toHexString() }))}
               />
             </Space.Compact>
           </Form.Item>
 
           {/* SDK Type */}
-          <Form.Item label="SDK">
+          <Form.Item label={t('ocLaunch.sdkType')}>
             <Radio.Group
               value={form.sdkType}
               onChange={(e) => setForm((f) => ({ ...f, sdkType: e.target.value }))}
@@ -215,11 +215,11 @@ export function ProviderFormModal({
               <Radio.Button value="openai-compatible">OpenAI 兼容 (@ai-sdk/openai-compatible)</Radio.Button>
             </Radio.Group>
             <Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
-              {t('cxLaunch.wireApiHint')}
+              {t('ocLaunch.sdkTypeHint')}
             </Text>
           </Form.Item>
 
-          <Form.Item label={t('ccLaunch.endpointUrl')} required>
+          <Form.Item label={t('ocLaunch.endpointUrl')} required>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {form.endpoints.map((ep, idx) => (
                 <div
@@ -234,16 +234,16 @@ export function ProviderFormModal({
                   <Input
                     value={ep.label}
                     onChange={(e) => updateEndpoint(idx, { label: e.target.value })}
-                    placeholder={t('ccLaunch.endpointLabelPlaceholder')}
+                    placeholder={t('ocLaunch.endpointLabelPlaceholder')}
                   />
                   <Input
                     value={ep.url}
                     onChange={(e) => updateEndpoint(idx, { url: e.target.value })}
-                    placeholder={t('cxLaunch.endpointUrlPlaceholder')}
+                    placeholder={t('ocLaunch.endpointUrlPlaceholder')}
                     style={{ fontFamily: 'monospace', flex: 1 }}
                   />
                   <Space size={6} style={{ whiteSpace: 'nowrap' }}>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.useSystemProxy')}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{t('ocLaunch.useSystemProxy')}</Text>
                     <Switch
                       size="small"
                       checked={Boolean(ep.useSystemProxy)}
@@ -260,16 +260,16 @@ export function ProviderFormModal({
                 </div>
               ))}
               <Button type="dashed" icon={<PlusOutlined />} onClick={addEndpoint} block>
-                {t('ccLaunch.addEndpoint')}
+                {t('ocLaunch.addEndpoint')}
               </Button>
             </div>
           </Form.Item>
 
           {/* Models */}
-          <Form.Item label="Models">
+          <Form.Item label={t('ocLaunch.models')}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {form.models.length === 0 && (
-                <div style={{ color: '#999', fontSize: 13 }}>暂无 Model</div>
+                <div style={{ color: '#999', fontSize: 13 }}>{t('ocLaunch.noModels')}</div>
               )}
               {form.models.map((m, idx) => (
                 <div
@@ -314,12 +314,12 @@ export function ProviderFormModal({
                 </div>
               ))}
               <Button type="dashed" icon={<PlusOutlined />} onClick={addModel} block>
-                添加 Model
+                {t('ocLaunch.addModel')}
               </Button>
             </div>
           </Form.Item>
 
-          <Form.Item label={t('cxLaunch.kanbanUrl')}>
+          <Form.Item label={t('ocLaunch.kanbanUrl')}>
             <Input
               value={form.kanbanUrl ?? ''}
               onChange={(e) => setForm((f) => ({ ...f, kanbanUrl: e.target.value }))}
@@ -327,10 +327,10 @@ export function ProviderFormModal({
               style={{ fontFamily: 'monospace' }}
             />
           </Form.Item>
-          <Form.Item label={t('ccLaunch.tokenLabel')}>
+          <Form.Item label={t('ocLaunch.tokenLabel')}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {form.keys.length === 0 && (
-                <div style={{ color: '#999', fontSize: 13 }}>{t('ccLaunch.noKeys')}</div>
+                <div style={{ color: '#999', fontSize: 13 }}>{t('ocLaunch.noKeys')}</div>
               )}
               {form.keys.map((key) => (
                 <Space.Compact key={key.id} style={{ width: '100%' }}>
@@ -340,7 +340,7 @@ export function ProviderFormModal({
                     style={{ width: 140, flexShrink: 0 }}
                   />
                   <Input
-                    value={key.token ? t('ccLaunch.encryptedToken') : t('common.notSet')}
+                    value={key.token ? t('ocLaunch.encryptedToken') : t('common.notSet')}
                     disabled
                     style={{ fontFamily: 'monospace', flex: 1, color: key.token ? undefined : '#999' }}
                     prefix={<LockOutlined style={{ color: '#999', marginRight: 4 }} />}
@@ -357,7 +357,7 @@ export function ProviderFormModal({
                 </Space.Compact>
               ))}
               <Button type="dashed" icon={<PlusOutlined />} onClick={() => openKeyEdit(null)} block>
-                {t('ccLaunch.addKey')}
+                {t('ocLaunch.addKey')}
               </Button>
             </div>
           </Form.Item>

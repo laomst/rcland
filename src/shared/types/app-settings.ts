@@ -1,7 +1,7 @@
 import type { ShellType, ShellProfileConfig } from '../shell'
 import type { TFunction } from 'i18next'
 
-export type AppPage = '/env' | '/path' | '/functions' | '/aliases' | '/system-proxy' | '/ccland' | '/cxland'
+export type AppPage = '/env' | '/path' | '/functions' | '/aliases' | '/system-proxy' | '/ccland' | '/cxland' | '/ocland'
 
 export const getAppPageLabels = (t: TFunction): Record<AppPage, string> => ({
   '/env': t('nav.env'),
@@ -11,6 +11,7 @@ export const getAppPageLabels = (t: TFunction): Record<AppPage, string> => ({
   '/system-proxy': t('nav.systemProxy'),
   '/ccland': t('nav.ccland'),
   '/cxland': t('nav.cxland'),
+  '/ocland': t('nav.ocland'),
 })
 
 export interface ProxyFunctionNames {

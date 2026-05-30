@@ -109,7 +109,7 @@ export function LaunchItemFormModal({
 
         {isPassthrough ? (
           <>
-            <Form.Item label={t('ccLaunch.configName')} required>
+            <Form.Item label={t('ocLaunch.configName')} required>
               <Input
                 value={form.name ?? ''}
                 onChange={(e) => {
@@ -122,10 +122,10 @@ export function LaunchItemFormModal({
                     return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
                   })
                 }}
-                placeholder={t('ccLaunch.configNamePlaceholder')}
+                placeholder={t('ocLaunch.configNamePlaceholder')}
               />
             </Form.Item>
-            <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
+            <Form.Item label={t('ocLaunch.funcName')} extra={t('ocLaunch.funcNameHint')}>
               <Input
                 value={form.funcName ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, funcName: e.target.value }))}
@@ -150,11 +150,11 @@ export function LaunchItemFormModal({
           </>
         ) : (
           <>
-            <Form.Item label={t('ccLaunch.provider')}>
+            <Form.Item label={t('ocLaunch.provider')}>
               <Select
                 value={form.providerId}
                 onChange={handleProviderChange}
-                placeholder={t('ccLaunch.selectProvider')}
+                placeholder={t('ocLaunch.selectProvider')}
                 style={{ width: '100%' }}
                 options={providers.map((p) => ({
                   value: p.id,
@@ -167,11 +167,11 @@ export function LaunchItemFormModal({
                 }))}
               />
             </Form.Item>
-            <Form.Item label={t('ccLaunch.endpoint')}>
+            <Form.Item label={t('ocLaunch.endpoint')}>
               <Select
                 value={form.endpointId}
                 onChange={(val) => setForm((f) => ({ ...f, endpointId: val }))}
-                placeholder={t('ccLaunch.selectEndpoint')}
+                placeholder={t('ocLaunch.selectEndpoint')}
                 style={{ width: '100%' }}
                 options={(provider?.endpoints ?? []).map((ep) => ({
                   value: ep.id,
@@ -179,11 +179,11 @@ export function LaunchItemFormModal({
                 }))}
               />
             </Form.Item>
-            <Form.Item label={t('ccLaunch.key')} required>
+            <Form.Item label={t('ocLaunch.key')} required>
               <Select
                 value={form.keyId}
                 onChange={(val) => setForm((f) => ({ ...f, keyId: val }))}
-                placeholder={hasNoKeys ? t('ccLaunch.noKeyHint') : t('ccLaunch.selectKey')}
+                placeholder={hasNoKeys ? t('ocLaunch.noKeyHint') : t('ocLaunch.selectKey')}
                 style={{ width: '100%' }}
                 status={!selectedKey && form.keyId ? 'error' : undefined}
                 options={(provider?.keys ?? []).map((k) => ({
@@ -192,18 +192,18 @@ export function LaunchItemFormModal({
                     <Space>
                       <LockOutlined style={{ color: '#999' }} />
                       {k.label}
-                      {k.token && <Text type="success" style={{ fontSize: 11 }}>{t('ccLaunch.keyEncrypted')}</Text>}
+                      {k.token && <Text type="success" style={{ fontSize: 11 }}>{t('ocLaunch.keyEncrypted')}</Text>}
                     </Space>
                   )
                 }))}
               />
               {!selectedKey && form.keyId && (
                 <Text type="danger" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
-                  {t('ccLaunch.keyDeletedError')}
+                  {t('ocLaunch.keyDeletedError')}
                 </Text>
               )}
             </Form.Item>
-            <Form.Item label={t('ccLaunch.configName')} required>
+            <Form.Item label={t('ocLaunch.configName')} required>
               <Input
                 value={form.name ?? ''}
                 onChange={(e) => {
@@ -216,10 +216,10 @@ export function LaunchItemFormModal({
                     return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
                   })
                 }}
-                placeholder={t('ccLaunch.configNamePlaceholder')}
+                placeholder={t('ocLaunch.configNamePlaceholder')}
               />
             </Form.Item>
-            <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
+            <Form.Item label={t('ocLaunch.funcName')} extra={t('ocLaunch.funcNameHint')}>
               <Input
                 value={form.funcName ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, funcName: e.target.value }))}
@@ -227,11 +227,11 @@ export function LaunchItemFormModal({
                 style={{ fontFamily: 'monospace' }}
               />
             </Form.Item>
-            <Form.Item label={t('cxLaunch.model')}>
+            <Form.Item label={t('ocLaunch.model')}>
               <Select
                 value={form.modelId}
                 onChange={(val) => setForm((f) => ({ ...f, modelId: val }))}
-                placeholder={t('ccLaunch.selectModel', { defaultValue: '选择 Model (可选)' })}
+                placeholder={t('ocLaunch.selectModelPlaceholder')}
                 style={{ width: '100%' }}
                 allowClear
                 status={modelDeleted ? 'error' : undefined}
@@ -242,7 +242,7 @@ export function LaunchItemFormModal({
               />
               {modelDeleted && (
                 <Text type="danger" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
-                  该 Model 已被删除，请重新选择
+                  {t('ocLaunch.modelDeleted')}
                 </Text>
               )}
             </Form.Item>

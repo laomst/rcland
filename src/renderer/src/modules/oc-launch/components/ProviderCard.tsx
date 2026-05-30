@@ -42,10 +42,10 @@ export function ProviderCard({
     const newProvider: OCProvider = {
       ...rest,
       id: crypto.randomUUID(),
-      name: provider.name + ' ' + t('ccLaunch.copySuffix')
+      name: provider.name + ' ' + t('ocLaunch.copySuffix')
     }
     addProviderAfter(provider.id, newProvider)
-    message.success(t('ccLaunch.providerCopied'))
+    message.success(t('ocLaunch.providerCopied'))
   }
 
   return (
@@ -70,7 +70,7 @@ export function ProviderCard({
                     {i > 0 ? ' / ' : ''}{ep.label || ep.url}
                   </Text>
                 </Tooltip>
-                {ep.useSystemProxy && <Tag style={{ marginInlineEnd: 0 }}>{t('ccLaunch.systemProxyShort')}</Tag>}
+                {ep.useSystemProxy && <Tag style={{ marginInlineEnd: 0 }}>{t('ocLaunch.systemProxyShort')}</Tag>}
               </Space>
             ))}
           </Space>
@@ -86,11 +86,11 @@ export function ProviderCard({
           {keyCount > 0 && (
             <Text type="secondary" style={{ fontSize: 11 }}>
               <LockOutlined style={{ marginRight: 2 }} />
-              {t('ccLaunch.keyCount', { count: keyCount })}
+              {t('ocLaunch.keyCount', { count: keyCount })}
             </Text>
           )}
 
-          <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.relatedConfigs', { count: relatedLaunchItems.length })}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{t('ocLaunch.relatedConfigs', { count: relatedLaunchItems.length })}</Text>
           <Tooltip title={t('common.copy')}>
             <Button type="text" size="small" icon={<CopyOutlined />} onClick={handleCopy} />
           </Tooltip>
@@ -105,7 +105,7 @@ export function ProviderCard({
                 content: count > 0
                   ? (
                       <div>
-                        <p>{t('ccLaunch.deleteProviderWithConfigs', { name: provider.name, count })}</p>
+                        <p>{t('ocLaunch.deleteProviderWithConfigs', { name: provider.name, count })}</p>
                         <div style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px 12px', borderRadius: 4, margin: '8px 0' }}>
                           {relatedLaunchItems.map((c) => (
                             <div key={c.id}>{c.name || c.id}</div>
@@ -113,7 +113,7 @@ export function ProviderCard({
                         </div>
                       </div>
                     )
-                  : t('ccLaunch.deleteProviderConfirm', { name: provider.name }),
+                  : t('ocLaunch.deleteProviderConfirm', { name: provider.name }),
                 okText: t('common.delete'),
                 okType: 'danger',
                 cancelText: t('common.cancel'),
@@ -138,12 +138,12 @@ export function ProviderCard({
         {/* Name */}
         <Text strong style={{ fontSize: 14 }}>{provider.name}</Text>
 
-        {!provider.enabled && <Text type="secondary" style={{ fontSize: 12 }}>{t('ccLaunch.providerDisabled')}</Text>}
+        {!provider.enabled && <Text type="secondary" style={{ fontSize: 12 }}>{t('ocLaunch.providerDisabled')}</Text>}
       </ItemRow>
 
       <ProviderFormModal
         open={editOpen}
-        title={t('ccLaunch.editProviderTitle', { name: provider.name })}
+        title={t('ocLaunch.editProviderTitle', { name: provider.name })}
         initialValues={{
           id: provider.id,
           name: provider.name,

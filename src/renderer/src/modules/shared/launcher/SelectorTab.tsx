@@ -7,7 +7,7 @@ const { Text } = Typography
 interface SelectorTabProps {
   selector: BaseSelector
   onChange: (patch: Partial<BaseSelector>) => void
-  i18nPrefix: 'ccLaunch' | 'cxLaunch'
+  i18nPrefix: 'ccLaunch' | 'cxLaunch' | 'ocLaunch'
   defaults: {
     funcName: string
     promptTitle: string

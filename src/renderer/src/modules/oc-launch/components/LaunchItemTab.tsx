@@ -155,7 +155,7 @@ export function LaunchItemTab(): React.ReactElement {
 
       <LaunchItemFormModal
         open={addOpen}
-        title={t('cxLaunch.newLaunchItem')}
+        title={t('ocLaunch.newLaunchItem')}
         providers={providers}
         initialValues={{
           providerId: firstProvider?.id ?? '',

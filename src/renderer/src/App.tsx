@@ -6,6 +6,7 @@ import { EyeOutlined, ThunderboltOutlined, SettingOutlined, CopyOutlined } from 
 import { ModuleNav, SettingsModal, PreviewModal, usePreview, KeyModals, type KeyModalsHandle } from './components'
 import { CCLaunchItemPage } from './modules/cc-launch'
 import { CXLaunchItemPage } from './modules/cx-launch'
+import { OCLaunchItemPage } from './modules/oc-launch'
 import { SystemProxyPage } from './modules/system-proxy'
 import { EnvVarPage } from './modules/shell-env'
 import { PathPage } from './modules/shell-path'
@@ -129,6 +130,7 @@ function AppLayout(): React.ReactElement {
               <Route path="/system-proxy" element={<SystemProxyPage />} />
               <Route path="/ccland" element={<CCLaunchItemPage />} />
               <Route path="/cxland" element={<CXLaunchItemPage />} />
+              <Route path="/ocland" element={<OCLaunchItemPage />} />
             </Routes>
           </Content>
           <Footer className="action-bar">

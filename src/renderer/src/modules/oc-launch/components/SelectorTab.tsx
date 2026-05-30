@@ -9,7 +9,7 @@ export function SelectorTab(): React.ReactElement {
     <SharedSelectorTab
       selector={selector}
       onChange={updateSelector}
-      i18nPrefix="cxLaunch"
+      i18nPrefix="ocLaunch"
       defaults={{ funcName: 'oc', promptTitle: '选择 opencode 供应商', localFuncName: 'ocl', kanbanFuncName: 'show-oc-usage' }}
     />
   )

@@ -69,7 +69,7 @@ export function LaunchItemCard({
                 onChange={(val) => updateLaunchItem(launchItem.id, { endpointId: val })}
                 style={{ width: 140, textAlign: 'right' }}
                 popupMatchSelectWidth={false}
-                placeholder={t('ccLaunch.selectEndpoint')}
+                placeholder={t('ocLaunch.selectEndpoint')}
                 options={(provider?.endpoints ?? []).map((ep) => ({
                   value: ep.id,
                   label: <span style={{ fontSize: 12 }}>{ep.label || ep.url}</span>
@@ -84,7 +84,7 @@ export function LaunchItemCard({
                 onChange={(val) => updateLaunchItem(launchItem.id, { keyId: val })}
                 style={{ width: 90, textAlign: 'right' }}
                 popupMatchSelectWidth={false}
-                placeholder={t('ccLaunch.selectKey')}
+                placeholder={t('ocLaunch.selectKey')}
                 options={(provider?.keys ?? []).map((k) => ({
                   value: k.id,
                   label: <span style={{ fontSize: 12 }}>{k.label}</span>
@@ -95,7 +95,7 @@ export function LaunchItemCard({
 
           {/* Warning */}
           {providerDisabled && (
-            <Text type="warning" style={{ fontSize: 12 }}><WarningOutlined /> {t('ccLaunch.providerDisabledWarning')}</Text>
+            <Text type="warning" style={{ fontSize: 12 }}><WarningOutlined /> {t('ocLaunch.providerDisabledWarning')}</Text>
           )}
 
           {/* Action Buttons */}
@@ -116,7 +116,7 @@ export function LaunchItemCard({
             <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => {
               modal.confirm({
                 title: t('common.confirmDelete'),
-                content: t('ccLaunch.deleteConfigConfirm', { name: launchItem.funcName }),
+                content: t('ocLaunch.deleteConfigConfirm', { name: launchItem.funcName }),
                 okText: t('common.delete'),
                 okType: 'danger',
                 cancelText: t('common.cancel'),
@@ -160,10 +160,10 @@ export function LaunchItemCard({
         ) : (
           <>
             {/* 1. Provider - fixed */}
-            <Tooltip title={provider?.name ?? t('ccLaunch.unknown')}>
+            <Tooltip title={provider?.name ?? t('ocLaunch.unknown')}>
               <Space size={4} style={{ width: 110, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, display: 'inline-block', flexShrink: 0 }} />
-                <Text style={{ fontSize: 12 }}>{provider?.name ?? t('ccLaunch.unknown')}</Text>
+                <Text style={{ fontSize: 12 }}>{provider?.name ?? t('ocLaunch.unknown')}</Text>
               </Space>
             </Tooltip>
 
@@ -199,7 +199,7 @@ export function LaunchItemCard({
 
       <LaunchItemFormModal
         open={editOpen}
-        title={t('ccLaunch.editConfigTitle', { name: launchItemName })}
+        title={t('ocLaunch.editConfigTitle', { name: launchItemName })}
         providers={providers}
         initialValues={{
           providerId: launchItem.providerId,

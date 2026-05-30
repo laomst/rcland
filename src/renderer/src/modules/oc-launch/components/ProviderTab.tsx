@@ -99,16 +99,16 @@ export function ProviderTab(): React.ReactElement {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <Text strong style={{ fontSize: 15 }}>{t('ccLaunch.providerList')}</Text>
+          <Text strong style={{ fontSize: 15 }}>{t('ocLaunch.providerList')}</Text>
           <Text type="secondary" style={{ marginLeft: 8 }}>({providers.length})</Text>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
-          {t('ccLaunch.addProvider')}
+          {t('ocLaunch.addProvider')}
         </Button>
       </div>
 
       {providers.length === 0
-        ? <Empty description={t('ccLaunch.noProvider')} />
+        ? <Empty description={t('ocLaunch.noProvider')} />
         : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={providers.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -122,13 +122,13 @@ export function ProviderTab(): React.ReactElement {
 
       <ProviderFormModal
         open={addOpen}
-        title={t('ccLaunch.newProvider')}
+        title={t('ocLaunch.newProvider')}
         initialValues={{
           name: '',
           color: '#1677ff',
           sdkType: 'anthropic',
           kanbanUrl: '',
-          endpoints: [{ id: crypto.randomUUID(), label: t('ccLaunch.defaultEndpoint'), url: '', useSystemProxy: false }],
+          endpoints: [{ id: crypto.randomUUID(), label: t('ocLaunch.defaultEndpoint'), url: '', useSystemProxy: false }],
           keys: [],
           models: []
         }}

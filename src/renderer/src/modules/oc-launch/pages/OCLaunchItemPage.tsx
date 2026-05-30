@@ -41,9 +41,9 @@ export function OCLaunchItemPage(): React.ReactElement {
       <Tabs
         defaultActiveKey="configs"
         items={[
-          { key: 'configs', label: t('cxLaunch.launchItemTab'), icon: <SettingOutlined />, children: <LaunchItemTab /> },
-          { key: 'providers', label: t('cxLaunch.providerTab'), icon: <ShopOutlined />, children: <ProviderTab /> },
-          { key: 'selector', label: t('cxLaunch.selectorTab'), icon: <MenuOutlined />, children: <SelectorTab /> }
+          { key: 'configs', label: t('ocLaunch.launchItemTab'), icon: <SettingOutlined />, children: <LaunchItemTab /> },
+          { key: 'providers', label: t('ocLaunch.providerTab'), icon: <ShopOutlined />, children: <ProviderTab /> },
+          { key: 'selector', label: t('ocLaunch.selectorTab'), icon: <MenuOutlined />, children: <SelectorTab /> }
         ]}
       />
     </div>
