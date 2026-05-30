@@ -83,6 +83,10 @@ function loadCXData(): ReturnType<typeof configService.loadCXLandData> {
   return configService.loadCXLandData()
 }
 
+function loadOCData(): ReturnType<typeof configService.loadOCLandData> {
+  return configService.loadOCLandData()
+}
+
 function loadShellConfigData(): ShellConfigData {
   return shellConfigService.loadShellConfigData()
 }
@@ -114,6 +118,7 @@ export function registerShellHandlers(): void {
         shellTypes,
         ccData: loadCCDataOrDefault(),
         cxData: loadCXData(),
+        ocData: loadOCData(),
         shellConfig: loadShellConfigData(),
         keyPassphrase: tempKey,
         proxyFunctionNames,
@@ -142,6 +147,7 @@ export function registerShellHandlers(): void {
       shellType,
       ccData: loadCCDataOrDefault(),
       cxData: loadCXData(),
+      ocData: loadOCData(),
       shellConfig: loadShellConfigData(),
       keyPassphrase: key,
       proxyFunctionNames
@@ -158,6 +164,7 @@ export function registerShellHandlers(): void {
       shellTypes,
       ccData: loadCCDataOrDefault(),
       cxData: loadCXData(),
+      ocData: loadOCData(),
       shellConfig: loadShellConfigData(),
       keyPassphrase: key,
       proxyFunctionNames,
