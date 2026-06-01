@@ -1,4 +1,4 @@
-import type { AppSettings, CCLaunchData, CXLandData } from './types'
+import type { AppSettings, CCLaunchData, CXLandData, OCLandData } from './types'
 import type { ShellConfigData } from './shell-types'
 
 function assertObject(value: unknown, label: string): asserts value is Record<string, unknown> {
@@ -24,6 +24,14 @@ export function assertCCLaunchData(value: unknown): asserts value is CCLaunchDat
 export function assertCXLandData(value: unknown): asserts value is CXLandData {
   assertObject(value, 'CXLandData')
   if (value.version !== 3) throw new Error('version must be 3')
+  assertArray(value.providers, 'providers')
+  assertArray(value.launchItems, 'launchItems')
+  assertObject(value.selector, 'selector')
+}
+
+export function assertOCLandData(value: unknown): asserts value is OCLandData {
+  assertObject(value, 'OCLandData')
+  if (value.version !== 1) throw new Error('version must be 1')
   assertArray(value.providers, 'providers')
   assertArray(value.launchItems, 'launchItems')
   assertObject(value.selector, 'selector')

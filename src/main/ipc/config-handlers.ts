@@ -4,7 +4,7 @@ import * as shellConfigService from '../services/shell-config'
 import * as backupService from '../services/backup'
 import * as conflictChecker from '../services/conflict-checker'
 import type { ShellType } from '@shared/shell'
-import type { AppSettings, CCLaunchData, CXLandData } from '@shared/types'
+import type { AppSettings, CCLaunchData, CXLandData, OCLandData } from '@shared/types'
 import type { ShellConfigData } from '@shared/shell-types'
 
 export function registerConfigHandlers(): void {
@@ -25,6 +25,8 @@ export function registerConfigHandlers(): void {
   ipcMain.handle('data:save', (_e, data: CCLaunchData) => configService.saveCCData(data))
   ipcMain.handle('cxland:load', () => configService.loadCXLandData())
   ipcMain.handle('cxland:save', (_e, data: CXLandData) => configService.saveCXLandData(data))
+  ipcMain.handle('ocland:load', () => configService.loadOCLandData())
+  ipcMain.handle('ocland:save', (_e, data: OCLandData) => configService.saveOCLandData(data))
 
   // ---- File Dialogs ----
   ipcMain.handle('dialog:open', (_e, options: Electron.OpenDialogOptions) =>

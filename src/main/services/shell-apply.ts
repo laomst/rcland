@@ -2,17 +2,19 @@ import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs'
 import { dirname } from 'path'
 import type { ShellType } from '@shared/shell'
 import { getShellOutputPath } from '@shared/shell'
-import type { CCLaunchData, CXLandData } from '@shared/types'
+import type { CCLaunchData, CXLandData, OCLandData } from '@shared/types'
 import type { ShellConfigData } from '@shared/shell-types'
-import { buildDecryptedMap, buildCXDecryptedMap, decryptShellVariables } from './crypto-utils'
+import { buildDecryptedMap, buildCXDecryptedMap, buildOCDecryptedMap, decryptShellVariables } from './crypto-utils'
 import { createGenerateContext } from './generators/context'
 import { generateFullConfig } from './generators/orchestrator'
+import { buildOCConfigFiles, writeOCConfigFiles } from './generators/oc-config'
 import { resolveHomePath } from './path-utils'
 
 export interface GenerateConfigInput {
   shellType: ShellType
   ccData: CCLaunchData
   cxData: CXLandData
+  ocData: OCLandData
   shellConfig: ShellConfigData
   keyPassphrase: string
   decryptedTokens?: Map<string, string>
@@ -23,6 +25,7 @@ export interface ApplyConfigInput {
   shellTypes: ShellType[]
   ccData: CCLaunchData
   cxData: CXLandData
+  ocData: OCLandData
   shellConfig: ShellConfigData
   keyPassphrase: string
   proxyFunctionNames?: { proxyOn: string; proxyOff: string; proxyStatus: string }
@@ -37,15 +40,16 @@ function ensureParentDir(filePath: string): void {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
 }
 
-export function getDecryptedTokensOrThrow(ccData: CCLaunchData, cxData: CXLandData, keyPassphrase: string): Map<string, string> {
+export function getDecryptedTokensOrThrow(ccData: CCLaunchData, cxData: CXLandData, ocData: OCLandData, keyPassphrase: string): Map<string, string> {
   const ccResult = buildDecryptedMap(ccData, keyPassphrase)
   const cxResult = buildCXDecryptedMap(cxData, keyPassphrase)
-  if (ccResult.decryptFailed || cxResult.decryptFailed) throw new Error('DECRYPT_FAILED')
-  return new Map<string, string>([...ccResult.map, ...cxResult.map])
+  const ocResult = buildOCDecryptedMap(ocData, keyPassphrase)
+  if (ccResult.decryptFailed || cxResult.decryptFailed || ocResult.decryptFailed) throw new Error('DECRYPT_FAILED')
+  return new Map<string, string>([...ccResult.map, ...cxResult.map, ...ocResult.map])
 }
 
 export function generateConfigWithKey(input: GenerateConfigInput): string {
-  const decryptedTokens = input.decryptedTokens ?? getDecryptedTokensOrThrow(input.ccData, input.cxData, input.keyPassphrase)
+  const decryptedTokens = input.decryptedTokens ?? getDecryptedTokensOrThrow(input.ccData, input.cxData, input.ocData, input.keyPassphrase)
   const decryptedShellConfig = decryptShellVariables(input.shellConfig, input.keyPassphrase)
   const ctx = createGenerateContext(
     input.shellType,
@@ -53,11 +57,18 @@ export function generateConfigWithKey(input: GenerateConfigInput): string {
     input.proxyFunctionNames,
     decryptedShellConfig.pathVariables
   )
-  return generateFullConfig(input.shellType, decryptedShellConfig, input.ccData, input.cxData, decryptedTokens, ctx)
+  return generateFullConfig(input.shellType, decryptedShellConfig, input.ccData, input.cxData, input.ocData, decryptedTokens, ctx)
 }
 
 export function applyConfigWithKey(input: ApplyConfigInput): { appliedShells: ShellType[]; count: number } {
   const appliedShells: ShellType[] = []
+
+  // opencode JSON config is shell-agnostic: decrypt once, write JSON once before the per-shell loop.
+  // Only write when at least one shell is actually enabled, matching the per-shell scripts which
+  // skip disabled shells (no enabled shell → nothing is applied, so nothing should be written).
+  const decryptedTokens = getDecryptedTokensOrThrow(input.ccData, input.cxData, input.ocData, input.keyPassphrase)
+  const hasEnabledShell = input.shellTypes.some((shellType) => input.enabledShells[shellType]?.enabled)
+  if (hasEnabledShell) writeOCConfigFiles(buildOCConfigFiles(input.ocData))
 
   for (const shellType of input.shellTypes) {
     const profile = input.enabledShells[shellType]
@@ -71,7 +82,7 @@ export function applyConfigWithKey(input: ApplyConfigInput): { appliedShells: Sh
       unlinkSync(legacyPath)
     }
     input.createBackup?.(shellType, getShellOutputPath(shellType))
-    const generated = generateConfigWithKey({ ...input, shellType })
+    const generated = generateConfigWithKey({ ...input, shellType, decryptedTokens })
 
     ensureParentDir(outputPath)
     // PowerShell on Windows requires UTF-8 BOM for correct encoding,

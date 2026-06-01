@@ -1,18 +1,20 @@
 import { app, dialog } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import type { AppSettings, CCLaunchData, CXLandData, Provider, LaunchItem, LocalCCLaunchData, CXProvider, CXLaunchItem, LocalCXLandData } from '@shared/types'
-import { createEmptyCXLandData, normalizeCXLandData } from '@shared/types'
+import type { AppSettings, CCLaunchData, CXLandData, Provider, LaunchItem, LocalCCLaunchData, CXProvider, CXLaunchItem, LocalCXLandData, OCLandData, OCProvider, OCLaunchItem, LocalOCLandData } from '@shared/types'
+import { createEmptyCXLandData, normalizeCXLandData, createEmptyOCLandData, normalizeOCLandData } from '@shared/types'
 import type { ShellType } from '@shared/shell'
-import { assertAppSettings, assertCCLaunchData, assertCXLandData } from '@shared/ipc-contracts'
+import { assertAppSettings, assertCCLaunchData, assertCXLandData, assertOCLandData } from '@shared/ipc-contracts'
 import { platform } from 'os'
 import { loadLocalCCConfig, saveLocalCCConfig } from './local-cc-config'
 import { loadLocalCXConfig, saveLocalCXConfig } from './local-cx-config'
+import { loadLocalOCConfig, saveLocalOCConfig } from './local-oc-config'
 import { markLocalItems, splitLocalItems } from './local-sync'
 
 const SETTINGS_FILENAME = 'settings.json'
 const DATA_FILENAME = 'rcland.config.claudecode.json'
 const CX_DATA_FILENAME = 'rcland.config.codex.json'
+const OC_DATA_FILENAME = 'rcland.config.opencode.json'
 
 function getLocalDir(): string {
   return join(app.getPath('home'), '.rcland', 'local_config')
@@ -232,6 +234,65 @@ export function saveCXLandData(data: CXLandData): void {
     launchItems: localLaunchItems.map(c => { const { localOnly: _, ...rest } = c; return rest }) as CXLaunchItem[]
   }
   saveLocalCXConfig(localData)
+}
+
+// ============================================================
+// OCLand Data (v1, syncable + local split)
+// ============================================================
+
+export function loadOCLandData(): OCLandData {
+  const settings = loadSettings()
+  const p = join(settings.configDir, OC_DATA_FILENAME)
+
+  let syncedData: OCLandData | null = null
+  if (existsSync(p)) {
+    try {
+      const parsed = JSON.parse(readFileSync(p, 'utf-8'))
+      const normalized = normalizeOCLandData(parsed)
+      if (normalized.version === 1) syncedData = normalized
+    } catch {
+      // Discard malformed file
+    }
+  }
+
+  const localData = loadLocalOCConfig()
+  const localProviders = markLocalItems(localData.providers)
+  const localLaunchItems = markLocalItems(localData.launchItems)
+
+  const empty = createEmptyOCLandData()
+  const merged: OCLandData = {
+    version: 1,
+    providers: [...(syncedData?.providers ?? []), ...localProviders],
+    launchItems: [...(syncedData?.launchItems ?? []), ...localLaunchItems],
+    selector: syncedData?.selector ?? empty.selector
+  }
+
+  assertOCLandData(merged)
+  return merged
+}
+
+export function saveOCLandData(data: OCLandData): void {
+  assertOCLandData(data)
+  const settings = loadSettings()
+  ensureConfigDir(settings.configDir)
+
+  const { synced: syncedProviders, local: localProviders } = splitLocalItems(data.providers)
+  const { synced: syncedLaunchItems, local: localLaunchItems } = splitLocalItems(data.launchItems)
+
+  const syncedData: OCLandData = {
+    version: 1,
+    providers: syncedProviders as OCProvider[],
+    launchItems: syncedLaunchItems as OCLaunchItem[],
+    selector: data.selector
+  }
+  writeFileSync(join(settings.configDir, OC_DATA_FILENAME), JSON.stringify(syncedData, null, 2), 'utf-8')
+
+  const localData: LocalOCLandData = {
+    version: 1,
+    providers: localProviders.map(p => { const { localOnly: _, ...rest } = p; return rest }) as OCProvider[],
+    launchItems: localLaunchItems.map(c => { const { localOnly: _, ...rest } = c; return rest }) as OCLaunchItem[]
+  }
+  saveLocalOCConfig(localData)
 }
 
 // ============================================================

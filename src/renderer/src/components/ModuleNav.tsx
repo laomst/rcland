@@ -7,7 +7,8 @@ import {
   TagsOutlined,
   CodeSandboxOutlined,
   RobotOutlined,
-  GlobalOutlined
+  GlobalOutlined,
+  ThunderboltOutlined
 } from '@ant-design/icons'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { useTranslation } from 'react-i18next'
@@ -26,7 +27,8 @@ export function ModuleNav(): React.ReactElement {
     { key: '/aliases', label: t('nav.aliases'), icon: <TagsOutlined /> },
     { type: 'divider' as const },
     { key: '/ccland', label: t('nav.ccland'), icon: <CodeSandboxOutlined /> },
-    { key: '/cxland', label: t('nav.cxland'), icon: <RobotOutlined /> }
+    { key: '/cxland', label: t('nav.cxland'), icon: <RobotOutlined /> },
+    { key: '/ocland', label: t('nav.ocland'), icon: <ThunderboltOutlined /> }
   ]
   return (
     <Menu
