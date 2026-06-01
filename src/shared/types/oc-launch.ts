@@ -107,6 +107,11 @@ export function normalizeOCLandData(data: unknown): OCLandData {
   if (obj.version !== 1 || !Array.isArray(obj.providers) || !Array.isArray(obj.launchItems)) {
     return createEmptyOCLandData()
   }
+  // selector may be missing in hand-edited/partial data; fall back to the default so the
+  // normalized object is self-contained rather than relying on downstream callers to patch it.
+  if (!obj.selector || typeof obj.selector !== 'object') {
+    return { ...(obj as OCLandData), selector: createEmptyOCLandData().selector }
+  }
   return obj as OCLandData
 }
 

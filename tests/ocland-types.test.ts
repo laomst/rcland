@@ -34,6 +34,13 @@ test('normalizeOCLandData passes valid data through', () => {
   assert.equal(normalizeOCLandData(valid).providers.length, 1)
 })
 
+test('normalizeOCLandData fills missing selector with default', () => {
+  const partial = { version: 1, providers: [], launchItems: [] }
+  const normalized = normalizeOCLandData(partial)
+  assert.equal(normalized.selector.funcName, 'oc')
+  assert.equal(normalized.selector.kanban.enabled, false)
+})
+
 test('sdkTypeToNpm maps sdkType to ai-sdk package', () => {
   assert.equal(sdkTypeToNpm('anthropic'), '@ai-sdk/anthropic')
   assert.equal(sdkTypeToNpm('openai-compatible'), '@ai-sdk/openai-compatible')

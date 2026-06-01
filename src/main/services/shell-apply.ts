@@ -64,8 +64,11 @@ export function applyConfigWithKey(input: ApplyConfigInput): { appliedShells: Sh
   const appliedShells: ShellType[] = []
 
   // opencode JSON config is shell-agnostic: decrypt once, write JSON once before the per-shell loop.
+  // Only write when at least one shell is actually enabled, matching the per-shell scripts which
+  // skip disabled shells (no enabled shell → nothing is applied, so nothing should be written).
   const decryptedTokens = getDecryptedTokensOrThrow(input.ccData, input.cxData, input.ocData, input.keyPassphrase)
-  writeOCConfigFiles(buildOCConfigFiles(input.ocData))
+  const hasEnabledShell = input.shellTypes.some((shellType) => input.enabledShells[shellType]?.enabled)
+  if (hasEnabledShell) writeOCConfigFiles(buildOCConfigFiles(input.ocData))
 
   for (const shellType of input.shellTypes) {
     const profile = input.enabledShells[shellType]
