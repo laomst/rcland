@@ -195,12 +195,13 @@ test('zsh alias generator rejects shell metacharacters in alias names', () => {
   )
 })
 
-test('bash prompt-select redraws from a saved cursor anchor', () => {
+test('bash prompt-select redraws by moving the cursor up and clearing', () => {
   const builtin = BUILTIN_FUNCTIONS.find((fn) => fn.id === 'builtin:prompt-select')
   assert.ok(builtin)
 
   const output = new FunctionsBashGenerator().generate([builtin], createGenerateContext('bash', 'unused'))
 
-  assert.ok(output.includes("printf '\\0337'"))
-  assert.ok(output.includes("printf '\\0338\\033[J'"))
+  // Implementation uses relative cursor-up + clear-to-end (\033[NA\033[J) instead of
+  // absolute save/restore (\0337/\0338), which broke when the terminal scrolled.
+  assert.ok(output.includes("printf '\\033[%dA\\033[J'"))
 })
