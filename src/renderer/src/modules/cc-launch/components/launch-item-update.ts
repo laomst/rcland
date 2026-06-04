@@ -1,4 +1,4 @@
-import type { LaunchItem } from '@shared/types'
+import type { LaunchItem, Provider } from '@shared/types'
 
 export type LaunchItemFormValues = Pick<
   LaunchItem,
@@ -21,4 +21,17 @@ export function createLaunchItemUpdatePatch(values: LaunchItemFormValues): Parti
   if (values.useSystemProxy !== undefined) patch.useSystemProxy = values.useSystemProxy
 
   return patch
+}
+
+export function deriveCommonValuesMap(
+  provider: Provider | undefined
+): Record<string, string[]> {
+  const result: Record<string, string[]> = {}
+  const envVars = provider?.template?.envVars ?? {}
+  for (const [key, setting] of Object.entries(envVars)) {
+    if (setting.commonValues && setting.commonValues.length > 0) {
+      result[key] = setting.commonValues
+    }
+  }
+  return result
 }
