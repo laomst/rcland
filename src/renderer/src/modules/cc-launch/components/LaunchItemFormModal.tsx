@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Input, Modal, Form, Space, Select, Divider, Typography, Button, Switch } from 'antd'
 import { PlusOutlined, LockOutlined } from '@ant-design/icons'
 import type { Provider, EnvVarSetting } from '@shared/types'
+import { stripCommonValues } from '@shared/types/cc-launch'
 import { EnvVarEditor } from './EnvVarEditor'
-import type { LaunchItemFormValues } from './launch-item-update'
+import { deriveCommonValuesMap, type LaunchItemFormValues } from './launch-item-update'
 
 const { Text } = Typography
 
@@ -71,7 +72,7 @@ export function LaunchItemFormModal({
       keyId: firstKeyId,
       name: '',
       funcName: '',
-      envVars: { ...templateEnvVars },
+      envVars: stripCommonValues(templateEnvVars),
       passthrough: form.passthrough,
       useSystemProxy: form.useSystemProxy,
       localOnly: form.localOnly
@@ -79,6 +80,7 @@ export function LaunchItemFormModal({
   }
 
   const provider = providers.find((p) => p.id === form.providerId)
+  const commonValuesMap = deriveCommonValuesMap(provider)
   const selectedKey = provider?.keys.find((k) => k.id === form.keyId)
   const hasNoKeys = !provider?.keys?.length
 
@@ -163,6 +165,7 @@ export function LaunchItemFormModal({
             </Form.Item>
             <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>
             <EnvVarEditor
+              mode="launchItem"
               envVars={form.envVars}
               onChange={handleEnvVarChange}
               onRemove={handleEnvVarRemove}
@@ -274,6 +277,8 @@ export function LaunchItemFormModal({
           <>
             <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>
             <EnvVarEditor
+              mode="launchItem"
+              commonValuesMap={commonValuesMap}
               envVars={form.envVars}
               onChange={handleEnvVarChange}
               onRemove={handleEnvVarRemove}
