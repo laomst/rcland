@@ -277,6 +277,7 @@ export function ProviderFormModal({
           </Form.Item>
           <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.defaultEnvTemplate')}</Divider>
           <EnvVarEditor
+            mode="template"
             envVars={form.template.envVars}
             onChange={handleEnvVarChange}
             onRemove={handleEnvVarRemove}
