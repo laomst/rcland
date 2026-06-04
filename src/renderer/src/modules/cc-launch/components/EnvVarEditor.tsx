@@ -1,4 +1,4 @@
-import { Input, Switch, Typography, Button, Space, Tooltip } from 'antd'
+import { Input, Switch, Typography, Button, Space, Tooltip, Select, AutoComplete } from 'antd'
 import { DeleteOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import type { EnvVarsMap, EnvVarSetting } from '@shared/types'
@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next'
 import { EnvDictPicker } from '@renderer/modules/claude-env-dict/components/EnvDictPicker'
 
 const { Text } = Typography
+
+export type EnvVarEditorMode = 'template' | 'launchItem'
 
 function useDescriptionText(item: ClaudeEnvDictItem | undefined): string {
   const { t } = useTranslation()
@@ -19,36 +21,37 @@ function useDescriptionText(item: ClaudeEnvDictItem | undefined): string {
 function EnvVarRow({
   envVarKey,
   setting,
+  mode,
+  commonValues,
   onChange,
   onRemove
 }: {
   envVarKey: string
   setting: EnvVarSetting
+  mode: EnvVarEditorMode
+  commonValues: string[]
   onChange: (setting: EnvVarSetting) => void
   onRemove: () => void
 }): React.ReactElement {
+  const { t } = useTranslation()
   const item = useClaudeEnvDictStore((s) => s.getItem(envVarKey))
   const desc = useDescriptionText(item)
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-        marginBottom: 6,
-        padding: '2px 0',
-        background: setting.enabled ? '#fff' : '#f5f5f5',
-        borderRadius: 4,
-        opacity: setting.enabled ? 1 : 0.6
-      }}
-    >
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, width: 290, flexShrink: 0 }}>
-        <Text code style={{ fontSize: 11, color: setting.enabled ? undefined : '#999' }}>{envVarKey}</Text>
-        <Tooltip title={desc}>
-          <InfoCircleOutlined style={{ color: '#999', fontSize: 12, cursor: 'pointer' }} />
-        </Tooltip>
-      </span>
+  const valueControl =
+    mode === 'launchItem' ? (
+      <AutoComplete
+        size="small"
+        value={setting.value}
+        options={commonValues.map((v) => ({ value: v, label: v }))}
+        placeholder={item?.exampleValue ?? desc}
+        style={{ width: '100%', fontFamily: 'monospace', fontSize: 12 }}
+        disabled={!setting.enabled}
+        filterOption={(input, option) =>
+          (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+        }
+        onChange={(value) => onChange({ ...setting, value })}
+      />
+    ) : (
       <Input
         size="small"
         value={setting.value}
@@ -58,29 +61,72 @@ function EnvVarRow({
         disabled={!setting.enabled}
         onChange={(e) => onChange({ ...setting, value: e.target.value })}
       />
-      <Switch
-        size="small"
-        checked={setting.enabled}
-        onChange={(checked) => onChange({ ...setting, enabled: checked })}
-      />
-      <Button
-        size="small"
-        type="text"
-        danger
-        icon={<DeleteOutlined />}
-        onClick={onRemove}
-      />
+    )
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
+        marginBottom: 6,
+        padding: '2px 0',
+        background: setting.enabled ? '#fff' : '#f5f5f5',
+        borderRadius: 4,
+        opacity: setting.enabled ? 1 : 0.6
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, width: 290, flexShrink: 0 }}>
+          <Text code style={{ fontSize: 11, color: setting.enabled ? undefined : '#999' }}>{envVarKey}</Text>
+          <Tooltip title={desc}>
+            <InfoCircleOutlined style={{ color: '#999', fontSize: 12, cursor: 'pointer' }} />
+          </Tooltip>
+        </span>
+        <div style={{ flex: 1 }}>{valueControl}</div>
+        <Switch
+          size="small"
+          checked={setting.enabled}
+          onChange={(checked) => onChange({ ...setting, enabled: checked })}
+        />
+        <Button
+          size="small"
+          type="text"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={onRemove}
+        />
+      </div>
+      {mode === 'template' && (
+        <div style={{ paddingLeft: 294 }}>
+          <Select
+            mode="tags"
+            size="small"
+            value={setting.commonValues ?? []}
+            placeholder={t('ccLaunch.commonValuesPlaceholder')}
+            style={{ width: '100%', fontFamily: 'monospace', fontSize: 12 }}
+            disabled={!setting.enabled}
+            open={false}
+            suffixIcon={null}
+            onChange={(vals: string[]) => onChange({ ...setting, commonValues: vals })}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
 export function EnvVarEditor({
   envVars,
+  mode,
+  commonValuesMap = {},
   onChange,
   onRemove,
   onAdd
 }: {
   envVars: EnvVarsMap
+  mode: EnvVarEditorMode
+  commonValuesMap?: Record<string, string[]>
   onChange: (key: string, setting: EnvVarSetting) => void
   onRemove: (key: string) => void
   onAdd: (keys: string[]) => void
@@ -102,6 +148,8 @@ export function EnvVarEditor({
           key={key}
           envVarKey={key}
           setting={envVars[key]}
+          mode={mode}
+          commonValues={commonValuesMap[key] ?? []}
           onChange={(s) => onChange(key, s)}
           onRemove={() => onRemove(key)}
         />
