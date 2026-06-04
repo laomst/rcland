@@ -21,6 +21,7 @@ import { LaunchItemCard } from './LaunchItemCard'
 import { LaunchItemFormModal } from './LaunchItemFormModal'
 import { GroupHeader } from '@renderer/components/GroupHeader'
 import type { LaunchItem, Provider } from '@shared/types'
+import { stripCommonValues } from '@shared/types/cc-launch'
 
 interface SortableLaunchItemCardProps {
   config: LaunchItem
@@ -81,7 +82,7 @@ export function LaunchItemTab(): React.ReactElement {
   const firstProvider = providers[0]
   const firstEndpointId = firstProvider?.endpoints?.[0]?.id ?? ''
   const firstKeyId = firstProvider?.keys?.[0]?.id ?? ''
-  const firstTemplateEnvVars = firstProvider?.template?.envVars ?? createEmptyLaunchItem(firstProvider?.id ?? '', '', '').envVars
+  const firstTemplateEnvVars = stripCommonValues(firstProvider?.template?.envVars ?? createEmptyLaunchItem(firstProvider?.id ?? '', '', '').envVars)
 
   const handleAdd = (localOnly: boolean) => {
     setAddLocalOnly(localOnly)
