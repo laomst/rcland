@@ -229,6 +229,7 @@ const en = {
     encryptedToken: '•••••••••••• (encrypted)',
     addKey: 'Add Key',
     defaultEnvTemplate: 'Default Env Var Template',
+    commonValuesPlaceholder: 'Type a value and press Enter',
     keyInUse: 'Key In Use',
     keyInUseDesc: 'Key "{{label}}" is used by the following launch items:',
     keyInUseWarning: 'These launch items will stop working after deletion. Force delete?',

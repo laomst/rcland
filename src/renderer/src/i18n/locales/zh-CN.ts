@@ -229,6 +229,7 @@ const zhCN = {
     encryptedToken: '•••••••••••• (已加密)',
     addKey: '添加密钥',
     defaultEnvTemplate: '默认环境变量模板',
+    commonValuesPlaceholder: '输入常用值后回车添加',
     keyInUse: '密钥正在使用中',
     keyInUseDesc: '密钥「{{label}}」正被以下启动项使用：',
     keyInUseWarning: '删除后，这些启动项将无法正常工作。确定要强制删除吗？',
