@@ -2,6 +2,7 @@
 export interface EnvVarSetting {
   value: string
   enabled: boolean
+  commonValues?: string[]
 }
 
 /** All env vars for a config (key 由 Claude Env Dict 统一维护) */
@@ -134,4 +135,12 @@ export function getEndpointUrl(provider: Provider, endpointId?: string): string 
     ? provider.endpoints.find((e) => e.id === endpointId)
     : null
   return ep?.url ?? provider.endpoints[0].url
+}
+
+export function stripCommonValues(envVars: EnvVarsMap): EnvVarsMap {
+  const result: EnvVarsMap = {}
+  for (const [key, setting] of Object.entries(envVars)) {
+    result[key] = { value: setting.value, enabled: setting.enabled }
+  }
+  return result
 }
