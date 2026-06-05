@@ -5,11 +5,9 @@ import {
   NodeIndexOutlined,
   FunctionOutlined,
   TagsOutlined,
-  CodeSandboxOutlined,
-  RobotOutlined,
-  GlobalOutlined,
-  ThunderboltOutlined
+  GlobalOutlined
 } from '@ant-design/icons'
+import { ClaudeCodeIcon, CodexIcon, OpenCodeIcon } from './LauncherIcons'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { useTranslation } from 'react-i18next'
 
@@ -26,9 +24,9 @@ export function ModuleNav(): React.ReactElement {
     { key: '/functions', label: t('nav.functions'), icon: <FunctionOutlined /> },
     { key: '/aliases', label: t('nav.aliases'), icon: <TagsOutlined /> },
     { type: 'divider' as const },
-    { key: '/ccland', label: t('nav.ccland'), icon: <CodeSandboxOutlined /> },
-    { key: '/cxland', label: t('nav.cxland'), icon: <RobotOutlined /> },
-    { key: '/ocland', label: t('nav.ocland'), icon: <ThunderboltOutlined /> }
+    { key: '/ccland', label: t('nav.ccland'), icon: <ClaudeCodeIcon /> },
+    { key: '/cxland', label: t('nav.cxland'), icon: <CodexIcon /> },
+    { key: '/ocland', label: t('nav.ocland'), icon: <OpenCodeIcon /> }
   ]
   return (
     <Menu
