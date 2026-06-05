@@ -1,7 +1,7 @@
 import { Menu } from 'antd'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  ApiOutlined,
+  GatewayOutlined,
   ControlOutlined,
   ForkOutlined,
   FunctionOutlined,
@@ -18,7 +18,7 @@ export function ModuleNav(): React.ReactElement {
   const settings = useSettingsStore((s) => s.settings)
 
   const menuItems = [
-    { key: '/system-proxy', label: t('nav.systemProxy'), icon: <ApiOutlined /> },
+    { key: '/system-proxy', label: t('nav.systemProxy'), icon: <GatewayOutlined /> },
     { key: '/env', label: t('nav.env'), icon: <ControlOutlined /> },
     { key: '/path', label: t('nav.path'), icon: <ForkOutlined /> },
     { key: '/functions', label: t('nav.functions'), icon: <FunctionOutlined /> },
