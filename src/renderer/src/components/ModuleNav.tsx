@@ -4,9 +4,10 @@ import {
   ApiOutlined,
   ControlOutlined,
   ForkOutlined,
+  FunctionOutlined,
   LinkOutlined
 } from '@ant-design/icons'
-import { FunctionBoldIcon, ClaudeCodeIcon, CodexIcon, OpenCodeIcon } from './LauncherIcons'
+import { ClaudeCodeIcon, CodexIcon, OpenCodeIcon } from './LauncherIcons'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { useTranslation } from 'react-i18next'
 
@@ -20,7 +21,7 @@ export function ModuleNav(): React.ReactElement {
     { key: '/system-proxy', label: t('nav.systemProxy'), icon: <ApiOutlined /> },
     { key: '/env', label: t('nav.env'), icon: <ControlOutlined /> },
     { key: '/path', label: t('nav.path'), icon: <ForkOutlined /> },
-    { key: '/functions', label: t('nav.functions'), icon: <FunctionBoldIcon /> },
+    { key: '/functions', label: t('nav.functions'), icon: <FunctionOutlined /> },
     { key: '/aliases', label: t('nav.aliases'), icon: <LinkOutlined /> },
     { type: 'divider' as const },
     { key: '/ccland', label: t('nav.ccland'), icon: <ClaudeCodeIcon /> },
