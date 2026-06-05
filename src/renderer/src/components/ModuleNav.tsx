@@ -1,13 +1,12 @@
 import { Menu } from 'antd'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  GatewayOutlined,
   ControlOutlined,
   ForkOutlined,
   FunctionOutlined,
   LinkOutlined
 } from '@ant-design/icons'
-import { ClaudeCodeIcon, CodexIcon, OpenCodeIcon } from './LauncherIcons'
+import { ClashVergeIcon, ClaudeCodeIcon, CodexIcon, OpenCodeIcon } from './LauncherIcons'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { useTranslation } from 'react-i18next'
 
@@ -18,7 +17,7 @@ export function ModuleNav(): React.ReactElement {
   const settings = useSettingsStore((s) => s.settings)
 
   const menuItems = [
-    { key: '/system-proxy', label: t('nav.systemProxy'), icon: <GatewayOutlined /> },
+    { key: '/system-proxy', label: t('nav.systemProxy'), icon: <ClashVergeIcon /> },
     { key: '/env', label: t('nav.env'), icon: <ControlOutlined /> },
     { key: '/path', label: t('nav.path'), icon: <ForkOutlined /> },
     { key: '/functions', label: t('nav.functions'), icon: <FunctionOutlined /> },
