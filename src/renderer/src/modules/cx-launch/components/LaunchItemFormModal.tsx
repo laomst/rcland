@@ -107,7 +107,7 @@ export function LaunchItemFormModal({
 
         {isPassthrough ? (
           <>
-            <Form.Item label={t('ccLaunch.configName')} required>
+            <Form.Item label={t('ccLaunch.launchItemName')} required>
               <Input
                 value={form.name ?? ''}
                 onChange={(e) => {
@@ -120,7 +120,7 @@ export function LaunchItemFormModal({
                     return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
                   })
                 }}
-                placeholder={t('ccLaunch.configNamePlaceholder')}
+                placeholder={t('ccLaunch.launchItemNamePlaceholder')}
               />
             </Form.Item>
             <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
@@ -201,7 +201,7 @@ export function LaunchItemFormModal({
                 </Text>
               )}
             </Form.Item>
-            <Form.Item label={t('ccLaunch.configName')} required>
+            <Form.Item label={t('ccLaunch.launchItemName')} required>
               <Input
                 value={form.name ?? ''}
                 onChange={(e) => {
@@ -214,7 +214,7 @@ export function LaunchItemFormModal({
                     return { ...f, name, funcName: shouldAutoGen ? autoFuncName : f.funcName }
                   })
                 }}
-                placeholder={t('ccLaunch.configNamePlaceholder')}
+                placeholder={t('ccLaunch.launchItemNamePlaceholder')}
               />
             </Form.Item>
             <Form.Item label={t('ccLaunch.funcName')} extra={t('ccLaunch.funcNameHint')}>
