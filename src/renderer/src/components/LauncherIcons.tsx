@@ -1,6 +1,12 @@
 import Icon from '@ant-design/icons'
 import type { CustomIconComponentProps } from '@ant-design/icons/lib/components/Icon'
 
+const FunctionBoldSvg = () => (
+  <svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor">
+    <path d="M841.1 396.5H608.2c10.5-74.3 29.3-148.1 56.6-221.4 5.6-15-2.1-31.7-17.1-37.3-15-5.6-31.7 2.1-37.3 17.1-30.2 81-50.7 162.5-61.7 241.6h-73.4c-11-79.1-31.5-160.6-61.7-241.6-5.6-15-22.3-22.7-37.3-17.1s-22.7 22.3-17.1 37.3c27.3 73.3 46.1 147.1 56.6 221.4H182.9c-16 0-28.9 12.9-28.9 28.9s12.9 28.9 28.9 28.9h180.3c3 43.6 3 87.2 0 130.9H182.9c-16 0-28.9 12.9-28.9 28.9s12.9 28.9 28.9 28.9h173.5c-10.5 74.3-29.3 148.1-56.6 221.4-5.6 15 2.1 31.7 17.1 37.3 15 5.6 31.7-2.1 37.3-17.1 30.2-81.1 50.7-162.5 61.7-241.6h73.4c11 79.1 31.5 160.6 61.7 241.6 5.6 15 22.3 22.7 37.3 17.1 15-5.6 22.7-22.3 17.1-37.3-27.3-73.3-46.1-147.1-56.6-221.4h252.3c16 0 28.9-12.9 28.9-28.9s-12.9-28.9-28.9-28.9H540.8c-3-43.6-3-87.2 0-130.9h300.3c16 0 28.9-12.9 28.9-28.9s-12.9-28.9-28.9-28.9z" />
+  </svg>
+)
+
 const ClaudeCodeSvg = () => (
   <svg fill="currentColor" fillRule="evenodd" viewBox="0 0 24 24" width="1em" height="1em">
     <path
@@ -23,6 +29,10 @@ const OpenCodeSvg = () => (
   <svg fill="currentColor" fillRule="evenodd" viewBox="0 0 24 24" width="1em" height="1em">
     <path d="M16 6H8v12h8V6zm4 16H4V2h16v20z" />
   </svg>
+)
+
+export const FunctionBoldIcon = (props: Partial<CustomIconComponentProps>) => (
+  <Icon component={FunctionBoldSvg} {...props} />
 )
 
 export const ClaudeCodeIcon = (props: Partial<CustomIconComponentProps>) => (
