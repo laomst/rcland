@@ -91,7 +91,8 @@ export function loadData(): string | null {
     const raw = readFileSync(p, 'utf-8')
     const parsed = JSON.parse(raw)
 
-    if (parsed.version === 6) {
+    if (parsed.version === 5 || parsed.version === 6) {
+      parsed.version = 6
       syncedData = parsed
     }
   }

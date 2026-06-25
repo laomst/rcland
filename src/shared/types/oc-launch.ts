@@ -109,10 +109,12 @@ export function createEmptyOCLandData(): OCLandData {
 // v1 is the first version; no backward-compatibility migration needed (unlike CXLand).
 export function normalizeOCLandData(data: unknown): OCLandData {
   if (!data || typeof data !== 'object') return createEmptyOCLandData()
-  const obj = data as Partial<OCLandData>
-  if (obj.version !== 2 || !Array.isArray(obj.providers) || !Array.isArray(obj.launchItems)) {
+  const raw = data as Record<string, unknown>
+  if ((raw.version !== 1 && raw.version !== 2) || !Array.isArray(raw.providers) || !Array.isArray(raw.launchItems)) {
     return createEmptyOCLandData()
   }
+  raw.version = 2
+  const obj = data as Partial<OCLandData>
   // selector may be missing in hand-edited/partial data; fall back to the default so the
   // normalized object is self-contained rather than relying on downstream callers to patch it.
   if (!obj.selector || typeof obj.selector !== 'object') {

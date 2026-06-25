@@ -95,10 +95,12 @@ export function createEmptyCXLandData(): CXLandData {
 
 export function normalizeCXLandData(data: unknown): CXLandData {
   if (!data || typeof data !== 'object') return createEmptyCXLandData()
-  const obj = data as Partial<CXLandData>
-  if (obj.version !== 4 || !Array.isArray(obj.providers)) {
+  const raw = data as Record<string, unknown>
+  if ((raw.version !== 3 && raw.version !== 4) || !Array.isArray(raw.providers)) {
     return createEmptyCXLandData()
   }
+  raw.version = 4
+  const obj = data as Partial<CXLandData>
   // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new)
   const rawObj = obj as unknown as Record<string, unknown>
   if (!Array.isArray(rawObj.launchItems) && !Array.isArray(rawObj.configs)) {
