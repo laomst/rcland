@@ -1,14 +1,16 @@
-import React, { useEffect } from 'react'
-import { Tabs, Spin, Alert } from 'antd'
-import { SettingOutlined, ShopOutlined, MenuOutlined } from '@ant-design/icons'
+import React, { useEffect, useState } from 'react'
+import { Segmented, Spin, Alert } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useOCLandStore } from '@renderer/stores/useOCLandStore'
 import { LaunchItemTab } from '../components/LaunchItemTab'
 import { ProviderTab } from '../components/ProviderTab'
 import { SelectorTab } from '../components/SelectorTab'
 
+type OCTab = 'configs' | 'providers' | 'selector'
+
 export function OCLaunchItemPage(): React.ReactElement {
   const { t } = useTranslation()
+  const [tab, setTab] = useState<OCTab>('configs')
   const loadData = useOCLandStore((s) => s.loadData)
   const dataLoaded = useOCLandStore((s) => s.dataLoaded)
   const loading = useOCLandStore((s) => s.loading)
@@ -28,6 +30,12 @@ export function OCLaunchItemPage(): React.ReactElement {
     )
   }
 
+  const options = [
+    { label: t('ocLaunch.launchItemTab'), value: 'configs' as const },
+    { label: t('ocLaunch.providerTab'), value: 'providers' as const },
+    { label: t('ocLaunch.selectorTab'), value: 'selector' as const },
+  ]
+
   return (
     <div>
       {saveError && (
@@ -38,14 +46,12 @@ export function OCLaunchItemPage(): React.ReactElement {
           message={t('common.operationFailed', { error: saveError })}
         />
       )}
-      <Tabs
-        defaultActiveKey="configs"
-        items={[
-          { key: 'configs', label: t('ocLaunch.launchItemTab'), icon: <SettingOutlined />, children: <LaunchItemTab /> },
-          { key: 'providers', label: t('ocLaunch.providerTab'), icon: <ShopOutlined />, children: <ProviderTab /> },
-          { key: 'selector', label: t('ocLaunch.selectorTab'), icon: <MenuOutlined />, children: <SelectorTab /> }
-        ]}
-      />
+      <div style={{ marginBottom: 16 }}>
+        <Segmented options={options} value={tab} onChange={(v) => setTab(v as OCTab)} block />
+      </div>
+      {tab === 'configs' && <LaunchItemTab />}
+      {tab === 'providers' && <ProviderTab />}
+      {tab === 'selector' && <SelectorTab />}
     </div>
   )
 }

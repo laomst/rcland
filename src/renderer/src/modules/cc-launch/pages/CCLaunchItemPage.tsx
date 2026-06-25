@@ -1,7 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Tabs, Spin } from 'antd'
-import { ShopOutlined, SettingOutlined, MenuOutlined, AppstoreOutlined } from '@ant-design/icons'
+import { Segmented, Spin } from 'antd'
 import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
 import { useClaudeEnvDictStore } from '@renderer/stores/useClaudeEnvDictStore'
 import { ProviderTab } from '../components/ProviderTab'
@@ -9,8 +8,11 @@ import { LaunchItemTab } from '../components/LaunchItemTab'
 import { SelectorTab } from '../components/SelectorTab'
 import { EnvDictTab } from '@renderer/modules/claude-env-dict/components/EnvDictTab'
 
+type CCTab = 'configs' | 'providers' | 'env-dict' | 'selector'
+
 export default function CCLaunchItemPage(): React.ReactElement {
   const { t } = useTranslation()
+  const [tab, setTab] = useState<CCTab>('configs')
   const loadData = useCCLaunchStore((s) => s.loadData)
   const dataLoaded = useCCLaunchStore((s) => s.dataLoaded)
   const loading = useCCLaunchStore((s) => s.loading)
@@ -34,35 +36,22 @@ export default function CCLaunchItemPage(): React.ReactElement {
     )
   }
 
+  const options = [
+    { label: t('ccLaunch.launchItemTab'), value: 'configs' as const },
+    { label: t('ccLaunch.providerTab'), value: 'providers' as const },
+    { label: t('claudeEnvDict.tabTitle'), value: 'env-dict' as const },
+    { label: t('ccLaunch.selectorTab'), value: 'selector' as const },
+  ]
+
   return (
-    <Tabs
-      defaultActiveKey="configs"
-      items={[
-        {
-          key: 'configs',
-          label: t('ccLaunch.launchItemTab'),
-          icon: <SettingOutlined />,
-          children: <LaunchItemTab />
-        },
-        {
-          key: 'providers',
-          label: t('ccLaunch.providerTab'),
-          icon: <ShopOutlined />,
-          children: <ProviderTab />
-        },
-        {
-          key: 'env-dict',
-          label: t('claudeEnvDict.tabTitle'),
-          icon: <AppstoreOutlined />,
-          children: <EnvDictTab />
-        },
-        {
-          key: 'selector',
-          label: t('ccLaunch.selectorTab'),
-          icon: <MenuOutlined />,
-          children: <SelectorTab />
-        }
-      ]}
-    />
+    <div>
+      <div style={{ marginBottom: 16 }}>
+        <Segmented options={options} value={tab} onChange={(v) => setTab(v as CCTab)} block />
+      </div>
+      {tab === 'configs' && <LaunchItemTab />}
+      {tab === 'providers' && <ProviderTab />}
+      {tab === 'env-dict' && <EnvDictTab />}
+      {tab === 'selector' && <SelectorTab />}
+    </div>
   )
 }

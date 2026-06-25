@@ -1,14 +1,16 @@
-import React, { useEffect } from 'react'
-import { Tabs, Spin, Alert } from 'antd'
-import { SettingOutlined, ShopOutlined, MenuOutlined } from '@ant-design/icons'
+import React, { useEffect, useState } from 'react'
+import { Segmented, Spin, Alert } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useCXLandStore } from '@renderer/stores/useCXLandStore'
 import { LaunchItemTab } from '../components/LaunchItemTab'
 import { ProviderTab } from '../components/ProviderTab'
 import { SelectorTab } from '../components/SelectorTab'
 
+type CXTab = 'configs' | 'providers' | 'selector'
+
 export function CXLaunchItemPage(): React.ReactElement {
   const { t } = useTranslation()
+  const [tab, setTab] = useState<CXTab>('configs')
   const loadData = useCXLandStore((s) => s.loadData)
   const dataLoaded = useCXLandStore((s) => s.dataLoaded)
   const loading = useCXLandStore((s) => s.loading)
@@ -28,6 +30,12 @@ export function CXLaunchItemPage(): React.ReactElement {
     )
   }
 
+  const options = [
+    { label: t('cxLaunch.launchItemTab'), value: 'configs' as const },
+    { label: t('cxLaunch.providerTab'), value: 'providers' as const },
+    { label: t('cxLaunch.selectorTab'), value: 'selector' as const },
+  ]
+
   return (
     <div>
       {saveError && (
@@ -38,14 +46,12 @@ export function CXLaunchItemPage(): React.ReactElement {
           message={t('common.operationFailed', { error: saveError })}
         />
       )}
-      <Tabs
-        defaultActiveKey="configs"
-        items={[
-          { key: 'configs', label: t('cxLaunch.launchItemTab'), icon: <SettingOutlined />, children: <LaunchItemTab /> },
-          { key: 'providers', label: t('cxLaunch.providerTab'), icon: <ShopOutlined />, children: <ProviderTab /> },
-          { key: 'selector', label: t('cxLaunch.selectorTab'), icon: <MenuOutlined />, children: <SelectorTab /> }
-        ]}
-      />
+      <div style={{ marginBottom: 16 }}>
+        <Segmented options={options} value={tab} onChange={(v) => setTab(v as CXTab)} block />
+      </div>
+      {tab === 'configs' && <LaunchItemTab />}
+      {tab === 'providers' && <ProviderTab />}
+      {tab === 'selector' && <SelectorTab />}
     </div>
   )
 }
