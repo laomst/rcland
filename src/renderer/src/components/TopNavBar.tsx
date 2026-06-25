@@ -47,14 +47,14 @@ export function TopNavBar({
 
   return (
     <div className="top-nav-bar">
-      {/* 左区: 标题 + 设置 */}
+      {/* 左区: 设置 */}
       <div className="top-nav-left no-drag">
-        <span className="top-nav-title">RCLand</span>
         <SettingOutlined className="top-nav-settings-icon" onClick={onSettingsClick} />
       </div>
 
-      {/* 中区: 标签页按钮组 */}
-      <div className="top-nav-center no-drag">
+      {/* 标签页按钮组 + 工具图标组，靠右排列 */}
+      <div className="top-nav-tabs-and-tools no-drag">
+      <div className="top-nav-tabs">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -67,8 +67,8 @@ export function TopNavBar({
         ))}
       </div>
 
-      {/* 右区: 工具图标组 */}
-      <div className="top-nav-right no-drag">
+      {/* 工具图标组 */}
+      <div className="top-nav-right">
         <Tooltip title={t('nav.mcp')}>
           <Button
             type="text"
@@ -92,6 +92,7 @@ export function TopNavBar({
             onClick={onApplyClick}
           />
         </Tooltip>
+      </div>
       </div>
     </div>
   )
