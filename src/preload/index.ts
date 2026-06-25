@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { ShellType } from '@shared/shell'
-import type { AppSettings, CCLaunchData, CXLandData, OCLandData } from '@shared/types'
+import type { AppSettings, CCLaunchData, CXLandData, OCLandData, McpServersData } from '@shared/types'
 import type { BackupEntry, ConflictCheckResult, ShellConfigData } from '@shared/shell-types'
 import type { SystemProxyConfig } from '@shared/system-proxy'
 import type {
@@ -21,6 +21,10 @@ export interface ElectronAPI {
   saveCXLandData: (data: CXLandData) => Promise<void>
   loadOCLandData: () => Promise<OCLandData>
   saveOCLandData: (data: OCLandData) => Promise<void>
+
+  // MCP Servers
+  loadMcpServersData: () => Promise<McpServersData>
+  saveMcpServersData: (data: McpServersData) => Promise<void>
 
   // Settings
   loadSettings: () => Promise<AppSettings>
@@ -83,6 +87,8 @@ const api: ElectronAPI = {
   saveCXLandData: (data) => ipcRenderer.invoke('cxland:save', data),
   loadOCLandData: () => ipcRenderer.invoke('ocland:load'),
   saveOCLandData: (data) => ipcRenderer.invoke('ocland:save', data),
+  loadMcpServersData: () => ipcRenderer.invoke('mcp-servers:load'),
+  saveMcpServersData: (data) => ipcRenderer.invoke('mcp-servers:save', data),
   loadSettings: () => ipcRenderer.invoke('settings:load'),
   saveSettings: (json) => ipcRenderer.invoke('settings:save', json),
   initKey: (passphrase?) => ipcRenderer.invoke('crypto:initKey', passphrase),

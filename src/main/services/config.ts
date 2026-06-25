@@ -1,8 +1,8 @@
 import { app, dialog } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import type { AppSettings, CCLaunchData, CXLandData, Provider, LaunchItem, LocalCCLaunchData, CXProvider, CXLaunchItem, LocalCXLandData, OCLandData, OCProvider, OCLaunchItem, LocalOCLandData } from '@shared/types'
-import { createEmptyCXLandData, normalizeCXLandData, createEmptyOCLandData, normalizeOCLandData } from '@shared/types'
+import type { AppSettings, CCLaunchData, CXLandData, Provider, LaunchItem, LocalCCLaunchData, CXProvider, CXLaunchItem, LocalCXLandData, OCLandData, OCProvider, OCLaunchItem, LocalOCLandData, McpServersData } from '@shared/types'
+import { createEmptyCXLandData, normalizeCXLandData, createEmptyOCLandData, normalizeOCLandData, normalizeMcpServersData } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import { assertAppSettings, assertCCLaunchData, assertCXLandData, assertOCLandData } from '@shared/ipc-contracts'
 import { platform } from 'os'
@@ -15,6 +15,7 @@ const SETTINGS_FILENAME = 'settings.json'
 const DATA_FILENAME = 'rcland.config.claudecode.json'
 const CX_DATA_FILENAME = 'rcland.config.codex.json'
 const OC_DATA_FILENAME = 'rcland.config.opencode.json'
+const MCP_DATA_FILENAME = 'rcland.mcp-servers.json'
 
 function getLocalDir(): string {
   return join(app.getPath('home'), '.rcland', 'local_config')
@@ -293,6 +294,27 @@ export function saveOCLandData(data: OCLandData): void {
     launchItems: localLaunchItems.map(c => { const { localOnly: _, ...rest } = c; return rest }) as OCLaunchItem[]
   }
   saveLocalOCConfig(localData)
+}
+
+// ============================================================
+// MCP Servers Data (v1, syncable, no local/synced split)
+// ============================================================
+
+export function loadMcpServersData(): McpServersData {
+  const settings = loadSettings()
+  const p = join(settings.configDir, MCP_DATA_FILENAME)
+  if (!existsSync(p)) return { version: 1, servers: [] }
+  try {
+    return normalizeMcpServersData(JSON.parse(readFileSync(p, 'utf-8')))
+  } catch {
+    return { version: 1, servers: [] }
+  }
+}
+
+export function saveMcpServersData(data: McpServersData): void {
+  const settings = loadSettings()
+  ensureConfigDir(settings.configDir)
+  writeFileSync(join(settings.configDir, MCP_DATA_FILENAME), JSON.stringify(data, null, 2), 'utf-8')
 }
 
 // ============================================================
