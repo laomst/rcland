@@ -53,8 +53,17 @@ const zhCN = {
   },
 
   settings: {
-    title: '基础设置',
+    title: '设置',
     saved: '设置已保存',
+    back: '返回',
+    sectionGeneral: '通用',
+    sectionSecurity: '密钥与安全',
+    sectionAdvanced: '高级',
+    languageHint: '切换后立即生效',
+    defaultPageHint: '启动时默认打开的页面',
+    shellSettingsHint: '勾选要生成配置的 Shell',
+    apply: '应用',
+    applyAndRestart: '应用并重启',
     general: '通用设置',
     configDir: '配置目录',
     configDirHint: '可放在 iCloud/Dropbox 等同步目录中',

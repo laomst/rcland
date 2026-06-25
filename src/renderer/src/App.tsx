@@ -2,7 +2,7 @@ import { ConfigProvider, App as AntdApp, Layout } from 'antd'
 import zhCNAntd from 'antd/locale/zh_CN'
 import enUSAntd from 'antd/locale/en_US'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { TopNavBar, SettingsModal, PreviewModal, usePreview, KeyModals, type KeyModalsHandle } from './components'
+import { TopNavBar, SettingsPage, PreviewModal, usePreview, KeyModals, type KeyModalsHandle } from './components'
 import { CCLaunchItemPage } from './modules/cc-launch'
 import { CXLaunchItemPage } from './modules/cx-launch'
 import { OCLaunchItemPage } from './modules/oc-launch'
@@ -124,27 +124,30 @@ function AppLayout(): React.ReactElement {
 
   return (
     <>
-      <Layout style={{ height: '100vh' }}>
-        <TopNavBar
-          onSettingsClick={() => setSettingsOpen(true)}
-          onApplyClick={handleApply}
-          previewMenuItems={previewMenuItems}
-          copyMenuItems={copyMenuItems}
-          configDirty={configDirty}
-        />
-        <Content className="content-area">
-          <Routes>
-            <Route path="/" element={<Navigate to={settings?.defaultPage || '/system'} replace />} />
-            <Route path="/system" element={<SystemSettingsPage />} />
-            <Route path="/ccland" element={<CCLaunchItemPage />} />
-            <Route path="/cxland" element={<CXLaunchItemPage />} />
-            <Route path="/ocland" element={<OCLaunchItemPage />} />
-            <Route path="/mcp" element={<McpServersPage />} />
-          </Routes>
-        </Content>
-      </Layout>
+      {settingsOpen ? (
+        <SettingsPage onBack={() => setSettingsOpen(false)} />
+      ) : (
+        <Layout style={{ height: '100vh' }}>
+          <TopNavBar
+            onSettingsClick={() => setSettingsOpen(true)}
+            onApplyClick={handleApply}
+            previewMenuItems={previewMenuItems}
+            copyMenuItems={copyMenuItems}
+            configDirty={configDirty}
+          />
+          <Content className="content-area">
+            <Routes>
+              <Route path="/" element={<Navigate to={settings?.defaultPage || '/system'} replace />} />
+              <Route path="/system" element={<SystemSettingsPage />} />
+              <Route path="/ccland" element={<CCLaunchItemPage />} />
+              <Route path="/cxland" element={<CXLaunchItemPage />} />
+              <Route path="/ocland" element={<OCLaunchItemPage />} />
+              <Route path="/mcp" element={<McpServersPage />} />
+            </Routes>
+          </Content>
+        </Layout>
+      )}
 
-      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <PreviewModal shell={previewShell} content={previewContent} onClose={closePreview} />
       <KeyModals ref={keyModalsRef} enabledShells={enabledShells} />
     </>
@@ -156,7 +159,17 @@ export default function App(): React.ReactElement {
   const antdLocale = i18n.language === 'zh-CN' ? zhCNAntd : enUSAntd
 
   return (
-    <ConfigProvider locale={antdLocale}>
+    <ConfigProvider
+      locale={antdLocale}
+      theme={{
+        components: {
+          Segmented: {
+            itemSelectedBg: '#1677ff',
+            itemSelectedColor: '#ffffff',
+          },
+        },
+      }}
+    >
       <AntdApp>
         <HashRouter>
           <AppLayout />
