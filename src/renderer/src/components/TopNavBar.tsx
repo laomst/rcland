@@ -24,6 +24,7 @@ interface TopNavBarProps {
   onApplyClick: () => void
   previewMenuItems: { key: string; label: string; onClick: () => void }[]
   copyMenuItems: { key: string; label: string; onClick: () => void }[]
+  configDirty?: boolean
 }
 
 export function TopNavBar({
@@ -31,6 +32,7 @@ export function TopNavBar({
   onApplyClick,
   previewMenuItems,
   copyMenuItems,
+  configDirty,
 }: TopNavBarProps): React.ReactElement {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -66,6 +68,7 @@ export function TopNavBar({
             <Button
               type="default"
               icon={<ThunderboltOutlined />}
+              className={configDirty ? 'top-nav-apply-dirty' : ''}
               onClick={onApplyClick}
             />
           </Tooltip>

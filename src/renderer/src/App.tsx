@@ -10,6 +10,12 @@ import { McpServersPage } from './modules/mcp-servers'
 import { SystemSettingsPage } from './modules/system-settings/SystemSettingsPage'
 import { ALL_SHELL_TYPES, SHELL_LABELS, SHELL_OS_SUPPORT, type ShellType } from '@shared/shell'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
+import { useConfigDirtyStore } from '@renderer/stores/useConfigDirtyStore'
+import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
+import { useCXLandStore } from '@renderer/stores/useCXLandStore'
+import { useOCLandStore } from '@renderer/stores/useOCLandStore'
+import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
+import { useMcpServersStore } from '@renderer/stores/useMcpServersStore'
 import { extractIpcErrorMessage, isDecryptFailedError, isKeyNotFoundError } from './utils/ipc-error'
 import { useTranslation } from 'react-i18next'
 import './i18n'
@@ -40,6 +46,7 @@ function AppLayout(): React.ReactElement {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const keyModalsRef = useRef<KeyModalsHandle>(null)
   const { previewShell, previewContent, handlePreview, closePreview } = usePreview()
+  const configDirty = useConfigDirtyStore((s) => s.version !== s.appliedVersion)
 
   useEffect(() => {
     loadSettings().then(() => {
@@ -47,6 +54,16 @@ function AppLayout(): React.ReactElement {
       if (lang) i18n.changeLanguage(lang)
     })
     refreshKeyExists()
+
+    const bump = useConfigDirtyStore.getState().bump
+    const subs = [
+      useCCLaunchStore.subscribe((s, prev) => { if (s.dataLoaded && prev.dataLoaded) bump() }),
+      useCXLandStore.subscribe((s, prev) => { if (s.dataLoaded && prev.dataLoaded) bump() }),
+      useOCLandStore.subscribe((s, prev) => { if (s.dataLoaded && prev.dataLoaded) bump() }),
+      useShellConfigStore.subscribe((s, prev) => { if (s.dataLoaded && prev.dataLoaded) bump() }),
+      useMcpServersStore.subscribe((s, prev) => { if (s.loaded && prev.loaded) bump() }),
+    ]
+    return () => subs.forEach((unsub) => unsub())
   }, [loadSettings, refreshKeyExists])
 
   // Derive enabled shells from settings
@@ -89,6 +106,7 @@ function AppLayout(): React.ReactElement {
       const result = await window.electronAPI.applyAllConfig(enabledShells)
       const shellNames = result.appliedShells.map((s) => SHELL_LABELS[s]).join(i18n.language === 'zh-CN' ? '、' : ', ')
       if (result.count > 0) {
+        useConfigDirtyStore.getState().markApplied()
         message.success(t('app.applySuccess', { shells: shellNames }))
       } else {
         message.warning(t('app.applyNone'))
@@ -112,6 +130,7 @@ function AppLayout(): React.ReactElement {
           onApplyClick={handleApply}
           previewMenuItems={previewMenuItems}
           copyMenuItems={copyMenuItems}
+          configDirty={configDirty}
         />
         <Content className="content-area">
           <Routes>

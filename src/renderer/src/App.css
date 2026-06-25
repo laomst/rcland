@@ -146,6 +146,11 @@ html, body, #root {
   color: #1677ff !important;
 }
 
+.top-nav-apply-dirty {
+  color: #1677ff !important;
+  border-color: #1677ff !important;
+}
+
 .no-drag {
   -webkit-app-region: no-drag;
 }
