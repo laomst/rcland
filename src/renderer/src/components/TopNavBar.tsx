@@ -50,20 +50,22 @@ export function TopNavBar({
       {/* 左区: 设置 + 操作按钮 */}
       <div className="top-nav-left no-drag">
         <SettingOutlined className="top-nav-settings-icon" onClick={onSettingsClick} />
-        <Dropdown menu={{ items: previewMenuItems }} placement="bottomLeft">
-          <Button type="text" size="small" icon={<EyeOutlined />} />
-        </Dropdown>
-        <Dropdown menu={{ items: copyMenuItems }} placement="bottomLeft">
-          <Button type="text" size="small" icon={<CopyOutlined />} />
-        </Dropdown>
-        <Tooltip title={t('app.apply')}>
-          <Button
-            type="primary"
-            size="small"
-            icon={<ThunderboltOutlined />}
-            onClick={onApplyClick}
-          />
-        </Tooltip>
+        <div className="top-nav-actions">
+          <Dropdown menu={{ items: previewMenuItems }} placement="bottomLeft">
+            <Button type="text" size="small" icon={<EyeOutlined />} />
+          </Dropdown>
+          <Dropdown menu={{ items: copyMenuItems }} placement="bottomLeft">
+            <Button type="text" size="small" icon={<CopyOutlined />} />
+          </Dropdown>
+          <Tooltip title={t('app.apply')}>
+            <Button
+              type="primary"
+              size="small"
+              icon={<ThunderboltOutlined />}
+              onClick={onApplyClick}
+            />
+          </Tooltip>
+        </div>
       </div>
 
       {/* 右区: 标签页按钮组 + MCP 工具图标 */}
