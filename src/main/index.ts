@@ -46,6 +46,8 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     title: 'RCLand',
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 12, y: 14 },
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
