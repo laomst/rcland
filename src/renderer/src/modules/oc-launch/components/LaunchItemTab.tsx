@@ -98,6 +98,8 @@ export function LaunchItemTab(): React.ReactElement {
     passthroughCommand?: string
     useSystemProxy?: boolean
     localOnly?: boolean
+    mcpMode?: 'inherit' | 'custom'
+    mcpServerIds?: string[]
   }) => {
     addLaunchItem({
       id: crypto.randomUUID(),
@@ -111,7 +113,9 @@ export function LaunchItemTab(): React.ReactElement {
       passthrough: values.passthrough,
       passthroughCommand: values.passthrough ? (values.passthroughCommand?.trim() || undefined) : undefined,
       useSystemProxy: values.passthrough ? values.useSystemProxy : undefined,
-      localOnly: values.localOnly
+      localOnly: values.localOnly,
+      mcpMode: values.mcpMode,
+      mcpServerIds: values.mcpServerIds
     })
     setAddOpen(false)
   }

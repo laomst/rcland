@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { EnvVarsMap, Provider, ProviderEndpoint, ProviderKey } from '@shared/types'
+import type { EnvVarsMap, McpServer, Provider, ProviderEndpoint, ProviderKey } from '@shared/types'
 import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
 import { useClaudeEnvDictStore } from '@renderer/stores/useClaudeEnvDictStore'
 import { ProviderCard } from './ProviderCard'
@@ -85,7 +85,7 @@ export function ProviderTab(): React.ReactElement {
     })
   )
 
-  const handleAdd = (values: { name: string; color: string; kanbanUrl?: string; endpoints: ProviderEndpoint[]; keys: ProviderKey[]; template: { envVars: EnvVarsMap } }) => {
+  const handleAdd = (values: { name: string; color: string; kanbanUrl?: string; endpoints: ProviderEndpoint[]; keys: ProviderKey[]; template: { envVars: EnvVarsMap }; mcpServers?: McpServer[]; mcpServerRefs?: string[] }) => {
     addProvider({
       id: crypto.randomUUID(),
       name: values.name.trim(),
@@ -94,7 +94,9 @@ export function ProviderTab(): React.ReactElement {
       keys: values.keys ?? [],
       color: values.color || '#1677ff',
       kanbanUrl: values.kanbanUrl,
-      template: values.template
+      template: values.template,
+      mcpServers: values.mcpServers?.length ? values.mcpServers : undefined,
+      mcpServerRefs: values.mcpServerRefs?.length ? values.mcpServerRefs : undefined
     })
     setAddOpen(false)
   }

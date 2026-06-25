@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { CXEndpoint, CXProvider, CXProviderKey } from '@shared/types'
+import type { CXEndpoint, CXProvider, CXProviderKey, McpServer } from '@shared/types'
 import { useCXLandStore } from '@renderer/stores/useCXLandStore'
 import { ProviderCard } from './ProviderCard'
 import { ProviderFormModal } from './ProviderFormModal'
@@ -73,7 +73,7 @@ export function ProviderTab(): React.ReactElement {
     })
   )
 
-  const handleAdd = (values: { name: string; color: string; kanbanUrl?: string; wireApi: 'responses' | 'chat'; endpoints: CXEndpoint[]; keys: CXProviderKey[] }) => {
+  const handleAdd = (values: { name: string; color: string; kanbanUrl?: string; wireApi: 'responses' | 'chat'; endpoints: CXEndpoint[]; keys: CXProviderKey[]; mcpServers?: McpServer[]; mcpServerRefs?: string[] }) => {
     addProvider({
       id: crypto.randomUUID(),
       name: values.name.trim(),
@@ -82,7 +82,9 @@ export function ProviderTab(): React.ReactElement {
       endpoints: values.endpoints.filter((ep) => ep.url.trim()),
       keys: values.keys ?? [],
       color: values.color || '#1677ff',
-      kanbanUrl: values.kanbanUrl
+      kanbanUrl: values.kanbanUrl,
+      mcpServers: values.mcpServers?.length ? values.mcpServers : undefined,
+      mcpServerRefs: values.mcpServerRefs?.length ? values.mcpServerRefs : undefined
     })
     setAddOpen(false)
   }

@@ -138,7 +138,9 @@ export function ProviderCard({
           kanbanUrl: provider.kanbanUrl ?? '',
           endpoints: (provider.endpoints ?? []).map((ep) => ({ ...ep })),
           keys: (provider.keys ?? []).map((k) => ({ ...k })),
-          color: accent
+          color: accent,
+          mcpServers: provider.mcpServers ? [...provider.mcpServers] : [],
+          mcpServerRefs: provider.mcpServerRefs ? [...provider.mcpServerRefs] : []
         }}
         existingLaunchItems={launchItems}
         onCancel={() => setEditOpen(false)}

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Input, Modal, Form, Space, Select, Typography, Switch } from 'antd'
+import { Input, Modal, Form, Space, Select, Divider, Typography, Switch } from 'antd'
 import { LockOutlined } from '@ant-design/icons'
 import type { OCProvider } from '@shared/types'
+import { McpLaunchItemSection } from '@renderer/modules/shared/launcher/McpLaunchItemSection'
 
 const { Text } = Typography
 
@@ -17,6 +18,8 @@ export interface OCLaunchItemFormValues {
   passthroughCommand?: string
   useSystemProxy?: boolean
   localOnly?: boolean
+  mcpMode?: 'inherit' | 'custom'
+  mcpServerIds?: string[]
 }
 
 interface LaunchItemFormModalProps {
@@ -261,6 +264,15 @@ export function LaunchItemFormModal({
             )}
           </Space>
         </Form.Item>
+        <Divider style={{ margin: '8px 0' }}>{t('mcp.providerMcpSection')}</Divider>
+        <McpLaunchItemSection
+          mcpMode={form.mcpMode}
+          mcpServerIds={form.mcpServerIds}
+          providerMcpServers={provider?.mcpServers}
+          providerMcpServerRefs={provider?.mcpServerRefs}
+          onModeChange={(mode) => setForm((f) => ({ ...f, mcpMode: mode }))}
+          onServerIdsChange={(ids) => setForm((f) => ({ ...f, mcpServerIds: ids }))}
+        />
       </Form>
     </Modal>
   )

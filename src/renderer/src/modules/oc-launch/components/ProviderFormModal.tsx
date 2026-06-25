@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Input, InputNumber, Modal, Form, ColorPicker, Button, Space, App, Switch, Typography, Radio } from 'antd'
+import { Input, InputNumber, Modal, Form, ColorPicker, Collapse, Button, Space, App, Switch, Typography, Radio } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
-import type { OCEndpoint, OCModel, OCProviderKey, OCLaunchItem, OCSdkType } from '@shared/types'
+import type { McpServer, OCEndpoint, OCModel, OCProviderKey, OCLaunchItem, OCSdkType } from '@shared/types'
 import { KeyEditModal } from '@renderer/modules/shared/launcher/KeyEditModal'
+import { McpRefSelector } from '@renderer/modules/shared/launcher/McpRefSelector'
+import { McpServerEditModal } from '@renderer/modules/mcp-servers/McpServerEditModal'
 
 const PRESET_COLORS = ['#1677ff', '#52c41a', '#fa8c16', '#722ed1', '#eb2f96', '#13c2c2', '#faad14', '#f5222d']
 const { Text } = Typography
@@ -17,6 +19,8 @@ export interface OCProviderFormValues {
   endpoints: OCEndpoint[]
   keys: OCProviderKey[]
   models: OCModel[]
+  mcpServers?: McpServer[]
+  mcpServerRefs?: string[]
 }
 
 export function ProviderFormModal({
@@ -39,6 +43,8 @@ export function ProviderFormModal({
   const [form, setForm] = useState<OCProviderFormValues>(initialValues)
   const [keyEditOpen, setKeyEditOpen] = useState(false)
   const [editingKey, setEditingKey] = useState<OCProviderKey | null>(null)
+  const [mcpEditOpen, setMcpEditOpen] = useState(false)
+  const [editingMcp, setEditingMcp] = useState<McpServer | null>(null)
 
   const handleOpen = () => setForm(initialValues)
 
@@ -140,6 +146,29 @@ export function ProviderFormModal({
         keys: f.keys.filter((k) => k.id !== keyId)
       }))
     }
+  }
+
+  // MCP handlers
+  const openMcpEdit = (server: McpServer | null) => {
+    setEditingMcp(server)
+    setMcpEditOpen(true)
+  }
+
+  const handleMcpEditConfirm = (server: McpServer) => {
+    setForm((f) => {
+      const existing = (f.mcpServers ?? []).find((s) => s.id === server.id)
+      if (existing) {
+        return { ...f, mcpServers: (f.mcpServers ?? []).map((s) => (s.id === server.id ? server : s)) }
+      } else {
+        return { ...f, mcpServers: [...(f.mcpServers ?? []), server] }
+      }
+    })
+    setMcpEditOpen(false)
+    setEditingMcp(null)
+  }
+
+  const removeMcpServer = (id: string) => {
+    setForm((f) => ({ ...f, mcpServers: (f.mcpServers ?? []).filter((s) => s.id !== id) }))
   }
 
   const hasValidEndpoint = form.endpoints.some((ep) => ep.url.trim())
@@ -361,6 +390,45 @@ export function ProviderFormModal({
               </Button>
             </div>
           </Form.Item>
+          <Collapse
+            ghost
+            size="small"
+            style={{ marginBottom: 4 }}
+            items={[{
+              key: 'mcp',
+              label: t('mcp.providerMcpSection'),
+              children: (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{t('mcp.globalPoolRefs')}</div>
+                    <McpRefSelector
+                      value={form.mcpServerRefs ?? []}
+                      onChange={(ids) => setForm((f) => ({ ...f, mcpServerRefs: ids }))}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{t('mcp.privateServers')}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {(form.mcpServers ?? []).length === 0 && (
+                        <div style={{ color: '#999', fontSize: 13 }}>{t('mcp.noPrivateServers')}</div>
+                      )}
+                      {(form.mcpServers ?? []).map((srv) => (
+                        <Space.Compact key={srv.id} style={{ width: '100%' }}>
+                          <Input value={srv.name} disabled style={{ flex: 1 }} />
+                          <Input value={srv.type} disabled style={{ width: 80 }} />
+                          <Button icon={<EditOutlined />} onClick={() => openMcpEdit(srv)} />
+                          <Button danger icon={<DeleteOutlined />} onClick={() => removeMcpServer(srv.id)} />
+                        </Space.Compact>
+                      ))}
+                      <Button type="dashed" icon={<PlusOutlined />} onClick={() => openMcpEdit(null)} block>
+                        {t('mcp.addPrivateServer')}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )
+            }]}
+          />
         </Form>
       </Modal>
       <KeyEditModal
@@ -368,6 +436,12 @@ export function ProviderFormModal({
         editingKey={editingKey}
         onConfirm={handleKeyEditConfirm}
         onCancel={() => { setKeyEditOpen(false); setEditingKey(null) }}
+      />
+      <McpServerEditModal
+        open={mcpEditOpen}
+        server={editingMcp}
+        onOk={handleMcpEditConfirm}
+        onCancel={() => { setMcpEditOpen(false); setEditingMcp(null) }}
       />
     </>
   )

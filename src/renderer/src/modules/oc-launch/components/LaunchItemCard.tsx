@@ -211,7 +211,9 @@ export function LaunchItemCard({
           passthrough: launchItem.passthrough ?? false,
           passthroughCommand: launchItem.passthroughCommand ?? '',
           useSystemProxy: launchItem.useSystemProxy ?? false,
-          localOnly: launchItem.localOnly ?? false
+          localOnly: launchItem.localOnly ?? false,
+          mcpMode: launchItem.mcpMode,
+          mcpServerIds: launchItem.mcpServerIds
         }}
         okText={t('common.save')}
         onCancel={() => setEditOpen(false)}
@@ -226,7 +228,9 @@ export function LaunchItemCard({
             passthrough: values.passthrough,
             passthroughCommand: values.passthrough ? (values.passthroughCommand?.trim() || undefined) : undefined,
             useSystemProxy: values.useSystemProxy,
-            localOnly: values.localOnly
+            localOnly: values.localOnly,
+            mcpMode: values.mcpMode,
+            mcpServerIds: values.mcpServerIds
           })
           setEditOpen(false)
         }}

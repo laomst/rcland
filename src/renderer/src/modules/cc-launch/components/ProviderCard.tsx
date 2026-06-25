@@ -135,7 +135,9 @@ export function ProviderCard({
           endpoints: (provider.endpoints ?? []).map((ep) => ({ ...ep })),
           keys: (provider.keys ?? []).map((k) => ({ ...k })),
           color: accent,
-          template: { envVars: { ...(provider.template?.envVars ?? {}) } }
+          template: { envVars: { ...(provider.template?.envVars ?? {}) } },
+          mcpServers: provider.mcpServers ? [...provider.mcpServers] : [],
+          mcpServerRefs: provider.mcpServerRefs ? [...provider.mcpServerRefs] : []
         }}
         existingLaunchItems={launchItems}
         onCancel={() => setEditOpen(false)}

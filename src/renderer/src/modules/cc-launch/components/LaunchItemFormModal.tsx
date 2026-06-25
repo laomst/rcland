@@ -6,6 +6,7 @@ import type { Provider, EnvVarSetting } from '@shared/types'
 import { stripCommonValues } from '@shared/types/cc-launch'
 import { EnvVarEditor } from './EnvVarEditor'
 import { deriveCommonValuesMap, type LaunchItemFormValues } from './launch-item-update'
+import { McpLaunchItemSection } from '@renderer/modules/shared/launcher/McpLaunchItemSection'
 
 const { Text } = Typography
 
@@ -273,6 +274,15 @@ export function LaunchItemFormModal({
             )}
           </Space>
         </Form.Item>
+        <Divider style={{ margin: '8px 0' }}>{t('mcp.providerMcpSection')}</Divider>
+        <McpLaunchItemSection
+          mcpMode={form.mcpMode}
+          mcpServerIds={form.mcpServerIds}
+          providerMcpServers={provider?.mcpServers}
+          providerMcpServerRefs={provider?.mcpServerRefs}
+          onModeChange={(mode) => setForm((f) => ({ ...f, mcpMode: mode }))}
+          onServerIdsChange={(ids) => setForm((f) => ({ ...f, mcpServerIds: ids }))}
+        />
         {!isPassthrough && (
           <>
             <Divider style={{ margin: '8px 0' }}>{t('ccLaunch.claudeEnvVars')}</Divider>

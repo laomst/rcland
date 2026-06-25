@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { OCEndpoint, OCModel, OCProvider, OCProviderKey, OCSdkType } from '@shared/types'
+import type { McpServer, OCEndpoint, OCModel, OCProvider, OCProviderKey, OCSdkType } from '@shared/types'
 import { useOCLandStore } from '@renderer/stores/useOCLandStore'
 import { ProviderCard } from './ProviderCard'
 import { ProviderFormModal } from './ProviderFormModal'
@@ -73,7 +73,7 @@ export function ProviderTab(): React.ReactElement {
     })
   )
 
-  const handleAdd = (values: { name: string; color: string; kanbanUrl?: string; sdkType: OCSdkType; endpoints: OCEndpoint[]; keys: OCProviderKey[]; models: OCModel[] }) => {
+  const handleAdd = (values: { name: string; color: string; kanbanUrl?: string; sdkType: OCSdkType; endpoints: OCEndpoint[]; keys: OCProviderKey[]; models: OCModel[]; mcpServers?: McpServer[]; mcpServerRefs?: string[] }) => {
     addProvider({
       id: crypto.randomUUID(),
       name: values.name.trim(),
@@ -83,7 +83,9 @@ export function ProviderTab(): React.ReactElement {
       keys: values.keys ?? [],
       models: values.models ?? [],
       color: values.color || '#1677ff',
-      kanbanUrl: values.kanbanUrl
+      kanbanUrl: values.kanbanUrl,
+      mcpServers: values.mcpServers?.length ? values.mcpServers : undefined,
+      mcpServerRefs: values.mcpServerRefs?.length ? values.mcpServerRefs : undefined
     })
     setAddOpen(false)
   }

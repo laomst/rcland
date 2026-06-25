@@ -192,7 +192,9 @@ export function LaunchItemCard({
           passthrough: config.passthrough ?? false,
           passthroughCommand: config.passthroughCommand ?? '',
           useSystemProxy: config.useSystemProxy ?? false,
-          localOnly: config.localOnly ?? false
+          localOnly: config.localOnly ?? false,
+          mcpMode: config.mcpMode,
+          mcpServerIds: config.mcpServerIds
         }}
         okText={t('common.save')}
         onCancel={() => setEditOpen(false)}

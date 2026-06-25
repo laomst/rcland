@@ -100,6 +100,8 @@ export function LaunchItemTab(): React.ReactElement {
     passthroughCommand?: string
     useSystemProxy?: boolean
     localOnly?: boolean
+    mcpMode?: 'inherit' | 'custom'
+    mcpServerIds?: string[]
   }) => {
     if (values.passthrough) {
       addLaunchItem({
@@ -114,7 +116,9 @@ export function LaunchItemTab(): React.ReactElement {
         passthrough: true,
         passthroughCommand: values.passthroughCommand?.trim() || undefined,
         useSystemProxy: values.useSystemProxy,
-        localOnly: values.localOnly
+        localOnly: values.localOnly,
+        mcpMode: values.mcpMode,
+        mcpServerIds: values.mcpServerIds
       })
     } else {
       const launchItem = createEmptyLaunchItem(values.providerId, values.endpointId, values.keyId)
@@ -123,7 +127,9 @@ export function LaunchItemTab(): React.ReactElement {
         name: values.name.trim(),
         funcName: values.funcName.trim(),
         envVars: values.envVars,
-        localOnly: values.localOnly
+        localOnly: values.localOnly,
+        mcpMode: values.mcpMode,
+        mcpServerIds: values.mcpServerIds
       })
     }
     setAddOpen(false)

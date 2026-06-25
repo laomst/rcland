@@ -2,7 +2,7 @@ import type { LaunchItem, Provider } from '@shared/types'
 
 export type LaunchItemFormValues = Pick<
   LaunchItem,
-  'providerId' | 'endpointId' | 'keyId' | 'name' | 'funcName' | 'envVars' | 'localOnly' | 'passthrough' | 'passthroughCommand' | 'useSystemProxy'
+  'providerId' | 'endpointId' | 'keyId' | 'name' | 'funcName' | 'envVars' | 'localOnly' | 'passthrough' | 'passthroughCommand' | 'useSystemProxy' | 'mcpMode' | 'mcpServerIds'
 >
 
 export function createLaunchItemUpdatePatch(values: LaunchItemFormValues): Partial<LaunchItem> {
@@ -19,6 +19,8 @@ export function createLaunchItemUpdatePatch(values: LaunchItemFormValues): Parti
   if (values.passthrough !== undefined) patch.passthrough = values.passthrough
   if (values.passthroughCommand !== undefined) patch.passthroughCommand = values.passthroughCommand
   if (values.useSystemProxy !== undefined) patch.useSystemProxy = values.useSystemProxy
+  if (values.mcpMode !== undefined) patch.mcpMode = values.mcpMode
+  if (values.mcpServerIds !== undefined) patch.mcpServerIds = values.mcpServerIds
 
   return patch
 }
