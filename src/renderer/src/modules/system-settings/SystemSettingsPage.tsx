@@ -14,10 +14,10 @@ export function SystemSettingsPage(): React.ReactElement {
   const [tab, setTab] = useState<SystemTab>('env')
 
   const options = [
-    { label: t('nav.env'), value: 'env' as const },
     { label: t('nav.path'), value: 'path' as const },
     { label: t('nav.functions'), value: 'functions' as const },
     { label: t('nav.aliases'), value: 'aliases' as const },
+    { label: t('nav.env'), value: 'env' as const },
     { label: t('nav.systemProxy'), value: 'systemProxy' as const },
   ]
 
@@ -31,10 +31,10 @@ export function SystemSettingsPage(): React.ReactElement {
           block
         />
       </div>
-      {tab === 'env' && <EnvVarPage />}
       {tab === 'path' && <PathPage />}
       {tab === 'functions' && <FunctionPage />}
       {tab === 'aliases' && <AliasPage />}
+      {tab === 'env' && <EnvVarPage />}
       {tab === 'systemProxy' && <SystemProxyPage />}
     </div>
   )
