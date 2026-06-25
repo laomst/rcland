@@ -1,8 +1,10 @@
 import { homedir } from 'os'
 import { join, basename } from 'path'
 import { existsSync, mkdirSync, writeFileSync, readdirSync, unlinkSync } from 'fs'
-import type { OCLandData, OCProvider, OCLaunchItem } from '@shared/types'
+import type { OCLandData, OCProvider, OCLaunchItem, McpServersData } from '@shared/types'
 import { sdkTypeToNpm, getOCEndpointUrl } from '@shared/types'
+import type { McpServer } from '@shared/types'
+import { resolveMcpServers } from '@shared/mcp-resolve'
 
 export const OC_CONFIG_DIR = join(homedir(), '.rcland', 'opencode')
 
@@ -25,7 +27,7 @@ interface OCModelJson {
 }
 
 /** Build the opencode.json content (string) for one launch item's provider. */
-export function buildOCConfigContent(provider: OCProvider, item: OCLaunchItem): string {
+export function buildOCConfigContent(provider: OCProvider, item: OCLaunchItem, mcpServers: McpServer[] = []): string {
   const models: Record<string, OCModelJson> = {}
   for (const m of provider.models) {
     const entry: OCModelJson = { name: m.name }
@@ -37,7 +39,7 @@ export function buildOCConfigContent(provider: OCProvider, item: OCLaunchItem): 
     models[m.id] = entry
   }
 
-  const config = {
+  const config: Record<string, unknown> = {
     $schema: 'https://opencode.ai/config.json',
     provider: {
       [provider.id]: {
@@ -51,6 +53,30 @@ export function buildOCConfigContent(provider: OCProvider, item: OCLaunchItem): 
       }
     }
   }
+
+  if (mcpServers.length > 0) {
+    const mcp: Record<string, Record<string, unknown>> = {}
+    for (const s of mcpServers) {
+      if (s.type === 'stdio') {
+        const entry: Record<string, unknown> = {
+          type: 'local',
+          command: [s.command, ...(s.args ?? [])]
+        }
+        if (s.env && Object.keys(s.env).length > 0) entry.environment = s.env
+        if (s.cwd) entry.cwd = s.cwd
+        if (s.toolTimeout != null) entry.timeout = s.toolTimeout * 1000
+        mcp[s.key] = entry
+      } else {
+        const entry: Record<string, unknown> = { type: 'remote', url: s.url }
+        if (s.headers && Object.keys(s.headers).length > 0) entry.headers = s.headers
+        if (s.oauth) entry.oauth = s.oauth
+        if (s.toolTimeout != null) entry.timeout = s.toolTimeout * 1000
+        mcp[s.key] = entry
+      }
+    }
+    config.mcp = mcp
+  }
+
   return JSON.stringify(config, null, 2)
 }
 
@@ -77,7 +103,7 @@ export function writeOCConfigFiles(files: OCConfigFile[], dir: string = OC_CONFI
 }
 
 /** Emit one config file per enabled, non-passthrough launch item with a valid provider. */
-export function buildOCConfigFiles(data: OCLandData): OCConfigFile[] {
+export function buildOCConfigFiles(data: OCLandData, mcpServersData?: McpServersData): OCConfigFile[] {
   const providerMap = new Map(data.providers.map((p) => [p.id, p]))
   const files: OCConfigFile[] = []
   for (const item of data.launchItems) {
@@ -87,9 +113,10 @@ export function buildOCConfigFiles(data: OCLandData): OCConfigFile[] {
     // Skip items whose endpoint resolves to an empty baseURL; the shell
     // generator surfaces these as error stubs instead.
     if (!getOCEndpointUrl(provider, item.endpointId)) continue
+    const mcpServers = mcpServersData ? resolveMcpServers(item, provider, mcpServersData.servers) : []
     files.push({
       filePath: join(OC_CONFIG_DIR, `${assertSafeOCConfigId(item.id)}.json`),
-      content: buildOCConfigContent(provider, item)
+      content: buildOCConfigContent(provider, item, mcpServers)
     })
   }
   return files

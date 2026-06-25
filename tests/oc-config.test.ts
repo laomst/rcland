@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join as pjoin } from 'node:path'
 import { buildOCConfigContent, ocKeyEnvVarName, buildOCConfigFiles, writeOCConfigFiles } from '../src/main/services/generators/oc-config'
 import type { OCLandData, OCProvider, OCLaunchItem } from '../src/shared/types/oc-launch'
+import type { McpServer } from '../src/shared/types/mcp-server'
 
 function provider(over: Partial<OCProvider> = {}): OCProvider {
   return {
@@ -116,4 +117,53 @@ test('writeOCConfigFiles creates dir if missing and empty files clears all json'
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+function mcpStdio(over: Partial<McpServer> = {}): McpServer {
+  return {
+    id: 'm1', name: 'Playwright', key: 'playwright', enabled: true,
+    type: 'stdio', command: 'npx', args: ['-y', '@playwright/mcp'],
+    ...over
+  }
+}
+
+function mcpRemote(over: Partial<McpServer> = {}): McpServer {
+  return {
+    id: 'm2', name: 'Remote', key: 'remote-tool', enabled: true,
+    type: 'remote', url: 'https://mcp.example.com',
+    headers: { Authorization: 'Bearer xxx' },
+    ...over
+  }
+}
+
+test('buildOCConfigContent embeds mcp stdio server', () => {
+  const json = JSON.parse(buildOCConfigContent(provider(), item(), [mcpStdio()]))
+  assert.deepEqual(json.mcp.playwright, {
+    type: 'local',
+    command: ['npx', '-y', '@playwright/mcp']
+  })
+})
+
+test('buildOCConfigContent embeds mcp remote server', () => {
+  const json = JSON.parse(buildOCConfigContent(provider(), item(), [mcpRemote()]))
+  assert.equal(json.mcp['remote-tool'].type, 'remote')
+  assert.equal(json.mcp['remote-tool'].url, 'https://mcp.example.com')
+  assert.deepEqual(json.mcp['remote-tool'].headers, { Authorization: 'Bearer xxx' })
+})
+
+test('buildOCConfigContent omits mcp when empty', () => {
+  const json = JSON.parse(buildOCConfigContent(provider(), item(), []))
+  assert.equal(json.mcp, undefined)
+})
+
+test('buildOCConfigContent mcp stdio with env maps to environment', () => {
+  const s = mcpStdio({ env: { DISPLAY: ':1' } })
+  const json = JSON.parse(buildOCConfigContent(provider(), item(), [s]))
+  assert.deepEqual(json.mcp.playwright.environment, { DISPLAY: ':1' })
+})
+
+test('buildOCConfigContent mcp with toolTimeout converts to ms', () => {
+  const s = mcpStdio({ toolTimeout: 30 })
+  const json = JSON.parse(buildOCConfigContent(provider(), item(), [s]))
+  assert.equal(json.mcp.playwright.timeout, 30000)
 })

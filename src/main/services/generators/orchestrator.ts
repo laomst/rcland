@@ -121,7 +121,7 @@ function getSectionData(
       return result
     }
     case 'ocland': {
-      const result: OCLandSectionData = { ocConfig, decryptedTokens }
+      const result: OCLandSectionData = { ocConfig, decryptedTokens, mcpServersData }
       return result
     }
   }

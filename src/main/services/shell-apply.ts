@@ -76,7 +76,7 @@ export function applyConfigWithKey(input: ApplyConfigInput): { appliedShells: Sh
   const mcpServersData = input.mcpServersData ?? createEmptyMcpServersData()
   const hasEnabledShell = input.shellTypes.some((shellType) => input.enabledShells[shellType]?.enabled)
   if (hasEnabledShell) {
-    writeOCConfigFiles(buildOCConfigFiles(input.ocData))
+    writeOCConfigFiles(buildOCConfigFiles(input.ocData, mcpServersData))
 
     // Write CC MCP config files for enabled, non-passthrough launch items
     const enabledProviderIds = new Set(input.ccData.providers.filter((p) => p.enabled).map((p) => p.id))
