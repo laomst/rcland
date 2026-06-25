@@ -28,6 +28,7 @@ const en = {
   },
 
   nav: {
+    system: 'System',
     env: 'Env Vars',
     path: 'PATH',
     functions: 'Functions',

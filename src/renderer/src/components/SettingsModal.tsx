@@ -214,7 +214,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): React.Reac
             </Form.Item>
             <Form.Item label={t('settings.defaultPage')}>
               <Select
-                value={editSettings.defaultPage || '/env'}
+                value={editSettings.defaultPage || '/system'}
                 onChange={(value: AppPage) => setEditSettings({ ...editSettings, defaultPage: value })}
                 options={Object.entries(getAppPageLabels(t)).map(([key, label]) => ({ value: key, label }))}
                 style={{ width: 200 }}

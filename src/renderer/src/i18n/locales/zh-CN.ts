@@ -28,6 +28,7 @@ const zhCN = {
   },
 
   nav: {
+    system: '系统设置',
     env: '环境变量',
     path: 'PATH',
     functions: '函数',
