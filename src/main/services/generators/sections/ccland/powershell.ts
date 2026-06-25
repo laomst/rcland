@@ -1,6 +1,7 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
-import type { LaunchItem, Provider, ProviderEndpoint } from '@shared/types'
+import type { LaunchItem, Provider, ProviderEndpoint, McpServer } from '@shared/types'
 import { getEndpointUrl } from '@shared/types'
+import { resolveMcpServers } from '@shared/mcp-resolve'
 import type { ShellType } from '@shared/shell'
 import type { CCLandSectionData } from './zsh'
 import { assertSafeEnvName, assertSafeShellName, quotePowerShellLiteral } from '../../shell-syntax'
@@ -11,7 +12,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
   readonly shellType: ShellType = 'powershell'
 
   generate(data: CCLandSectionData, _ctx: GenerateContext): string {
-    const { ccConfig, decryptedTokens } = data
+    const { ccConfig, decryptedTokens, mcpServersData } = data
     const lines: string[] = []
 
     // CC launch functions
@@ -30,7 +31,8 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
       } else {
         const provider = providerMap.get(config.providerId)
         if (!provider) continue
-        this.writeFunction(lines, provider, config, decryptedTokens)
+        const mcpServers = resolveMcpServers(config, provider, mcpServersData.servers)
+        this.writeFunction(lines, provider, config, decryptedTokens, mcpServers)
       }
     }
 
@@ -113,7 +115,8 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
     lines: string[],
     provider: Provider,
     config: LaunchItem,
-    tokens: Map<string, string>
+    tokens: Map<string, string>,
+    mcpServers: McpServer[]
   ): void {
     lines.push('')
 
@@ -168,7 +171,11 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
       }
     }
 
-    lines.push('        claude @args')
+    if (mcpServers.length > 0) {
+      lines.push(`        claude --mcp-config "$HOME\\.rcland\\mcp\\cc-${config.id}.json" @args`)
+    } else {
+      lines.push('        claude @args')
+    }
     lines.push('    } finally {')
     lines.push('        foreach ($key in $scopedEnvKeys) {')
     lines.push('            if ($null -eq $previous[$key]) {')

@@ -65,6 +65,7 @@ function sampleData(
     decryptedTokens: new Map([
       ['token:cfg-1', 'tok"$(touch /tmp/rcland-token)"']
     ]),
+    mcpServersData: { version: 1 as const, servers: [] },
   }
 }
 

@@ -114,6 +114,7 @@ export function registerShellHandlers(): void {
     const proxyFunctionNames = settings.proxyFunctionNames ?? DEFAULT_PROXY_FUNCTION_NAMES
     validateProxyFunctionNames(proxyFunctionNames)
     try {
+      const mcpServersData = configService.loadMcpServersData()
       const result = applyConfigWithKey({
         shellTypes,
         ccData: loadCCDataOrDefault(),
@@ -125,7 +126,8 @@ export function registerShellHandlers(): void {
         enabledShells: settings.shellProfiles,
         injectSourceBlock: injectGeneratedSource,
         createBackup: backupService.createBackup,
-        pruneBackups: backupService.pruneBackups
+        pruneBackups: backupService.pruneBackups,
+        mcpServersData
       })
       return { success: true, ...result }
     } catch (err) {
@@ -143,6 +145,7 @@ export function registerShellHandlers(): void {
     if (!key) throw new Error('Key file not found')
     const proxyFunctionNames = settings.proxyFunctionNames ?? DEFAULT_PROXY_FUNCTION_NAMES
     validateProxyFunctionNames(proxyFunctionNames)
+    const mcpServersData = configService.loadMcpServersData()
     return generateConfigWithKey({
       shellType,
       ccData: loadCCDataOrDefault(),
@@ -150,7 +153,8 @@ export function registerShellHandlers(): void {
       ocData: loadOCData(),
       shellConfig: loadShellConfigData(),
       keyPassphrase: key,
-      proxyFunctionNames
+      proxyFunctionNames,
+      mcpServersData
     })
   })
 
@@ -160,6 +164,7 @@ export function registerShellHandlers(): void {
     if (!key) throw new Error('Key file not found')
     const proxyFunctionNames = settings.proxyFunctionNames ?? DEFAULT_PROXY_FUNCTION_NAMES
     validateProxyFunctionNames(proxyFunctionNames)
+    const mcpServersData = configService.loadMcpServersData()
     return applyConfigWithKey({
       shellTypes,
       ccData: loadCCDataOrDefault(),
@@ -171,7 +176,8 @@ export function registerShellHandlers(): void {
       enabledShells: settings.shellProfiles,
       injectSourceBlock: injectGeneratedSource,
       createBackup: backupService.createBackup,
-      pruneBackups: backupService.pruneBackups
+      pruneBackups: backupService.pruneBackups,
+      mcpServersData
     })
   })
 }

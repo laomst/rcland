@@ -1,6 +1,7 @@
 import type { SectionGenerator, GenerateContext } from '../../section-types'
-import type { CCLaunchData, LaunchItem, Provider, ProviderEndpoint } from '@shared/types'
+import type { CCLaunchData, LaunchItem, Provider, ProviderEndpoint, McpServersData, McpServer } from '@shared/types'
 import { getEndpointUrl } from '@shared/types'
+import { resolveMcpServers } from '@shared/mcp-resolve'
 import type { ShellType } from '@shared/shell'
 import { assertSafeEnvName, assertSafeShellName, quoteBashLikeLiteral } from '../../shell-syntax'
 
@@ -8,6 +9,7 @@ import { assertSafeEnvName, assertSafeShellName, quoteBashLikeLiteral } from '..
 export interface CCLandSectionData {
   ccConfig: CCLaunchData
   decryptedTokens: Map<string, string>
+  mcpServersData: McpServersData
 }
 
 export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
@@ -15,7 +17,7 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
   readonly shellType: ShellType = 'zsh'
 
   generate(data: CCLandSectionData, ctx: GenerateContext): string {
-    const { ccConfig, decryptedTokens } = data
+    const { ccConfig, decryptedTokens, mcpServersData } = data
     const lines: string[] = []
 
     // CC launch functions
@@ -34,7 +36,8 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
       } else {
         const provider = providerMap.get(config.providerId)
         if (!provider) continue
-        this.writeFunction(lines, provider, config, decryptedTokens, ctx.proxyFunctionNames)
+        const mcpServers = resolveMcpServers(config, provider, mcpServersData.servers)
+        this.writeFunction(lines, provider, config, decryptedTokens, ctx.proxyFunctionNames, mcpServers)
       }
     }
 
@@ -118,7 +121,8 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
     provider: Provider,
     config: LaunchItem,
     tokens: Map<string, string>,
-    proxyFns: { proxyOn: string; proxyOff: string }
+    proxyFns: { proxyOn: string; proxyOff: string },
+    mcpServers: McpServer[]
   ): void {
     lines.push('')
 
@@ -154,7 +158,11 @@ export class CCLandZshGenerator implements SectionGenerator<CCLandSectionData> {
       }
     }
 
-    lines.push('    claude "$@"')
+    if (mcpServers.length > 0) {
+      lines.push(`    claude --mcp-config "$HOME/.rcland/mcp/cc-${config.id}.json" "$@"`)
+    } else {
+      lines.push('    claude "$@"')
+    }
     lines.push('  )')
     lines.push('}')
   }

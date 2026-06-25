@@ -2,12 +2,15 @@ import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs'
 import { dirname } from 'path'
 import type { ShellType } from '@shared/shell'
 import { getShellOutputPath } from '@shared/shell'
-import type { CCLaunchData, CXLandData, OCLandData } from '@shared/types'
+import type { CCLaunchData, CXLandData, OCLandData, McpServersData } from '@shared/types'
+import { createEmptyMcpServersData } from '@shared/types'
 import type { ShellConfigData } from '@shared/shell-types'
+import { resolveMcpServers } from '@shared/mcp-resolve'
 import { buildDecryptedMap, buildCXDecryptedMap, buildOCDecryptedMap, decryptShellVariables } from './crypto-utils'
 import { createGenerateContext } from './generators/context'
 import { generateFullConfig } from './generators/orchestrator'
 import { buildOCConfigFiles, writeOCConfigFiles } from './generators/oc-config'
+import { buildCCMcpConfigFiles, writeCCMcpConfigFiles } from './generators/cc-mcp-config'
 import { resolveHomePath } from './path-utils'
 
 export interface GenerateConfigInput {
@@ -19,6 +22,7 @@ export interface GenerateConfigInput {
   keyPassphrase: string
   decryptedTokens?: Map<string, string>
   proxyFunctionNames?: { proxyOn: string; proxyOff: string; proxyStatus: string }
+  mcpServersData?: McpServersData
 }
 
 export interface ApplyConfigInput {
@@ -33,6 +37,7 @@ export interface ApplyConfigInput {
   injectSourceBlock: (shellType: ShellType, outputPath: string) => void
   createBackup?: (shellType: ShellType, outputPath: string) => void
   pruneBackups?: (shellType: ShellType, keepCount: number) => void
+  mcpServersData?: McpServersData
 }
 
 function ensureParentDir(filePath: string): void {
@@ -51,13 +56,14 @@ export function getDecryptedTokensOrThrow(ccData: CCLaunchData, cxData: CXLandDa
 export function generateConfigWithKey(input: GenerateConfigInput): string {
   const decryptedTokens = input.decryptedTokens ?? getDecryptedTokensOrThrow(input.ccData, input.cxData, input.ocData, input.keyPassphrase)
   const decryptedShellConfig = decryptShellVariables(input.shellConfig, input.keyPassphrase)
+  const mcpServersData = input.mcpServersData ?? createEmptyMcpServersData()
   const ctx = createGenerateContext(
     input.shellType,
     input.keyPassphrase,
     input.proxyFunctionNames,
     decryptedShellConfig.pathVariables
   )
-  return generateFullConfig(input.shellType, decryptedShellConfig, input.ccData, input.cxData, input.ocData, decryptedTokens, ctx)
+  return generateFullConfig(input.shellType, decryptedShellConfig, input.ccData, input.cxData, input.ocData, decryptedTokens, mcpServersData, ctx)
 }
 
 export function applyConfigWithKey(input: ApplyConfigInput): { appliedShells: ShellType[]; count: number } {
@@ -67,8 +73,25 @@ export function applyConfigWithKey(input: ApplyConfigInput): { appliedShells: Sh
   // Only write when at least one shell is actually enabled, matching the per-shell scripts which
   // skip disabled shells (no enabled shell → nothing is applied, so nothing should be written).
   const decryptedTokens = getDecryptedTokensOrThrow(input.ccData, input.cxData, input.ocData, input.keyPassphrase)
+  const mcpServersData = input.mcpServersData ?? createEmptyMcpServersData()
   const hasEnabledShell = input.shellTypes.some((shellType) => input.enabledShells[shellType]?.enabled)
-  if (hasEnabledShell) writeOCConfigFiles(buildOCConfigFiles(input.ocData))
+  if (hasEnabledShell) {
+    writeOCConfigFiles(buildOCConfigFiles(input.ocData))
+
+    // Write CC MCP config files for enabled, non-passthrough launch items
+    const enabledProviderIds = new Set(input.ccData.providers.filter((p) => p.enabled).map((p) => p.id))
+    const providerMap = new Map(input.ccData.providers.map((p) => [p.id, p]))
+    const ccMcpInputs = input.ccData.launchItems
+      .filter((item) => item.enabled && !item.passthrough && enabledProviderIds.has(item.providerId))
+      .map((item) => {
+        const provider = providerMap.get(item.providerId)!
+        return {
+          itemId: item.id,
+          servers: resolveMcpServers(item, provider, mcpServersData.servers)
+        }
+      })
+    writeCCMcpConfigFiles(buildCCMcpConfigFiles(ccMcpInputs))
+  }
 
   for (const shellType of input.shellTypes) {
     const profile = input.enabledShells[shellType]

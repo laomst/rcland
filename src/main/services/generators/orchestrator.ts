@@ -2,7 +2,7 @@ import type { ShellType } from '@shared/shell'
 import type { SectionGenerator } from './section-types'
 import type { GenerateContext } from './section-types'
 import type { ShellConfigData } from '@shared/shell-types'
-import type { CCLaunchData, CXLandData, OCLandData } from '@shared/types'
+import type { CCLaunchData, CXLandData, OCLandData, McpServersData } from '@shared/types'
 
 import type { CCLandSectionData } from './sections/ccland/zsh'
 import type { CXLandSectionData } from './sections/cxland/zsh'
@@ -102,7 +102,8 @@ function getSectionData(
   cclandData: CCLandSectionData,
   cxlandData: CXLandData,
   ocConfig: OCLandData,
-  decryptedTokens: Map<string, string>
+  decryptedTokens: Map<string, string>,
+  mcpServersData: McpServersData
 ): unknown {
   switch (name) {
     case 'variables': return shellConfig.variables
@@ -136,11 +137,13 @@ export function generateFullConfig(
   cxConfig: CXLandData,
   ocConfig: OCLandData,
   decryptedTokens: Map<string, string>,
+  mcpServersData: McpServersData,
   ctx: GenerateContext
 ): string {
   const cclandData: CCLandSectionData = {
     ccConfig,
     decryptedTokens,
+    mcpServersData,
   }
   const parts: string[] = [generateHeader(shellType)]
 
@@ -148,7 +151,7 @@ export function generateFullConfig(
     const gen = getSection(sectionName, shellType)
     if (!gen) continue
 
-    const data = getSectionData(sectionName, shellConfig, cclandData, cxConfig, ocConfig, decryptedTokens)
+    const data = getSectionData(sectionName, shellConfig, cclandData, cxConfig, ocConfig, decryptedTokens, mcpServersData)
     const output = gen.generate(data, ctx)
     if (output) {
       parts.push(output)
