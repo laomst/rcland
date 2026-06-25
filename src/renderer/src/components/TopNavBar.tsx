@@ -50,9 +50,11 @@ export function TopNavBar({
     <div className="top-nav-bar">
       {/* 左区: 应用标识 + 设置 + 操作按钮 */}
       <div className="top-nav-left no-drag">
-        <img src={appIcon} alt="RCLand" className="top-nav-app-icon" />
-        <span className="top-nav-app-name">RCLand</span>
-        <SettingOutlined className="top-nav-settings-icon" onClick={onSettingsClick} />
+        <div className="top-nav-brand" onClick={onSettingsClick}>
+          <img src={appIcon} alt="RCLand" className="top-nav-app-icon" />
+          <span className="top-nav-app-name">RCLand</span>
+          <SettingOutlined className="top-nav-settings-icon" />
+        </div>
         <Space.Compact size="small">
           <Dropdown menu={{ items: previewMenuItems }} placement="bottomLeft">
             <Button type="default" icon={<EyeOutlined />} />
