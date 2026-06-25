@@ -54,7 +54,7 @@ test('buildOCConfigContent sdkType openai-compatible maps npm', () => {
 
 test('buildOCConfigFiles emits one file per enabled non-passthrough item', () => {
   const data: OCLandData = {
-    version: 1, providers: [provider()],
+    version: 2, providers: [provider()],
     launchItems: [item(), item({ id: 'item-2', funcName: 'oc-x', enabled: false }), item({ id: 'item-3', funcName: 'oc-pt', passthrough: true })],
     selector: { funcName: 'oc', promptTitle: 't' }
   }
@@ -65,7 +65,7 @@ test('buildOCConfigFiles emits one file per enabled non-passthrough item', () =>
 
 test('buildOCConfigFiles skips items with disabled or missing provider', () => {
   const data: OCLandData = {
-    version: 1,
+    version: 2,
     providers: [provider({ enabled: false })],
     launchItems: [item(), item({ id: 'orphan', providerId: 'nope', funcName: 'oc-orphan' })],
     selector: { funcName: 'oc', promptTitle: 't' }
@@ -75,7 +75,7 @@ test('buildOCConfigFiles skips items with disabled or missing provider', () => {
 
 test('buildOCConfigFiles skips items whose endpoint resolves to empty baseURL', () => {
   const data: OCLandData = {
-    version: 1,
+    version: 2,
     providers: [provider({ endpoints: [] })],
     launchItems: [item()],
     selector: { funcName: 'oc', promptTitle: 't' }

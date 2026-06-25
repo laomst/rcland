@@ -12,7 +12,7 @@ function encrypt(plain: string): string {
 
 test('buildCXDecryptedMap decrypts tokens for each enabled CX config', () => {
   const data: CXLandData = {
-    version: 3,
+    version: 4,
     providers: [{
       id: 'p1',
       name: 'p1',
@@ -39,7 +39,7 @@ test('buildCXDecryptedMap decrypts tokens for each enabled CX config', () => {
 
 test('buildCXDecryptedMap sets empty token and decryptFailed=true on bad key', () => {
   const data: CXLandData = {
-    version: 3,
+    version: 4,
     providers: [{
       id: 'p1',
       name: 'p1',
@@ -66,7 +66,7 @@ test('buildCXDecryptedMap sets empty token and decryptFailed=true on bad key', (
 
 test('buildCXDecryptedMap returns empty token when key reference is missing', () => {
   const data: CXLandData = {
-    version: 3,
+    version: 4,
     providers: [{
       id: 'p1',
       name: 'p1',

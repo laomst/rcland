@@ -10,17 +10,17 @@ import {
   type OCProvider
 } from '../src/shared/types/oc-launch'
 
-test('createEmptyOCLandData returns version 1 empty data', () => {
+test('createEmptyOCLandData returns version 2 empty data', () => {
   const d = createEmptyOCLandData()
-  assert.equal(d.version, 1)
+  assert.equal(d.version, 2)
   assert.deepEqual(d.providers, [])
   assert.deepEqual(d.launchItems, [])
   assert.equal(d.selector.funcName, 'oc')
 })
 
 test('normalizeOCLandData rejects wrong version', () => {
-  assert.equal(normalizeOCLandData({ version: 99 }).version, 1)
-  assert.equal(normalizeOCLandData(null).version, 1)
+  assert.equal(normalizeOCLandData({ version: 99 }).version, 2)
+  assert.equal(normalizeOCLandData(null).version, 2)
 })
 
 test('normalizeOCLandData passes valid data through', () => {
@@ -35,7 +35,7 @@ test('normalizeOCLandData passes valid data through', () => {
 })
 
 test('normalizeOCLandData fills missing selector with default', () => {
-  const partial = { version: 1, providers: [], launchItems: [] }
+  const partial = { version: 2, providers: [], launchItems: [] }
   const normalized = normalizeOCLandData(partial)
   assert.equal(normalized.selector.funcName, 'oc')
   assert.equal(normalized.selector.kanban.enabled, false)

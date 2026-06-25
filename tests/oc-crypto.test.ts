@@ -12,7 +12,7 @@ function encrypt(plain: string): string {
 
 test('buildOCDecryptedMap decrypts tokens for each OC launch item', () => {
   const data: OCLandData = {
-    version: 1,
+    version: 2,
     providers: [{
       id: 'p1',
       name: 'p1',
@@ -40,7 +40,7 @@ test('buildOCDecryptedMap decrypts tokens for each OC launch item', () => {
 
 test('buildOCDecryptedMap returns empty token when keyId reference is missing', () => {
   const data: OCLandData = {
-    version: 1,
+    version: 2,
     providers: [{
       id: 'p1',
       name: 'p1',
@@ -68,7 +68,7 @@ test('buildOCDecryptedMap returns empty token when keyId reference is missing', 
 
 test('buildOCDecryptedMap returns empty token for unencrypted (plain) token', () => {
   const data: OCLandData = {
-    version: 1,
+    version: 2,
     providers: [{
       id: 'p1',
       name: 'p1',

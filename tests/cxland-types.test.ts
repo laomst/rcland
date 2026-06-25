@@ -12,25 +12,25 @@ import {
   type CXLaunchItem
 } from '../src/shared/types'
 
-test('createEmptyCXLandData returns v3 with empty arrays and default selector', () => {
+test('createEmptyCXLandData returns v4 with empty arrays and default selector', () => {
   const data = createEmptyCXLandData()
-  assert.equal(data.version, 3)
+  assert.equal(data.version, 4)
   assert.deepEqual(data.providers, [])
   assert.deepEqual(data.launchItems, [])
   assert.deepEqual(data.selector, { funcName: 'cx', promptTitle: '选择 Codex 供应商', kanban: { funcName: 'show-cx-usage', enabled: false } })
 })
 
-test('normalizeCXLandData discards v2 data and returns empty v3', () => {
+test('normalizeCXLandData discards v2 data and returns empty v4', () => {
   const v2 = {
     version: 2,
     providers: [{ id: 'official', name: '官方默认', builtIn: true, useSystemProxy: false }]
   }
   const result = normalizeCXLandData(v2)
-  assert.equal(result.version, 3)
+  assert.equal(result.version, 4)
   assert.deepEqual(result.providers, [])
 })
 
-test('normalizeCXLandData accepts well-formed v3 data unchanged', () => {
+test('normalizeCXLandData accepts well-formed v4 data unchanged', () => {
   const provider: CXProvider = {
     id: 'p1',
     name: 'Test',
@@ -48,14 +48,14 @@ test('normalizeCXLandData accepts well-formed v3 data unchanged', () => {
     endpointId: 'e1',
     keyId: 'k1'
   }
-  const v3: CXLandData = {
-    version: 3,
+  const v4: CXLandData = {
+    version: 4,
     providers: [provider],
     launchItems: [config],
     selector: { funcName: 'cx', promptTitle: '选择' }
   }
-  const result = normalizeCXLandData(v3)
-  assert.deepEqual(result, v3)
+  const result = normalizeCXLandData(v4)
+  assert.deepEqual(result, v4)
 })
 
 test('normalizeCXLandData returns empty when input is not an object', () => {
@@ -63,7 +63,7 @@ test('normalizeCXLandData returns empty when input is not an object', () => {
   assert.deepEqual(normalizeCXLandData('garbage'), createEmptyCXLandData())
 })
 
-test('normalizeCXLandData returns empty when version is not 3', () => {
+test('normalizeCXLandData returns empty when version is not 4', () => {
   assert.deepEqual(normalizeCXLandData({ version: 99, providers: [] }), createEmptyCXLandData())
 })
 

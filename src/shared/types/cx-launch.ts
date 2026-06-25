@@ -1,3 +1,5 @@
+import type { McpServer } from './mcp-server'
+
 export interface CXEndpoint {
   id: string
   label: string
@@ -28,6 +30,8 @@ export interface CXProvider {
   localOnly?: boolean
   /** Usage dashboard URL for this provider */
   kanbanUrl?: string
+  mcpServers?: McpServer[]
+  mcpServerRefs?: string[]
 }
 
 export interface CXLaunchItem {
@@ -53,6 +57,8 @@ export interface CXLaunchItem {
   useSystemProxy?: boolean
   /** Only stored locally, not synced */
   localOnly?: boolean
+  mcpMode?: 'inherit' | 'custom'
+  mcpServerIds?: string[]
 }
 
 export interface CXSelector {
@@ -72,7 +78,7 @@ export interface CXSelector {
 }
 
 export interface CXLandData {
-  version: 3
+  version: 4
   providers: CXProvider[]
   launchItems: CXLaunchItem[]
   selector: CXSelector
@@ -80,7 +86,7 @@ export interface CXLandData {
 
 export function createEmptyCXLandData(): CXLandData {
   return {
-    version: 3,
+    version: 4,
     providers: [],
     launchItems: [],
     selector: { funcName: 'cx', promptTitle: '选择 Codex 供应商', kanban: { funcName: 'show-cx-usage', enabled: false } }
@@ -90,7 +96,7 @@ export function createEmptyCXLandData(): CXLandData {
 export function normalizeCXLandData(data: unknown): CXLandData {
   if (!data || typeof data !== 'object') return createEmptyCXLandData()
   const obj = data as Partial<CXLandData>
-  if (obj.version !== 3 || !Array.isArray(obj.providers)) {
+  if (obj.version !== 4 || !Array.isArray(obj.providers)) {
     return createEmptyCXLandData()
   }
   // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new)

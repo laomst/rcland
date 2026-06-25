@@ -81,7 +81,7 @@ export const useOCLandStore = create<OCLandState>((set, get) => {
 
     saveData: async () => {
       const { providers, launchItems, selector } = get()
-      const data: OCLandData = { version: 1, providers, launchItems, selector }
+      const data: OCLandData = { version: 2, providers, launchItems, selector }
       await persistQueue.enqueue(async () => {
         await window.electronAPI.saveOCLandData(data)
       }).then(() => {

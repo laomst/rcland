@@ -5,7 +5,7 @@ import type { CXLandData } from '../src/shared/types'
 
 function makeData(): CXLandData {
   return {
-    version: 3,
+    version: 4,
     providers: [{
       id: 'p1',
       name: 'GLM',

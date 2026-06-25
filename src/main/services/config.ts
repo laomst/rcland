@@ -90,7 +90,7 @@ export function loadData(): string | null {
     const raw = readFileSync(p, 'utf-8')
     const parsed = JSON.parse(raw)
 
-    if (parsed.version === 5) {
+    if (parsed.version === 6) {
       syncedData = parsed
     }
   }
@@ -112,7 +112,7 @@ export function loadData(): string | null {
   const selector = { funcName: (cleanSelector.funcName as string) || 'cc', promptTitle: (cleanSelector.promptTitle as string) || '选择启动器', ...cleanSelector }
 
   const merged: CCLaunchData = {
-    version: 5,
+    version: 6,
     providers: [...(syncedData?.providers ?? []), ...localProviders],
     launchItems: [...syncedLaunchItems, ...localLaunchItems],
     selector
@@ -140,7 +140,7 @@ export function saveData(json: string): void {
 
   // Save synced data (without localOnly field)
   const syncedData: CCLaunchData = {
-    version: 5,
+    version: 6,
     providers: syncedProviders as Provider[],
     launchItems: syncedLaunchItems as LaunchItem[],
     selector: data.selector
@@ -182,7 +182,7 @@ export function loadCXLandData(): CXLandData {
     try {
       const parsed = JSON.parse(readFileSync(p, 'utf-8'))
       const normalized = normalizeCXLandData(parsed)
-      if (normalized.version === 3) syncedData = normalized
+      if (normalized.version === 4) syncedData = normalized
     } catch {
       // Discard malformed file
     }
@@ -202,7 +202,7 @@ export function loadCXLandData(): CXLandData {
   const cxSelector = { funcName: (cleanCXSelector.funcName as string) || 'cx', promptTitle: (cleanCXSelector.promptTitle as string) || '选择 Codex 供应商', ...cleanCXSelector }
 
   const merged: CXLandData = {
-    version: 3,
+    version: 4,
     providers: [...(syncedData?.providers ?? []), ...localProviders],
     launchItems: [...syncedLaunchItems, ...localLaunchItems],
     selector: cxSelector
@@ -221,7 +221,7 @@ export function saveCXLandData(data: CXLandData): void {
   const { synced: syncedLaunchItems, local: localLaunchItems } = splitLocalItems(data.launchItems)
 
   const syncedData: CXLandData = {
-    version: 3,
+    version: 4,
     providers: syncedProviders as CXProvider[],
     launchItems: syncedLaunchItems as CXLaunchItem[],
     selector: data.selector
@@ -249,7 +249,7 @@ export function loadOCLandData(): OCLandData {
     try {
       const parsed = JSON.parse(readFileSync(p, 'utf-8'))
       const normalized = normalizeOCLandData(parsed)
-      if (normalized.version === 1) syncedData = normalized
+      if (normalized.version === 2) syncedData = normalized
     } catch {
       // Discard malformed file
     }
@@ -261,7 +261,7 @@ export function loadOCLandData(): OCLandData {
 
   const empty = createEmptyOCLandData()
   const merged: OCLandData = {
-    version: 1,
+    version: 2,
     providers: [...(syncedData?.providers ?? []), ...localProviders],
     launchItems: [...(syncedData?.launchItems ?? []), ...localLaunchItems],
     selector: syncedData?.selector ?? empty.selector
@@ -280,7 +280,7 @@ export function saveOCLandData(data: OCLandData): void {
   const { synced: syncedLaunchItems, local: localLaunchItems } = splitLocalItems(data.launchItems)
 
   const syncedData: OCLandData = {
-    version: 1,
+    version: 2,
     providers: syncedProviders as OCProvider[],
     launchItems: syncedLaunchItems as OCLaunchItem[],
     selector: data.selector

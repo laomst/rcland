@@ -1,3 +1,5 @@
+import type { McpServer } from './mcp-server'
+
 export interface OCEndpoint {
   id: string
   label: string
@@ -40,6 +42,8 @@ export interface OCProvider {
   color?: string
   localOnly?: boolean
   kanbanUrl?: string
+  mcpServers?: McpServer[]
+  mcpServerRefs?: string[]
 }
 
 export interface OCLaunchItem {
@@ -58,6 +62,8 @@ export interface OCLaunchItem {
   passthroughCommand?: string
   useSystemProxy?: boolean
   localOnly?: boolean
+  mcpMode?: 'inherit' | 'custom'
+  mcpServerIds?: string[]
 }
 
 export interface OCSelector {
@@ -77,7 +83,7 @@ export interface OCSelector {
 }
 
 export interface OCLandData {
-  version: 1
+  version: 2
   providers: OCProvider[]
   launchItems: OCLaunchItem[]
   selector: OCSelector
@@ -89,7 +95,7 @@ export function sdkTypeToNpm(sdkType: OCSdkType): string {
 
 export function createEmptyOCLandData(): OCLandData {
   return {
-    version: 1,
+    version: 2,
     providers: [],
     launchItems: [],
     selector: {
@@ -104,7 +110,7 @@ export function createEmptyOCLandData(): OCLandData {
 export function normalizeOCLandData(data: unknown): OCLandData {
   if (!data || typeof data !== 'object') return createEmptyOCLandData()
   const obj = data as Partial<OCLandData>
-  if (obj.version !== 1 || !Array.isArray(obj.providers) || !Array.isArray(obj.launchItems)) {
+  if (obj.version !== 2 || !Array.isArray(obj.providers) || !Array.isArray(obj.launchItems)) {
     return createEmptyOCLandData()
   }
   // selector may be missing in hand-edited/partial data; fall back to the default so the

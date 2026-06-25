@@ -15,7 +15,7 @@ function assertArray(value: unknown, field: string): void {
 
 export function assertCCLaunchData(value: unknown): asserts value is CCLaunchData {
   assertObject(value, 'CCLaunchData')
-  if (value.version !== 5) throw new Error('version must be 5')
+  if (value.version !== 6) throw new Error('version must be 6')
   assertArray(value.providers, 'providers')
   assertArray(value.launchItems, 'launchItems')
   assertObject(value.selector, 'selector')
@@ -23,7 +23,7 @@ export function assertCCLaunchData(value: unknown): asserts value is CCLaunchDat
 
 export function assertCXLandData(value: unknown): asserts value is CXLandData {
   assertObject(value, 'CXLandData')
-  if (value.version !== 3) throw new Error('version must be 3')
+  if (value.version !== 4) throw new Error('version must be 4')
   assertArray(value.providers, 'providers')
   assertArray(value.launchItems, 'launchItems')
   assertObject(value.selector, 'selector')
@@ -31,7 +31,7 @@ export function assertCXLandData(value: unknown): asserts value is CXLandData {
 
 export function assertOCLandData(value: unknown): asserts value is OCLandData {
   assertObject(value, 'OCLandData')
-  if (value.version !== 1) throw new Error('version must be 1')
+  if (value.version !== 2) throw new Error('version must be 2')
   assertArray(value.providers, 'providers')
   assertArray(value.launchItems, 'launchItems')
   assertObject(value.selector, 'selector')

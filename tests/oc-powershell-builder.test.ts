@@ -5,7 +5,7 @@ import type { OCLandData } from '../src/shared/types'
 
 function makeData(over: Partial<OCLandData> = {}): OCLandData {
   return {
-    version: 1,
+    version: 2,
     providers: [{
       id: 'p1', name: 'GLM', enabled: true, sdkType: 'anthropic',
       endpoints: [{ id: 'e1', label: 'd', url: 'https://api.z.ai' }],

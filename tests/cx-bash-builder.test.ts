@@ -15,7 +15,7 @@ function build(data: CXLandData, tokens: Map<string, string>): string {
 
 function makeData(overrides: Partial<CXLandData> = {}): CXLandData {
   return {
-    version: 3,
+    version: 4,
     providers: [{
       id: 'p1',
       name: 'GLM Proxy',

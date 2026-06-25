@@ -43,7 +43,7 @@ function sampleData(
 
   return {
     ccConfig: {
-      version: 5,
+      version: 6,
       providers: [{
         id: 'provider-1',
         name: 'Provider',

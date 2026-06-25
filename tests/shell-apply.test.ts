@@ -6,7 +6,7 @@ import { createEmptyCXLandData, createEmptyOCLandData, type CCLaunchData } from 
 import type { ShellConfigData } from '../src/shared/shell-types'
 
 const ccData: CCLaunchData = {
-  version: 5,
+  version: 6,
   providers: [{
     id: 'provider-1',
     name: 'Provider',

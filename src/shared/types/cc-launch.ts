@@ -1,3 +1,5 @@
+import type { McpServer } from './mcp-server'
+
 /** A single env var with value + enabled toggle */
 export interface EnvVarSetting {
   value: string
@@ -46,6 +48,8 @@ export interface Provider {
   localOnly?: boolean
   /** Usage dashboard URL for this provider */
   kanbanUrl?: string
+  mcpServers?: McpServer[]
+  mcpServerRefs?: string[]
 }
 
 export interface LaunchItem {
@@ -71,10 +75,12 @@ export interface LaunchItem {
   useSystemProxy?: boolean
   /** Only stored locally, not synced */
   localOnly?: boolean
+  mcpMode?: 'inherit' | 'custom'
+  mcpServerIds?: string[]
 }
 
 export interface CCLaunchData {
-  version: 5
+  version: 6
   providers: Provider[]
   launchItems: LaunchItem[]
   selector: {

@@ -81,7 +81,7 @@ export const useCXLandStore = create<CXLandState>((set, get) => {
 
     saveData: async () => {
       const { providers, launchItems, selector } = get()
-      const data: CXLandData = { version: 3, providers, launchItems, selector }
+      const data: CXLandData = { version: 4, providers, launchItems, selector }
       await persistQueue.enqueue(async () => {
         await window.electronAPI.saveCXLandData(data)
       }).then(() => {
