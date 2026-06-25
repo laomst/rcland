@@ -1,18 +1,13 @@
-import { ConfigProvider, App as AntdApp, Layout, Button, Tooltip, Dropdown } from 'antd'
+import { ConfigProvider, App as AntdApp, Layout } from 'antd'
 import zhCNAntd from 'antd/locale/zh_CN'
 import enUSAntd from 'antd/locale/en_US'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { EyeOutlined, ThunderboltOutlined, SettingOutlined, CopyOutlined } from '@ant-design/icons'
-import { ModuleNav, SettingsModal, PreviewModal, usePreview, KeyModals, type KeyModalsHandle } from './components'
+import { TopNavBar, SettingsModal, PreviewModal, usePreview, KeyModals, type KeyModalsHandle } from './components'
 import { CCLaunchItemPage } from './modules/cc-launch'
 import { CXLaunchItemPage } from './modules/cx-launch'
 import { OCLaunchItemPage } from './modules/oc-launch'
 import { McpServersPage } from './modules/mcp-servers'
-import { SystemProxyPage } from './modules/system-proxy'
-import { EnvVarPage } from './modules/shell-env'
-import { PathPage } from './modules/shell-path'
-import { FunctionPage } from './modules/shell-functions'
-import { AliasPage } from './modules/shell-aliases'
+import { SystemSettingsPage } from './modules/system-settings/SystemSettingsPage'
 import { ALL_SHELL_TYPES, SHELL_LABELS, SHELL_OS_SUPPORT, type ShellType } from '@shared/shell'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
 import { extractIpcErrorMessage, isDecryptFailedError, isKeyNotFoundError } from './utils/ipc-error'
@@ -21,7 +16,7 @@ import './i18n'
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
-const { Content, Footer, Sider } = Layout
+const { Content } = Layout
 
 /** Shells available on current OS (renderer runs on same OS) */
 function getOsSupportedShells(): ShellType[] {
@@ -73,6 +68,12 @@ function AppLayout(): React.ReactElement {
     onClick: () => handleCopyScript(shell),
   }))
 
+  const previewMenuItems = enabledShells.map((shell) => ({
+    key: `preview-${shell}`,
+    label: SHELL_LABELS[shell],
+    onClick: () => handlePreview(shell),
+  }))
+
   const handleApply = async () => {
     if (enabledShells.length === 0) {
       message.warning(t('app.noShellEnabled'))
@@ -106,61 +107,22 @@ function AppLayout(): React.ReactElement {
   return (
     <>
       <Layout style={{ height: '100vh' }}>
-        <Sider width={160} theme="dark">
-          <div style={{ padding: '16px 0 8px', textAlign: 'center', color: '#fff', fontWeight: 600, fontSize: 16 }}>
-            RCLand
-          </div>
-          <div style={{ flex: 1, overflow: 'auto' }}>
-            <ModuleNav />
-          </div>
-          <div style={{ padding: 12, display: 'flex', justifyContent: 'flex-end' }}>
-            <SettingOutlined
-              style={{ fontSize: 16, color: 'rgba(255,255,255,0.65)', cursor: 'pointer' }}
-              onClick={() => setSettingsOpen(true)}
-            />
-          </div>
-        </Sider>
-        <Layout>
-          <Content className="content-area">
-            <Routes>
-              <Route path="/" element={settings ? <Navigate to={settings.defaultPage || '/env'} replace /> : null} />
-              <Route path="/env" element={<EnvVarPage />} />
-              <Route path="/path" element={<PathPage />} />
-              <Route path="/functions" element={<FunctionPage />} />
-              <Route path="/aliases" element={<AliasPage />} />
-              <Route path="/system-proxy" element={<SystemProxyPage />} />
-              <Route path="/ccland" element={<CCLaunchItemPage />} />
-              <Route path="/cxland" element={<CXLaunchItemPage />} />
-              <Route path="/ocland" element={<OCLaunchItemPage />} />
-              <Route path="/mcp" element={<McpServersPage />} />
-            </Routes>
-          </Content>
-          <Footer className="action-bar">
-            <div className="action-bar-left" />
-            <div className="action-bar-right">
-              {enabledShells.map((shell) => (
-                <Tooltip key={shell} title={t('app.previewShell', { shell: SHELL_LABELS[shell] })}>
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<EyeOutlined />}
-                    onClick={() => handlePreview(shell)}
-                  >
-                    {SHELL_LABELS[shell]}
-                  </Button>
-                </Tooltip>
-              ))}
-              <Dropdown menu={{ items: copyMenuItems }} placement="topRight">
-                <Button type="default" icon={<CopyOutlined />}>
-                  {t('app.copyScript')}
-                </Button>
-              </Dropdown>
-              <Button type="primary" icon={<ThunderboltOutlined />} onClick={handleApply}>
-                {t('app.apply')}
-              </Button>
-            </div>
-          </Footer>
-        </Layout>
+        <TopNavBar
+          onSettingsClick={() => setSettingsOpen(true)}
+          onApplyClick={handleApply}
+          previewMenuItems={previewMenuItems}
+          copyMenuItems={copyMenuItems}
+        />
+        <Content className="content-area">
+          <Routes>
+            <Route path="/" element={<Navigate to={settings?.defaultPage || '/system'} replace />} />
+            <Route path="/system" element={<SystemSettingsPage />} />
+            <Route path="/ccland" element={<CCLaunchItemPage />} />
+            <Route path="/cxland" element={<CXLaunchItemPage />} />
+            <Route path="/ocland" element={<OCLaunchItemPage />} />
+            <Route path="/mcp" element={<McpServersPage />} />
+          </Routes>
+        </Content>
       </Layout>
 
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />

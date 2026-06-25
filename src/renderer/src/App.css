@@ -14,34 +14,6 @@ html, body, #root {
   background: #fff;
 }
 
-.ant-layout-sider-children {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.action-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 24px;
-  border-top: 1px solid #f0f0f0;
-  background: #fafafa;
-  min-height: 48px;
-}
-
-.action-bar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.action-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .content-area {
   padding: 24px;
   overflow-y: auto;
@@ -57,4 +29,97 @@ html, body, #root {
 
 .shake-animation {
   animation: shake 0.5s ease-in-out;
+}
+
+/* Top navigation bar */
+.top-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.top-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.top-nav-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1677ff;
+}
+
+.top-nav-settings-icon {
+  font-size: 14px;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.top-nav-settings-icon:hover {
+  color: #666;
+}
+
+.top-nav-center {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.top-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.top-nav-tab:hover {
+  color: #333;
+}
+
+.top-nav-tab.active {
+  background: #fff;
+  color: #333;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.top-nav-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.top-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.top-nav-tool-active {
+  color: #1677ff !important;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
 }
