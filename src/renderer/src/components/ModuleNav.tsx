@@ -4,7 +4,8 @@ import {
   ControlOutlined,
   ForkOutlined,
   FunctionOutlined,
-  LinkOutlined
+  LinkOutlined,
+  ApiOutlined,
 } from '@ant-design/icons'
 import { ClashVergeIcon, ClaudeCodeIcon, CodexIcon, OpenCodeIcon } from './LauncherIcons'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
@@ -25,7 +26,8 @@ export function ModuleNav(): React.ReactElement {
     { type: 'divider' as const },
     { key: '/ccland', label: t('nav.ccland'), icon: <ClaudeCodeIcon /> },
     { key: '/cxland', label: t('nav.cxland'), icon: <CodexIcon /> },
-    { key: '/ocland', label: t('nav.ocland'), icon: <OpenCodeIcon /> }
+    { key: '/ocland', label: t('nav.ocland'), icon: <OpenCodeIcon /> },
+    { key: '/mcp', label: t('nav.mcp'), icon: <ApiOutlined /> },
   ]
   return (
     <Menu

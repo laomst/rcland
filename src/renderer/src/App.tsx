@@ -7,6 +7,7 @@ import { ModuleNav, SettingsModal, PreviewModal, usePreview, KeyModals, type Key
 import { CCLaunchItemPage } from './modules/cc-launch'
 import { CXLaunchItemPage } from './modules/cx-launch'
 import { OCLaunchItemPage } from './modules/oc-launch'
+import { McpServersPage } from './modules/mcp-servers'
 import { SystemProxyPage } from './modules/system-proxy'
 import { EnvVarPage } from './modules/shell-env'
 import { PathPage } from './modules/shell-path'
@@ -131,6 +132,7 @@ function AppLayout(): React.ReactElement {
               <Route path="/ccland" element={<CCLaunchItemPage />} />
               <Route path="/cxland" element={<CXLaunchItemPage />} />
               <Route path="/ocland" element={<OCLaunchItemPage />} />
+              <Route path="/mcp" element={<McpServersPage />} />
             </Routes>
           </Content>
           <Footer className="action-bar">
