@@ -47,12 +47,26 @@ export function TopNavBar({
 
   return (
     <div className="top-nav-bar">
-      {/* 左区: 设置 */}
+      {/* 左区: 设置 + 操作按钮 */}
       <div className="top-nav-left no-drag">
         <SettingOutlined className="top-nav-settings-icon" onClick={onSettingsClick} />
+        <Dropdown menu={{ items: previewMenuItems }} placement="bottomLeft">
+          <Button type="text" size="small" icon={<EyeOutlined />} />
+        </Dropdown>
+        <Dropdown menu={{ items: copyMenuItems }} placement="bottomLeft">
+          <Button type="text" size="small" icon={<CopyOutlined />} />
+        </Dropdown>
+        <Tooltip title={t('app.apply')}>
+          <Button
+            type="primary"
+            size="small"
+            icon={<ThunderboltOutlined />}
+            onClick={onApplyClick}
+          />
+        </Tooltip>
       </div>
 
-      {/* 标签页按钮组 + 工具图标组，靠右排列 */}
+      {/* 右区: 标签页按钮组 + MCP 工具图标 */}
       <div className="top-nav-tabs-and-tools no-drag">
       <div className="top-nav-tabs">
         {tabs.map((tab) => (
@@ -67,7 +81,6 @@ export function TopNavBar({
         ))}
       </div>
 
-      {/* 工具图标组 */}
       <div className="top-nav-right">
         <Tooltip title={t('nav.mcp')}>
           <Button
@@ -76,20 +89,6 @@ export function TopNavBar({
             icon={<ToolOutlined />}
             className={isMcpActive ? 'top-nav-tool-active' : ''}
             onClick={() => navigate('/mcp')}
-          />
-        </Tooltip>
-        <Dropdown menu={{ items: previewMenuItems }} placement="bottomRight">
-          <Button type="text" size="small" icon={<EyeOutlined />} />
-        </Dropdown>
-        <Dropdown menu={{ items: copyMenuItems }} placement="bottomRight">
-          <Button type="text" size="small" icon={<CopyOutlined />} />
-        </Dropdown>
-        <Tooltip title={t('app.apply')}>
-          <Button
-            type="primary"
-            size="small"
-            icon={<ThunderboltOutlined />}
-            onClick={onApplyClick}
           />
         </Tooltip>
       </div>
