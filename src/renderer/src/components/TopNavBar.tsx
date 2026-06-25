@@ -62,7 +62,7 @@ export function TopNavBar({
           </Dropdown>
           <Tooltip title={t('app.apply')}>
             <Button
-              type="primary"
+              type="text"
               size="small"
               icon={<ThunderboltOutlined />}
               onClick={onApplyClick}
