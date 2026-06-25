@@ -1,5 +1,5 @@
 // src/renderer/src/components/TopNavBar.tsx
-import { Button, Tooltip, Dropdown } from 'antd'
+import { Button, Tooltip, Dropdown, Space } from 'antd'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   SettingOutlined,
@@ -53,22 +53,21 @@ export function TopNavBar({
         <img src={appIcon} alt="RCLand" className="top-nav-app-icon" />
         <span className="top-nav-app-name">RCLand</span>
         <SettingOutlined className="top-nav-settings-icon" onClick={onSettingsClick} />
-        <div className="top-nav-actions">
+        <Space.Compact size="small">
           <Dropdown menu={{ items: previewMenuItems }} placement="bottomLeft">
-            <Button type="text" size="small" icon={<EyeOutlined />} />
+            <Button type="default" icon={<EyeOutlined />} />
           </Dropdown>
           <Dropdown menu={{ items: copyMenuItems }} placement="bottomLeft">
-            <Button type="text" size="small" icon={<CopyOutlined />} />
+            <Button type="default" icon={<CopyOutlined />} />
           </Dropdown>
           <Tooltip title={t('app.apply')}>
             <Button
-              type="text"
-              size="small"
+              type="default"
               icon={<ThunderboltOutlined />}
               onClick={onApplyClick}
             />
           </Tooltip>
-        </div>
+        </Space.Compact>
       </div>
 
       {/* 右区: 标签页按钮组 + MCP 工具图标 */}

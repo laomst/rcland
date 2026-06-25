@@ -74,13 +74,6 @@ html, body, #root {
   color: #333;
 }
 
-.top-nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: 4px;
-}
-
 .top-nav-tabs-and-tools {
   display: flex;
   align-items: center;
