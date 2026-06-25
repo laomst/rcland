@@ -116,6 +116,7 @@ function getSectionData(
       const result: CXLandSectionData = {
         cxConfig: cxlandData,
         decryptedTokens,
+        mcpServersData,
       }
       return result
     }

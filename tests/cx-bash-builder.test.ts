@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { buildBashLikeCXContent } from '../src/main/services/generators/sections/cxland/bash-builder'
-import type { CXLandData } from '../src/shared/types'
+import type { CXLandData, McpServersData } from '../src/shared/types'
 
 const proxyFns = {
   proxyOn: 'proxy-on',
@@ -9,8 +9,10 @@ const proxyFns = {
   proxyStatus: 'proxy-status'
 }
 
+const emptyMcp: McpServersData = { version: 1, servers: [] }
+
 function build(data: CXLandData, tokens: Map<string, string>): string {
-  return buildBashLikeCXContent(data, tokens, proxyFns)
+  return buildBashLikeCXContent(data, tokens, emptyMcp, proxyFns)
 }
 
 function makeData(overrides: Partial<CXLandData> = {}): CXLandData {

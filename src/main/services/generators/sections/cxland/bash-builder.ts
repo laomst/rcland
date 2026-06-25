@@ -1,7 +1,8 @@
-import { DEFAULT_PROXY_FUNCTION_NAMES, type CXLandData, type CXProvider, type CXLaunchItem, type CXEndpoint, type ProxyFunctionNames } from '@shared/types'
+import { DEFAULT_PROXY_FUNCTION_NAMES, type CXLandData, type CXProvider, type CXLaunchItem, type CXEndpoint, type ProxyFunctionNames, type McpServersData } from '@shared/types'
 import { getCXEndpointUrl } from '@shared/types'
+import { resolveMcpServers } from '@shared/mcp-resolve'
 import { quoteBashLikeLiteral, assertSafeShellName } from '../../shell-syntax'
-import { sanitizeCodexProviderId, buildBashCodexConfigArg } from './codex-args'
+import { sanitizeCodexProviderId, buildBashCodexConfigArg, buildBashCXMcpArgs } from './codex-args'
 
 /**
  * Build bash/zsh shell content for all enabled CXLaunchItems and optional selector.
@@ -15,6 +16,7 @@ import { sanitizeCodexProviderId, buildBashCodexConfigArg } from './codex-args'
 export function buildBashLikeCXContent(
   data: CXLandData,
   decryptedTokens: Map<string, string>,
+  mcpServersData: McpServersData,
   proxyFns: ProxyFunctionNames = DEFAULT_PROXY_FUNCTION_NAMES
 ): string {
   const lines: string[] = []
@@ -35,7 +37,7 @@ export function buildBashLikeCXContent(
     if (!provider.enabled) {
       continue
     }
-    writeFunction(lines, provider, config, decryptedTokens, proxyFns)
+    writeFunction(lines, provider, config, decryptedTokens, proxyFns, mcpServersData)
   }
 
   // Main selector (always generated when configs exist)
@@ -92,7 +94,8 @@ function writeFunction(
   provider: CXProvider,
   config: CXLaunchItem,
   tokens: Map<string, string>,
-  proxyFns: ProxyFunctionNames
+  proxyFns: ProxyFunctionNames,
+  mcpServersData: McpServersData
 ): void {
   const funcName = assertSafeShellName(config.funcName, config.name || config.id)
   const tokenKey = `cx-token:${config.id}`
@@ -142,6 +145,13 @@ function writeFunction(
   // -c args: model (optional)
   if (config.model) {
     lines.push(`      -c ${buildBashCodexConfigArg('model', config.model)} \\`)
+  }
+
+  // -c args: MCP servers
+  const mcpServers = resolveMcpServers(config, provider, mcpServersData.servers)
+  const mcpArgs = buildBashCXMcpArgs(mcpServers)
+  for (const arg of mcpArgs) {
+    lines.push(`      -c ${arg} \\`)
   }
 
   lines.push('      "${@}"')

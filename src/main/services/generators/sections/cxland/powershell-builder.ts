@@ -1,8 +1,9 @@
-import type { CXLandData, CXProvider, CXLaunchItem, CXEndpoint } from '@shared/types'
+import type { CXLandData, CXProvider, CXLaunchItem, CXEndpoint, McpServersData } from '@shared/types'
 import { getCXEndpointUrl } from '@shared/types'
+import { resolveMcpServers } from '@shared/mcp-resolve'
 import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
 import { quotePowerShellLiteral, assertSafeShellName } from '../../shell-syntax'
-import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg } from './codex-args'
+import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg, buildPowerShellCXMcpArgs } from './codex-args'
 
 /**
  * Build PowerShell shell content for all enabled CXLaunchItems and optional selector.
@@ -17,7 +18,8 @@ import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg } from './codex-
  */
 export function buildPowerShellCXContent(
   data: CXLandData,
-  decryptedTokens: Map<string, string>
+  decryptedTokens: Map<string, string>,
+  mcpServersData: McpServersData
 ): string {
   const lines: string[] = []
 
@@ -37,7 +39,7 @@ export function buildPowerShellCXContent(
     if (!provider.enabled) {
       continue
     }
-    writeFunction(lines, provider, config, decryptedTokens)
+    writeFunction(lines, provider, config, decryptedTokens, mcpServersData)
   }
 
   // Main selector (always generated when configs exist)
@@ -93,7 +95,8 @@ function writeFunction(
   lines: string[],
   provider: CXProvider,
   config: CXLaunchItem,
-  tokens: Map<string, string>
+  tokens: Map<string, string>,
+  mcpServersData: McpServersData
 ): void {
   const funcName = assertSafeShellName(config.funcName, config.name || config.id)
   const tokenKey = `cx-token:${config.id}`
@@ -171,6 +174,13 @@ function writeFunction(
   // Optional model
   if (config.model) {
     lines.push(`            -c ${buildPowerShellCodexConfigArg('model', config.model)} \``)
+  }
+
+  // MCP servers
+  const mcpServers = resolveMcpServers(config, provider, mcpServersData.servers)
+  const mcpArgs = buildPowerShellCXMcpArgs(mcpServers)
+  for (const arg of mcpArgs) {
+    lines.push(`            -c ${arg} \``)
   }
 
   lines.push('            @args')

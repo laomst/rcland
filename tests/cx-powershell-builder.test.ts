@@ -1,7 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { buildPowerShellCXContent } from '../src/main/services/generators/sections/cxland/powershell-builder'
-import type { CXLandData } from '../src/shared/types'
+import type { CXLandData, McpServersData } from '../src/shared/types'
+
+const emptyMcp: McpServersData = { version: 1, servers: [] }
 
 function makeData(): CXLandData {
   return {
@@ -24,7 +26,7 @@ function makeData(): CXLandData {
 
 test('buildPowerShellCXContent emits function with try/finally for OPENAI_API_KEY', () => {
   const tokens = new Map([['cx-token:c1', 'plaintext']])
-  const out = buildPowerShellCXContent(makeData(), tokens)
+  const out = buildPowerShellCXContent(makeData(), tokens, emptyMcp)
   assert.match(out, /function cx-glm5 \{/)
   assert.match(out, /\$env:OPENAI_API_KEY = 'plaintext'/)
   assert.match(out, /try \{/)
@@ -34,7 +36,7 @@ test('buildPowerShellCXContent emits function with try/finally for OPENAI_API_KE
 
 test('buildPowerShellCXContent emits selector function with switch dispatch', () => {
   const tokens = new Map([['cx-token:c1', 'tok']])
-  const out = buildPowerShellCXContent(makeData(), tokens)
+  const out = buildPowerShellCXContent(makeData(), tokens, emptyMcp)
   assert.match(out, /function cx \{/)
   assert.match(out, /'cx-glm5:GLM5'/)
   assert.match(out, /function cxd \{/)
@@ -42,13 +44,13 @@ test('buildPowerShellCXContent emits selector function with switch dispatch', ()
 
 test('buildPowerShellCXContent emits error function when token is empty', () => {
   const tokens = new Map([['cx-token:c1', '']])
-  const out = buildPowerShellCXContent(makeData(), tokens)
+  const out = buildPowerShellCXContent(makeData(), tokens, emptyMcp)
   assert.match(out, /function cx-glm5 \{ Write-Error/)
 })
 
 test('buildPowerShellCXContent uses backtick line continuation for codex -c args', () => {
   const tokens = new Map([['cx-token:c1', 'tok']])
-  const out = buildPowerShellCXContent(makeData(), tokens)
+  const out = buildPowerShellCXContent(makeData(), tokens, emptyMcp)
   assert.match(out, /codex `/)
   assert.match(out, /-c 'model_providers\.ccland_cx_glm5\.base_url="https:\/\/api\.example\.com\/v1"'/)
   assert.match(out, /@args/)
@@ -58,6 +60,6 @@ test('buildPowerShellCXContent selector passes all args to child function', () =
   const data = makeData()
   data.selector = { funcName: 'cx', promptTitle: '选择' }
   const tokens = new Map([['cx-token:c1', 'tok']])
-  const out = buildPowerShellCXContent(data, tokens)
+  const out = buildPowerShellCXContent(data, tokens, emptyMcp)
   assert.match(out, /'cx-glm5'  \{ cx-glm5 @args/)
 })
