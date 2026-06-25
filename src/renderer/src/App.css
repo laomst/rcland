@@ -51,6 +51,18 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+.top-nav-app-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.top-nav-app-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1677ff;
+}
+
 .top-nav-settings-icon {
   font-size: 14px;
   color: #888;

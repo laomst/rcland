@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons'
 import { ClaudeCodeIcon, CodexIcon, OpenCodeIcon } from './LauncherIcons'
 import { useTranslation } from 'react-i18next'
+import appIcon from '../assets/app-icon.png'
 
 interface NavTab {
   key: string
@@ -47,8 +48,10 @@ export function TopNavBar({
 
   return (
     <div className="top-nav-bar">
-      {/* 左区: 设置 + 操作按钮 */}
+      {/* 左区: 应用标识 + 设置 + 操作按钮 */}
       <div className="top-nav-left no-drag">
+        <img src={appIcon} alt="RCLand" className="top-nav-app-icon" />
+        <span className="top-nav-app-name">RCLand</span>
         <SettingOutlined className="top-nav-settings-icon" onClick={onSettingsClick} />
         <div className="top-nav-actions">
           <Dropdown menu={{ items: previewMenuItems }} placement="bottomLeft">
