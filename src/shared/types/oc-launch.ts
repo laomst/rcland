@@ -40,7 +40,8 @@ export interface OCProvider {
   /** opencode-specific: model list written into config JSON */
   models: OCModel[]
   color?: string
-  localOnly?: boolean
+  /** Empty array or absent: applicable to all machines; non-empty: applicable only to listed machines (by machineId) */
+  applicableMachines?: string[]
   kanbanUrl?: string
   mcpServers?: McpServer[]
   mcpServerRefs?: string[]
@@ -61,7 +62,8 @@ export interface OCLaunchItem {
   /** Custom command for passthrough (defaults to 'opencode') */
   passthroughCommand?: string
   useSystemProxy?: boolean
-  localOnly?: boolean
+  /** Empty array or absent: applicable to all machines; non-empty: applicable only to listed machines (by machineId) */
+  applicableMachines?: string[]
   mcpMode?: 'inherit' | 'custom'
   mcpServerIds?: string[]
 }
@@ -83,7 +85,7 @@ export interface OCSelector {
 }
 
 export interface OCLandData {
-  version: 2
+  version: 3
   providers: OCProvider[]
   launchItems: OCLaunchItem[]
   selector: OCSelector
@@ -95,7 +97,7 @@ export function sdkTypeToNpm(sdkType: OCSdkType): string {
 
 export function createEmptyOCLandData(): OCLandData {
   return {
-    version: 2,
+    version: 3,
     providers: [],
     launchItems: [],
     selector: {
@@ -110,10 +112,10 @@ export function createEmptyOCLandData(): OCLandData {
 export function normalizeOCLandData(data: unknown): OCLandData {
   if (!data || typeof data !== 'object') return createEmptyOCLandData()
   const raw = data as Record<string, unknown>
-  if ((raw.version !== 1 && raw.version !== 2) || !Array.isArray(raw.providers) || !Array.isArray(raw.launchItems)) {
+  if ((raw.version !== 1 && raw.version !== 2 && raw.version !== 3) || !Array.isArray(raw.providers) || !Array.isArray(raw.launchItems)) {
     return createEmptyOCLandData()
   }
-  raw.version = 2
+  raw.version = 3
   const obj = data as Partial<OCLandData>
   // selector may be missing in hand-edited/partial data; fall back to the default so the
   // normalized object is self-contained rather than relying on downstream callers to patch it.

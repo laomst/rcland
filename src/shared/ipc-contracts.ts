@@ -31,7 +31,7 @@ export function assertCXLandData(value: unknown): asserts value is CXLandData {
 
 export function assertOCLandData(value: unknown): asserts value is OCLandData {
   assertObject(value, 'OCLandData')
-  if (value.version !== 2) throw new Error('version must be 2')
+  if (value.version !== 3) throw new Error('version must be 3')
   assertArray(value.providers, 'providers')
   assertArray(value.launchItems, 'launchItems')
   assertObject(value.selector, 'selector')
