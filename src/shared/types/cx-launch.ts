@@ -26,8 +26,8 @@ export interface CXProvider {
   keys: CXProviderKey[]
   /** Custom accent color, e.g. '#1677ff' */
   color?: string
-  /** Only stored locally, not synced */
-  localOnly?: boolean
+  /** 适用机器白名单（空/未设置 = 全部机器适用） */
+  applicableMachines?: string[]
   /** Usage dashboard URL for this provider */
   kanbanUrl?: string
   mcpServers?: McpServer[]
@@ -55,8 +55,8 @@ export interface CXLaunchItem {
   passthroughCommand?: string
   /** Use system proxy (only meaningful when passthrough=true) */
   useSystemProxy?: boolean
-  /** Only stored locally, not synced */
-  localOnly?: boolean
+  /** 适用机器白名单（空/未设置 = 全部机器适用） */
+  applicableMachines?: string[]
   mcpMode?: 'inherit' | 'custom'
   mcpServerIds?: string[]
 }
@@ -78,7 +78,7 @@ export interface CXSelector {
 }
 
 export interface CXLandData {
-  version: 4
+  version: 5
   providers: CXProvider[]
   launchItems: CXLaunchItem[]
   selector: CXSelector
@@ -86,7 +86,7 @@ export interface CXLandData {
 
 export function createEmptyCXLandData(): CXLandData {
   return {
-    version: 4,
+    version: 5,
     providers: [],
     launchItems: [],
     selector: { funcName: 'cx', promptTitle: '选择 Codex 供应商', kanban: { funcName: 'show-cx-usage', enabled: false } }
@@ -96,10 +96,10 @@ export function createEmptyCXLandData(): CXLandData {
 export function normalizeCXLandData(data: unknown): CXLandData {
   if (!data || typeof data !== 'object') return createEmptyCXLandData()
   const raw = data as Record<string, unknown>
-  if ((raw.version !== 3 && raw.version !== 4) || !Array.isArray(raw.providers)) {
+  if ((raw.version !== 3 && raw.version !== 4 && raw.version !== 5) || !Array.isArray(raw.providers)) {
     return createEmptyCXLandData()
   }
-  raw.version = 4
+  raw.version = 5
   const obj = data as Partial<CXLandData>
   // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new)
   const rawObj = obj as unknown as Record<string, unknown>

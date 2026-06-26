@@ -23,7 +23,7 @@ export function assertCCLaunchData(value: unknown): asserts value is CCLaunchDat
 
 export function assertCXLandData(value: unknown): asserts value is CXLandData {
   assertObject(value, 'CXLandData')
-  if (value.version !== 4) throw new Error('version must be 4')
+  if (value.version !== 5) throw new Error('version must be 5')
   assertArray(value.providers, 'providers')
   assertArray(value.launchItems, 'launchItems')
   assertObject(value.selector, 'selector')
