@@ -59,13 +59,13 @@ export default function FunctionPage(): React.ReactElement {
     category: string
     description: string
     body: ShellFunction['body']
-    localOnly: boolean
+    applicableMachines?: string[]
   }>({
     name: '',
     category: 'custom',
     description: '',
     body: {},
-    localOnly: false
+    applicableMachines: undefined
   })
 
   useEffect(() => {
@@ -83,9 +83,8 @@ export default function FunctionPage(): React.ReactElement {
     reorderFunctions
   )
 
-  const handleAdd = (localOnly: boolean) => {
+  const handleAdd = () => {
     const newFunc = createEmptyFunction()
-    newFunc.localOnly = localOnly
     addFunction(newFunc)
     setEditingFuncId(newFunc.id)
     setInitialFormValues({
@@ -93,7 +92,7 @@ export default function FunctionPage(): React.ReactElement {
       category: 'custom',
       description: '',
       body: {},
-      localOnly
+      applicableMachines: undefined
     })
     setAddModalOpen(true)
   }
@@ -113,7 +112,7 @@ export default function FunctionPage(): React.ReactElement {
         count={syncedFunctions.length}
         collapsed={syncCollapsed}
         onToggle={() => setSyncCollapsed(!syncCollapsed)}
-        onAdd={() => handleAdd(false)}
+        onAdd={() => handleAdd()}
         style={builtInFunctions.length > 0 ? { marginTop: 16 } : undefined}
       />
       {!syncCollapsed && syncedFunctions.length > 0 && (
@@ -134,7 +133,7 @@ export default function FunctionPage(): React.ReactElement {
         </DndContext>
       )}
 
-      <GroupHeader title={t('common.localConfig')} count={localFunctions.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
+      <GroupHeader title={t('common.localConfig')} count={localFunctions.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd()} style={{ marginTop: 16 }} />
       {!localCollapsed && localFunctions.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={localFunctions.map((f) => f.id)} strategy={verticalListSortingStrategy}>
@@ -178,7 +177,7 @@ export default function FunctionPage(): React.ReactElement {
               description: values.description,
               body: values.body,
               funcNames,
-              localOnly: values.localOnly
+              applicableMachines: values.applicableMachines
             })
           }
           setEditingFuncId(null)

@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Typography, Spin, App } from 'antd'
+import { Typography, Spin } from 'antd'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { createEmptyVariable } from '@shared/builtin-functions'
 import { ALL_SHELL_TYPES } from '@shared/shell'
-import { findLocalRefs } from '@shared/var-refs'
 import { EnvVarCard } from '../components/EnvVarCard'
 import { EnvVarFormModal, type EnvVarFormValues } from '../components/EnvVarFormModal'
 import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
@@ -13,7 +12,6 @@ const { Title } = Typography
 
 export function EnvVarPage(): React.ReactElement {
   const { t } = useTranslation()
-  const { modal } = App.useApp()
   const variables = useShellConfigStore((s) => s.shellConfig.variables)
   const dataLoaded = useShellConfigStore((s) => s.dataLoaded)
   const loadShellConfig = useShellConfigStore((s) => s.loadShellConfig)
@@ -30,7 +28,7 @@ export function EnvVarPage(): React.ReactElement {
     encrypted: false,
     description: '',
     shells: [...ALL_SHELL_TYPES],
-    localOnly: false
+    applicableMachines: undefined
   })
 
   // Load data on mount
@@ -40,12 +38,9 @@ export function EnvVarPage(): React.ReactElement {
     }
   }, [dataLoaded, loadShellConfig])
 
-  const handleAdd = (localOnly: boolean) => {
+  const handleAdd = () => {
     const newVar = createEmptyVariable()
-    addVariable({
-      ...newVar,
-      localOnly
-    })
+    addVariable(newVar)
     setEditingVarId(newVar.id)
     setInitialFormValues({
       key: '',
@@ -53,7 +48,7 @@ export function EnvVarPage(): React.ReactElement {
       encrypted: false,
       description: '',
       shells: [...ALL_SHELL_TYPES],
-      localOnly
+      applicableMachines: undefined
     })
     setAddOpen(true)
   }
@@ -78,8 +73,8 @@ export function EnvVarPage(): React.ReactElement {
         localCollapsed={localCollapsed}
         onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
         onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
-        onAddSync={() => handleAdd(false)}
-        onAddLocal={() => handleAdd(true)}
+        onAddSync={() => handleAdd()}
+        onAddLocal={() => handleAdd()}
         onReorder={reorderVariables}
         renderItem={(variable, index, dragHandleProps) => (
           <EnvVarCard variable={variable} index={index} dragHandleProps={dragHandleProps} />
@@ -102,24 +97,13 @@ export function EnvVarPage(): React.ReactElement {
         }}
         onOk={(values) => {
           if (editingVarId) {
-            if (!values.localOnly) {
-              const localRefs = findLocalRefs(values.value, variables)
-              if (localRefs.length > 0) {
-                modal.error({
-                  title: t('common.operationFailed'),
-                  content: t('shellEnv.syncedVarCannotRefLocal', { keys: localRefs.join(', ') }),
-                  okText: t('common.confirm')
-                })
-                return
-              }
-            }
             useShellConfigStore.getState().updateVariable(editingVarId, {
               key: values.key.trim(),
               value: values.value,
               encrypted: values.encrypted,
               description: values.description.trim() || undefined,
               shells: values.shells.length > 0 ? values.shells : undefined,
-              localOnly: values.localOnly
+              applicableMachines: values.applicableMachines
             })
           }
           setEditingVarId(null)

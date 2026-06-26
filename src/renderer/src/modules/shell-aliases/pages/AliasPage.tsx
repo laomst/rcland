@@ -23,20 +23,19 @@ export default function AliasPage(): React.ReactElement {
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [editingAliasId, setEditingAliasId] = useState<string | null>(null)
   const [initialFormValues, setInitialFormValues] = useState<AliasFormValues>({
-    alias: '', command: '', description: '', shells: [...ALL_SHELL_TYPES], localOnly: false
+    alias: '', command: '', description: '', shells: [...ALL_SHELL_TYPES], applicableMachines: undefined
   })
 
   useEffect(() => {
     if (!dataLoaded) loadShellConfig()
   }, [dataLoaded, loadShellConfig])
 
-  const handleAdd = (localOnly: boolean) => {
+  const handleAdd = () => {
     const newAlias = createEmptyAlias()
-    newAlias.localOnly = localOnly
     addAlias(newAlias)
     setEditingAliasId(newAlias.id)
     setInitialFormValues({
-      alias: '', command: '', description: '', shells: [...ALL_SHELL_TYPES], localOnly
+      alias: '', command: '', description: '', shells: [...ALL_SHELL_TYPES], applicableMachines: undefined
     })
     setAddModalOpen(true)
   }
@@ -53,8 +52,8 @@ export default function AliasPage(): React.ReactElement {
         localCollapsed={localCollapsed}
         onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
         onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
-        onAddSync={() => handleAdd(false)}
-        onAddLocal={() => handleAdd(true)}
+        onAddSync={() => handleAdd()}
+        onAddLocal={() => handleAdd()}
         onReorder={reorderAliases}
         renderItem={(alias, index, dragHandleProps) => (
           <AliasCard alias={alias} index={index} dragHandleProps={dragHandleProps} />
@@ -80,7 +79,7 @@ export default function AliasPage(): React.ReactElement {
               alias: values.alias, command: values.command,
               description: values.description || undefined,
               shells: values.shells.length > 0 ? values.shells as any : undefined,
-              localOnly: values.localOnly
+              applicableMachines: values.applicableMachines
             })
           }
           setEditingAliasId(null)
