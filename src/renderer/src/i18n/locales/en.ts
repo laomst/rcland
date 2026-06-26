@@ -12,12 +12,6 @@ const en = {
     copy: 'Copy',
     new: 'New',
     confirmDelete: 'Confirm Delete',
-    synced: 'Synced',
-    local: 'Local',
-    localOnly: 'Local Only',
-    localOnlyHint: 'This config is stored locally only and will not be synced to other devices',
-    syncedConfig: 'Synced Config',
-    localConfig: 'Local Config',
     notSet: '(not set)',
     empty: '(empty)',
     description: 'Description',
@@ -166,7 +160,6 @@ const en = {
     selectDir: 'Select Directory',
     pathHint: 'Supports manual input or directory selection, use $VAR or ${VAR} for variable references',
     pathShellHint: 'PATH format is OS-dependent, only showing Shells supported on this system',
-    localOnlyHint: 'PATH settings cannot be synced and are stored locally only',
   },
 
   shellFunctions: {

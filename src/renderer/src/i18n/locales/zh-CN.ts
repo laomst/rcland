@@ -12,12 +12,6 @@ const zhCN = {
     copy: '复制',
     new: '新建',
     confirmDelete: '确认删除',
-    synced: '同步',
-    local: '本机',
-    localOnly: '仅本机',
-    localOnlyHint: '此配置仅保存在本机，不会同步到其他设备',
-    syncedConfig: '同步配置',
-    localConfig: '本机配置',
     notSet: '(未设置)',
     empty: '(空)',
     description: '描述',
@@ -166,7 +160,6 @@ const zhCN = {
     selectDir: '选择目录',
     pathHint: '支持手动输入或选择目录，可使用 $VAR 或 ${VAR} 形式的变量引用',
     pathShellHint: 'PATH 路径格式与操作系统相关，仅显示当前系统支持的 Shell',
-    localOnlyHint: 'PATH 设置不支持同步，仅存储在本机',
   },
 
   shellFunctions: {
