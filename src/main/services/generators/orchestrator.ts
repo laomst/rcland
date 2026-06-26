@@ -3,6 +3,7 @@ import type { SectionGenerator } from './section-types'
 import type { GenerateContext } from './section-types'
 import type { ShellConfigData } from '@shared/shell-types'
 import type { CCLaunchData, CXLandData, OCLandData, McpServersData } from '@shared/types'
+import { appliesToMachine } from '@shared/machine-filter'
 
 import type { CCLandSectionData } from './sections/ccland/zsh'
 import type { CXLandSectionData } from './sections/cxland/zsh'
@@ -141,24 +142,33 @@ export function generateFullConfig(
   mcpServersData: McpServersData,
   ctx: GenerateContext
 ): string {
-  const cclandData: CCLandSectionData = {
-    ccConfig,
-    decryptedTokens,
-    mcpServersData,
+  const mid = ctx.machineId
+  const keep = <T extends { applicableMachines?: string[] }>(arr: T[]): T[] =>
+    arr.filter((it) => appliesToMachine(it, mid))
+
+  const fShell: ShellConfigData = {
+    ...shellConfig,
+    variables: keep(shellConfig.variables),
+    pathVariables: keep(shellConfig.pathVariables),
+    pathEntries: keep(shellConfig.pathEntries),
+    functions: keep(shellConfig.functions),
+    aliases: keep(shellConfig.aliases)
   }
+  const fCc: CCLaunchData = { ...ccConfig, providers: keep(ccConfig.providers), launchItems: keep(ccConfig.launchItems) }
+  const fCx: CXLandData = { ...cxConfig, providers: keep(cxConfig.providers), launchItems: keep(cxConfig.launchItems) }
+  const fOc: OCLandData = { ...ocConfig, providers: keep(ocConfig.providers), launchItems: keep(ocConfig.launchItems) }
+
+  const cclandData: CCLandSectionData = { ccConfig: fCc, decryptedTokens, mcpServersData }
   const parts: string[] = [generateHeader(shellType)]
 
   for (const sectionName of SECTION_ORDER) {
     const gen = getSection(sectionName, shellType)
     if (!gen) continue
-
-    const data = getSectionData(sectionName, shellConfig, cclandData, cxConfig, ocConfig, decryptedTokens, mcpServersData)
+    const data = getSectionData(sectionName, fShell, cclandData, fCx, fOc, decryptedTokens, mcpServersData)
     const output = gen.generate(data, ctx)
-    if (output) {
-      parts.push(output)
-    }
+    if (output) parts.push(output)
   }
 
-  parts.push('') // trailing newline
+  parts.push('')
   return parts.join('\n\n')
 }
