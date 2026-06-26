@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Modal, Radio, Select, Space, Typography } from 'antd'
+import { App, Modal, Radio, Select, Space, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import type { Machine } from '@shared/types'
 
@@ -9,6 +9,7 @@ interface Props {
 
 export function MachineClaimDialog({ onClaimed }: Props): React.ReactElement {
   const { t } = useTranslation()
+  const { message } = App.useApp()
   const [machines, setMachines] = useState<Machine[]>([])
   const [mode, setMode] = useState<'new' | 'adopt'>('new')
   const [adoptId, setAdoptId] = useState<string | undefined>()
@@ -22,8 +23,13 @@ export function MachineClaimDialog({ onClaimed }: Props): React.ReactElement {
 
   const handleOk = async () => {
     setSubmitting(true)
-    await window.electronAPI.machineClaim(mode, mode === 'adopt' ? adoptId : undefined)
-    onClaimed()
+    try {
+      await window.electronAPI.machineClaim(mode, mode === 'adopt' ? adoptId : undefined)
+      onClaimed()
+    } catch (err) {
+      setSubmitting(false)
+      message.error(String(err instanceof Error ? err.message : err))
+    }
   }
 
   return (
@@ -53,7 +59,7 @@ export function MachineClaimDialog({ onClaimed }: Props): React.ReactElement {
           options={machines.map((m) => ({ value: m.id, label: `${m.name} · ${m.os} · ${m.hostname}` }))}
         />
       )}
-      {!canAdopt && (
+      {mode === 'adopt' && !canAdopt && (
         <Typography.Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
           {t('machines.claimAdoptEmpty')}
         </Typography.Text>
