@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { ShellType } from '@shared/shell'
-import type { AppSettings, CCLaunchData, CXLandData, OCLandData, McpServersData } from '@shared/types'
+import type { AppSettings, CCLaunchData, CXLandData, OCLandData, McpServersData, Machine } from '@shared/types'
 import type { BackupEntry, ConflictCheckResult, ShellConfigData } from '@shared/shell-types'
 import type { SystemProxyConfig } from '@shared/system-proxy'
 import type {
@@ -25,6 +25,13 @@ export interface ElectronAPI {
   // MCP Servers
   loadMcpServersData: () => Promise<McpServersData>
   saveMcpServersData: (data: McpServersData) => Promise<void>
+
+  // Machines
+  machineStatus: () => Promise<{ claimed: boolean; machineId: string | null; machines: Machine[] }>
+  machineClaim: (mode: 'new' | 'adopt', adoptId?: string) => Promise<{ machineId: string }>
+  machineList: () => Promise<Machine[]>
+  machineUpdate: (machine: Machine) => Promise<Machine[]>
+  machineDelete: (id: string) => Promise<Machine[]>
 
   // Settings
   loadSettings: () => Promise<AppSettings>
@@ -89,6 +96,11 @@ const api: ElectronAPI = {
   saveOCLandData: (data) => ipcRenderer.invoke('ocland:save', data),
   loadMcpServersData: () => ipcRenderer.invoke('mcp-servers:load'),
   saveMcpServersData: (data) => ipcRenderer.invoke('mcp-servers:save', data),
+  machineStatus: () => ipcRenderer.invoke('machine:status'),
+  machineClaim: (mode, adoptId) => ipcRenderer.invoke('machine:claim', mode, adoptId),
+  machineList: () => ipcRenderer.invoke('machine:list'),
+  machineUpdate: (machine) => ipcRenderer.invoke('machine:update', machine),
+  machineDelete: (id) => ipcRenderer.invoke('machine:delete', id),
   loadSettings: () => ipcRenderer.invoke('settings:load'),
   saveSettings: (json) => ipcRenderer.invoke('settings:save', json),
   initKey: (passphrase?) => ipcRenderer.invoke('crypto:initKey', passphrase),
