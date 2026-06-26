@@ -1,14 +1,11 @@
 import { app, dialog } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'fs'
-import type { AppSettings, CCLaunchData, CXLandData, Provider, LaunchItem, CXProvider, CXLaunchItem, LocalCXLandData, OCLandData, OCProvider, OCLaunchItem, LocalOCLandData, McpServersData } from '@shared/types'
+import type { AppSettings, CCLaunchData, CXLandData, Provider, LaunchItem, CXProvider, CXLaunchItem, OCLandData, OCProvider, OCLaunchItem, McpServersData } from '@shared/types'
 import { createEmptyCXLandData, normalizeCXLandData, createEmptyOCLandData, normalizeOCLandData, normalizeMcpServersData } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import { assertAppSettings, assertCCLaunchData, assertCXLandData, assertOCLandData } from '@shared/ipc-contracts'
 import { platform } from 'os'
-import { loadLocalCXConfig, saveLocalCXConfig } from './local-cx-config'
-import { loadLocalOCConfig, saveLocalOCConfig } from './local-oc-config'
-import { markLocalItems, splitLocalItems } from './local-sync'
 import { readMachineId } from './machine-id'
 import { mergeLegacyLocalItems } from './legacy-migration'
 
@@ -190,8 +187,10 @@ export function saveCCData(data: CCLaunchData): void {
 }
 
 // ============================================================
-// CXLand Data (v3, syncable + local split)
+// CXLand Data (v5, syncable, unified)
 // ============================================================
+
+const LOCAL_CX_FILENAME = 'rcland.config.codex.local.json'
 
 export function loadCXLandData(): CXLandData {
   const settings = loadSettings()
@@ -200,32 +199,44 @@ export function loadCXLandData(): CXLandData {
   let syncedData: CXLandData | null = null
   if (existsSync(p)) {
     try {
-      const parsed = JSON.parse(readFileSync(p, 'utf-8'))
-      const normalized = normalizeCXLandData(parsed)
-      if (normalized.version === 4) syncedData = normalized
-    } catch {
-      // Discard malformed file
+      const normalized = normalizeCXLandData(JSON.parse(readFileSync(p, 'utf-8')))
+      if (normalized.version === 5) syncedData = normalized
+    } catch { /* discard */ }
+  }
+
+  const legacy = readLegacyLocal(LOCAL_CX_FILENAME)
+  let migrated = false
+  if (legacy) {
+    const machineId = readMachineId()
+    if (machineId) {
+      const empty = createEmptyCXLandData()
+      const base = syncedData ?? empty
+      syncedData = {
+        version: 5,
+        providers: mergeLegacyLocalItems(base.providers, legacy.providers as never[], machineId) as CXProvider[],
+        launchItems: mergeLegacyLocalItems(base.launchItems, legacy.launchItems as never[], machineId) as CXLaunchItem[],
+        selector: base.selector
+      }
+      migrated = true
     }
   }
 
-  const localData = loadLocalCXConfig()
-  const localProviders = markLocalItems(localData.providers)
-  const localLaunchItems = markLocalItems(localData.launchItems)
-
-  // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new) from disk
-  const syncedLaunchItems = syncedData?.launchItems ?? []
-
   const empty = createEmptyCXLandData()
   const rawCXSelector = syncedData?.selector ?? empty.selector
-  // Clean up legacy fields
   const { aliasName: _, enabled: __, ...cleanCXSelector } = rawCXSelector as unknown as Record<string, unknown>
   const cxSelector = { funcName: (cleanCXSelector.funcName as string) || 'cx', promptTitle: (cleanCXSelector.promptTitle as string) || '选择 Codex 供应商', ...cleanCXSelector }
 
   const merged: CXLandData = {
-    version: 4,
-    providers: [...(syncedData?.providers ?? []), ...localProviders],
-    launchItems: [...syncedLaunchItems, ...localLaunchItems],
+    version: 5,
+    providers: syncedData?.providers ?? [],
+    launchItems: syncedData?.launchItems ?? [],
     selector: cxSelector
+  }
+
+  if (migrated) {
+    ensureConfigDir(settings.configDir)
+    writeFileSync(p, JSON.stringify(merged, null, 2), 'utf-8')
+    archiveLegacyLocal(LOCAL_CX_FILENAME)
   }
 
   assertCXLandData(merged)
@@ -236,29 +247,20 @@ export function saveCXLandData(data: CXLandData): void {
   assertCXLandData(data)
   const settings = loadSettings()
   ensureConfigDir(settings.configDir)
-
-  const { synced: syncedProviders, local: localProviders } = splitLocalItems(data.providers)
-  const { synced: syncedLaunchItems, local: localLaunchItems } = splitLocalItems(data.launchItems)
-
   const syncedData: CXLandData = {
-    version: 4,
-    providers: syncedProviders as CXProvider[],
-    launchItems: syncedLaunchItems as CXLaunchItem[],
+    version: 5,
+    providers: data.providers,
+    launchItems: data.launchItems,
     selector: data.selector
   }
   writeFileSync(join(settings.configDir, CX_DATA_FILENAME), JSON.stringify(syncedData, null, 2), 'utf-8')
-
-  const localData: LocalCXLandData = {
-    version: 1,
-    providers: localProviders.map(p => { const { localOnly: _, ...rest } = p; return rest }) as CXProvider[],
-    launchItems: localLaunchItems.map(c => { const { localOnly: _, ...rest } = c; return rest }) as CXLaunchItem[]
-  }
-  saveLocalCXConfig(localData)
 }
 
 // ============================================================
-// OCLand Data (v1, syncable + local split)
+// OCLand Data (v3, syncable, unified)
 // ============================================================
+
+const LOCAL_OC_FILENAME = 'rcland.config.opencode.local.json'
 
 export function loadOCLandData(): OCLandData {
   const settings = loadSettings()
@@ -267,24 +269,39 @@ export function loadOCLandData(): OCLandData {
   let syncedData: OCLandData | null = null
   if (existsSync(p)) {
     try {
-      const parsed = JSON.parse(readFileSync(p, 'utf-8'))
-      const normalized = normalizeOCLandData(parsed)
-      if (normalized.version === 2) syncedData = normalized
-    } catch {
-      // Discard malformed file
+      const normalized = normalizeOCLandData(JSON.parse(readFileSync(p, 'utf-8')))
+      if (normalized.version === 3) syncedData = normalized
+    } catch { /* discard */ }
+  }
+
+  const legacy = readLegacyLocal(LOCAL_OC_FILENAME)
+  let migrated = false
+  const empty = createEmptyOCLandData()
+  if (legacy) {
+    const machineId = readMachineId()
+    if (machineId) {
+      const base = syncedData ?? empty
+      syncedData = {
+        version: 3,
+        providers: mergeLegacyLocalItems(base.providers, legacy.providers as never[], machineId) as OCProvider[],
+        launchItems: mergeLegacyLocalItems(base.launchItems, legacy.launchItems as never[], machineId) as OCLaunchItem[],
+        selector: base.selector
+      }
+      migrated = true
     }
   }
 
-  const localData = loadLocalOCConfig()
-  const localProviders = markLocalItems(localData.providers)
-  const localLaunchItems = markLocalItems(localData.launchItems)
-
-  const empty = createEmptyOCLandData()
   const merged: OCLandData = {
-    version: 2,
-    providers: [...(syncedData?.providers ?? []), ...localProviders],
-    launchItems: [...(syncedData?.launchItems ?? []), ...localLaunchItems],
+    version: 3,
+    providers: syncedData?.providers ?? [],
+    launchItems: syncedData?.launchItems ?? [],
     selector: syncedData?.selector ?? empty.selector
+  }
+
+  if (migrated) {
+    ensureConfigDir(settings.configDir)
+    writeFileSync(p, JSON.stringify(merged, null, 2), 'utf-8')
+    archiveLegacyLocal(LOCAL_OC_FILENAME)
   }
 
   assertOCLandData(merged)
@@ -295,24 +312,13 @@ export function saveOCLandData(data: OCLandData): void {
   assertOCLandData(data)
   const settings = loadSettings()
   ensureConfigDir(settings.configDir)
-
-  const { synced: syncedProviders, local: localProviders } = splitLocalItems(data.providers)
-  const { synced: syncedLaunchItems, local: localLaunchItems } = splitLocalItems(data.launchItems)
-
   const syncedData: OCLandData = {
-    version: 2,
-    providers: syncedProviders as OCProvider[],
-    launchItems: syncedLaunchItems as OCLaunchItem[],
+    version: 3,
+    providers: data.providers,
+    launchItems: data.launchItems,
     selector: data.selector
   }
   writeFileSync(join(settings.configDir, OC_DATA_FILENAME), JSON.stringify(syncedData, null, 2), 'utf-8')
-
-  const localData: LocalOCLandData = {
-    version: 1,
-    providers: localProviders.map(p => { const { localOnly: _, ...rest } = p; return rest }) as OCProvider[],
-    launchItems: localLaunchItems.map(c => { const { localOnly: _, ...rest } = c; return rest }) as OCLaunchItem[]
-  }
-  saveLocalOCConfig(localData)
 }
 
 // ============================================================
