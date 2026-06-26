@@ -1,13 +1,12 @@
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { loadSettings } from './config'
 import type { Machine, MachinesData } from '@shared/types'
 import { createEmptyMachinesData } from '@shared/types'
 
 const MACHINES_FILENAME = 'rcland.config.machines.json'
 
 function getMachinesPath(): string {
-  // Lazy-load to avoid bundling electron with tests that don't call this
-  const { loadSettings } = require('./config')
   return join(loadSettings().configDir, MACHINES_FILENAME)
 }
 
@@ -24,8 +23,6 @@ export function loadMachines(): MachinesData {
 }
 
 export function saveMachines(data: MachinesData): void {
-  // Lazy-load to avoid bundling electron with tests that don't call this
-  const { loadSettings } = require('./config')
   const dir = loadSettings().configDir
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   writeFileSync(getMachinesPath(), JSON.stringify(data, null, 2), 'utf-8')
