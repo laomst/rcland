@@ -15,7 +15,7 @@ function assertArray(value: unknown, field: string): void {
 
 export function assertCCLaunchData(value: unknown): asserts value is CCLaunchData {
   assertObject(value, 'CCLaunchData')
-  if (value.version !== 6) throw new Error('version must be 6')
+  if (value.version !== 7) throw new Error('version must be 7')
   assertArray(value.providers, 'providers')
   assertArray(value.launchItems, 'launchItems')
   assertObject(value.selector, 'selector')

@@ -44,8 +44,8 @@ export interface Provider {
   color?: string
   /** Default template for new configs */
   template?: ProviderTemplate
-  /** Only stored locally, not synced */
-  localOnly?: boolean
+  /** 适用机器白名单（空/未设置 = 全部机器适用） */
+  applicableMachines?: string[]
   /** Usage dashboard URL for this provider */
   kanbanUrl?: string
   mcpServers?: McpServer[]
@@ -73,14 +73,14 @@ export interface LaunchItem {
   passthroughCommand?: string
   /** Use system proxy (only meaningful when passthrough=true) */
   useSystemProxy?: boolean
-  /** Only stored locally, not synced */
-  localOnly?: boolean
+  /** 适用机器白名单（空/未设置 = 全部机器适用） */
+  applicableMachines?: string[]
   mcpMode?: 'inherit' | 'custom'
   mcpServerIds?: string[]
 }
 
 export interface CCLaunchData {
-  version: 6
+  version: 7
   providers: Provider[]
   launchItems: LaunchItem[]
   selector: {

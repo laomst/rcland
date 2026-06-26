@@ -67,7 +67,7 @@ export const useCCLaunchStore = create<AppState>((set, get) => {
 
   saveData: async () => {
     const { providers, launchItems, selector } = get()
-    const data: CCLaunchData = { version: 6, providers, launchItems, selector }
+    const data: CCLaunchData = { version: 7, providers, launchItems, selector }
     await persistQueue.enqueue(async () => {
       await window.electronAPI.saveData(data)
     }).then(() => {
