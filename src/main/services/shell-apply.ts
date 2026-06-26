@@ -24,6 +24,7 @@ export interface GenerateConfigInput {
   decryptedTokens?: Map<string, string>
   proxyFunctionNames?: { proxyOn: string; proxyOff: string; proxyStatus: string }
   mcpServersData?: McpServersData
+  machineId?: string
 }
 
 export interface ApplyConfigInput {
@@ -63,7 +64,7 @@ export function generateConfigWithKey(input: GenerateConfigInput): string {
     input.keyPassphrase,
     input.proxyFunctionNames,
     decryptedShellConfig.pathVariables,
-    readMachineId() ?? ''
+    input.machineId ?? readMachineId() ?? ''
   )
   return generateFullConfig(input.shellType, decryptedShellConfig, input.ccData, input.cxData, input.ocData, decryptedTokens, mcpServersData, ctx)
 }

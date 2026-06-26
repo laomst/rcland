@@ -36,6 +36,7 @@ const shellConfig: ShellConfigData = {
     encrypted: false,
     enabled: true
   }],
+  pathVariables: [],
   pathEntries: [],
   functions: [],
   aliases: [],
@@ -51,7 +52,8 @@ test('temporary key generation uses full shell config pipeline', () => {
     ocData: createEmptyOCLandData(),
     shellConfig,
     keyPassphrase: 'temporary-key',
-    decryptedTokens: new Map([['token:config-1', 'token-value']])
+    decryptedTokens: new Map([['token:config-1', 'token-value']]),
+    machineId: ''
   })
 
   assert.match(output, /export RCLAND_TEST_VAR="present"/)
