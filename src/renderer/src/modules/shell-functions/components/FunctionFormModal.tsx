@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Input, Modal, Form, Select, Tabs, Switch, Space, Typography, message } from 'antd'
+import { Input, Modal, Form, Select, Tabs, message } from 'antd'
 import { SHELL_LABELS, ALL_SHELL_TYPES, type ShellType } from '@shared/shell'
 import type { ShellFunction } from '@shared/shell-types'
+import { MachineScopeSelect } from '@renderer/components/MachineScopeSelect'
 
 const { TextArea } = Input
 
@@ -34,15 +35,13 @@ function extractFunctionName(code: string): string | null {
   return null
 }
 
-const { Text } = Typography
-
 interface FormValues {
   name: string
   category: string
   description: string
   body: ShellFunction['body']
   funcNames?: ShellFunction['funcNames']
-  localOnly: boolean
+  applicableMachines?: string[]
 }
 
 interface FunctionFormModalProps {
@@ -266,18 +265,11 @@ export function FunctionFormModal({
         </Form.Item>
 
         {!readOnly && (
-          <Form.Item label={t('common.localOnly')}>
-            <Space>
-              <Switch
-                checked={form.localOnly}
-                onChange={(checked) => setForm((f) => ({ ...f, localOnly: checked }))}
-              />
-              {form.localOnly && (
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  {t('common.localOnlyHint')}
-                </Text>
-              )}
-            </Space>
+          <Form.Item label={t('common.applicableMachines')}>
+            <MachineScopeSelect
+              value={form.applicableMachines}
+              onChange={(v) => setForm((f) => ({ ...f, applicableMachines: v }))}
+            />
           </Form.Item>
         )}
 

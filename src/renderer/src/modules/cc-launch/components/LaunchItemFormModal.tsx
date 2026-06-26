@@ -7,6 +7,7 @@ import { stripCommonValues } from '@shared/types/cc-launch'
 import { EnvVarEditor } from './EnvVarEditor'
 import { deriveCommonValuesMap, type LaunchItemFormValues } from './launch-item-update'
 import { McpLaunchItemSection } from '@renderer/modules/shared/launcher/McpLaunchItemSection'
+import { MachineScopeSelect } from '@renderer/components/MachineScopeSelect'
 
 const { Text } = Typography
 
@@ -76,7 +77,7 @@ export function LaunchItemFormModal({
       envVars: stripCommonValues(templateEnvVars),
       passthrough: form.passthrough,
       useSystemProxy: form.useSystemProxy,
-      localOnly: form.localOnly
+      applicableMachines: form.applicableMachines
     })
   }
 
@@ -261,18 +262,11 @@ export function LaunchItemFormModal({
             </Form.Item>
           </>
         )}
-        <Form.Item label={t('common.localOnly')}>
-          <Space>
-            <Switch
-              checked={form.localOnly ?? false}
-              onChange={(checked) => setForm((f) => ({ ...f, localOnly: checked }))}
-            />
-            {form.localOnly && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {t('common.localOnlyHint')}
-              </Text>
-            )}
-          </Space>
+        <Form.Item label={t('common.applicableMachines')}>
+          <MachineScopeSelect
+            value={form.applicableMachines}
+            onChange={(v) => setForm((f) => ({ ...f, applicableMachines: v }))}
+          />
         </Form.Item>
         <Divider style={{ margin: '8px 0' }}>{t('mcp.providerMcpSection')}</Divider>
         <McpLaunchItemSection

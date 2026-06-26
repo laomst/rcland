@@ -4,6 +4,7 @@ import { Input, Modal, Form, Space, Select, Divider, Typography, Switch } from '
 import { LockOutlined } from '@ant-design/icons'
 import type { CXProvider } from '@shared/types'
 import { McpLaunchItemSection } from '@renderer/modules/shared/launcher/McpLaunchItemSection'
+import { MachineScopeSelect } from '@renderer/components/MachineScopeSelect'
 
 const { Text } = Typography
 
@@ -17,7 +18,7 @@ export interface CXLaunchItemFormValues {
   passthrough?: boolean
   passthroughCommand?: string
   useSystemProxy?: boolean
-  localOnly?: boolean
+  applicableMachines?: string[]
   mcpMode?: 'inherit' | 'custom'
   mcpServerIds?: string[]
 }
@@ -61,7 +62,7 @@ export function LaunchItemFormModal({
       model: form.model,
       passthrough: form.passthrough,
       useSystemProxy: form.useSystemProxy,
-      localOnly: form.localOnly
+      applicableMachines: form.applicableMachines
     })
   }
 
@@ -237,18 +238,11 @@ export function LaunchItemFormModal({
             </Form.Item>
           </>
         )}
-        <Form.Item label={t('common.localOnly')}>
-          <Space>
-            <Switch
-              checked={form.localOnly ?? false}
-              onChange={(checked) => setForm((f) => ({ ...f, localOnly: checked }))}
-            />
-            {form.localOnly && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {t('common.localOnlyHint')}
-              </Text>
-            )}
-          </Space>
+        <Form.Item label={t('common.applicableMachines')}>
+          <MachineScopeSelect
+            value={form.applicableMachines}
+            onChange={(v) => setForm((f) => ({ ...f, applicableMachines: v }))}
+          />
         </Form.Item>
         <Divider style={{ margin: '8px 0' }}>{t('mcp.providerMcpSection')}</Divider>
         <McpLaunchItemSection

@@ -1,18 +1,18 @@
-import { Input, Modal, Form, Checkbox, Space, Typography, Switch } from 'antd'
+import { Input, Modal, Form, Checkbox, Space } from 'antd'
 import { useTranslation } from 'react-i18next'
 import type { ShellType } from '@shared/shell'
 import { SHELL_LABELS, ALL_SHELL_TYPES } from '@shared/shell'
 import { useFormModal } from '@renderer/hooks/useFormModal'
+import { MachineScopeSelect } from '@renderer/components/MachineScopeSelect'
 
 const { TextArea } = Input
-const { Text } = Typography
 
 export interface AliasFormValues {
   alias: string
   command: string
   description: string
   shells: ShellType[]
-  localOnly: boolean
+  applicableMachines?: string[]
 }
 
 interface AliasFormModalProps {
@@ -31,7 +31,7 @@ const ALIAS_INITIAL_STATE: AliasFormValues = {
   command: '',
   description: '',
   shells: [...ALL_SHELL_TYPES],
-  localOnly: false
+  applicableMachines: undefined
 }
 
 export function AliasFormModal({
@@ -97,18 +97,11 @@ export function AliasFormModal({
           />
         </Form.Item>
 
-        <Form.Item label={t('common.localOnly')}>
-          <Space>
-            <Switch
-              checked={formState.localOnly}
-              onChange={(checked) => setField('localOnly', checked)}
-            />
-            {formState.localOnly && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {t('common.localOnlyHint')}
-              </Text>
-            )}
-          </Space>
+        <Form.Item label={t('common.applicableMachines')}>
+          <MachineScopeSelect
+            value={formState.applicableMachines}
+            onChange={(v) => setField('applicableMachines', v)}
+          />
         </Form.Item>
 
         <Form.Item label={t('common.applicableShells')}>

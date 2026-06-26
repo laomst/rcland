@@ -6,6 +6,7 @@ import { ALL_SHELL_TYPES, SHELL_LABELS } from '@shared/shell'
 import { useFormModal } from '@renderer/hooks/useFormModal'
 import { VariableRefInput } from '@renderer/components/VariableRefInput'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
+import { MachineScopeSelect } from '@renderer/components/MachineScopeSelect'
 
 const { Text } = Typography
 
@@ -15,7 +16,7 @@ export interface EnvVarFormValues {
   encrypted: boolean
   description: string
   shells: ShellType[]
-  localOnly: boolean
+  applicableMachines?: string[]
 }
 
 interface EnvVarFormModalProps {
@@ -35,7 +36,7 @@ const ENVVAR_INITIAL_STATE: EnvVarFormValues = {
   encrypted: false,
   description: '',
   shells: [...ALL_SHELL_TYPES],
-  localOnly: false
+  applicableMachines: undefined
 }
 
 export function EnvVarFormModal({
@@ -111,18 +112,11 @@ export function EnvVarFormModal({
             placeholder={t('common.descriptionPlaceholder')}
           />
         </Form.Item>
-        <Form.Item label={t('common.localOnly')}>
-          <Space>
-            <Switch
-              checked={formState.localOnly}
-              onChange={(checked) => setField('localOnly', checked)}
-            />
-            {formState.localOnly && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {t('common.localOnlyHint')}
-              </Text>
-            )}
-          </Space>
+        <Form.Item label={t('common.applicableMachines')}>
+          <MachineScopeSelect
+            value={formState.applicableMachines}
+            onChange={(v) => setField('applicableMachines', v)}
+          />
         </Form.Item>
         <Form.Item label={t('common.applicableShells')}>
           <Space size={8}>

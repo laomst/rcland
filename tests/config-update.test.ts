@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createLaunchItemUpdatePatch } from '../src/renderer/src/modules/cc-launch/components/launch-item-update'
 
-test('config edit patch preserves provider and locality changes', () => {
+test('config edit patch preserves provider and applicableMachines changes', () => {
   const patch = createLaunchItemUpdatePatch({
     providerId: 'provider-new',
     endpointId: 'endpoint-new',
@@ -10,7 +10,7 @@ test('config edit patch preserves provider and locality changes', () => {
     name: 'New Provider Config',
     funcName: 'cc-new',
     envVars: {},
-    localOnly: true
+    applicableMachines: ['machine-1']
   })
 
   assert.deepEqual(patch, {
@@ -20,7 +20,7 @@ test('config edit patch preserves provider and locality changes', () => {
     name: 'New Provider Config',
     funcName: 'cc-new',
     envVars: {},
-    localOnly: true
+    applicableMachines: ['machine-1']
   })
 })
 
