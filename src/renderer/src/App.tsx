@@ -3,6 +3,7 @@ import zhCNAntd from 'antd/locale/zh_CN'
 import enUSAntd from 'antd/locale/en_US'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { TopNavBar, SettingsPage, PreviewModal, usePreview, KeyModals, type KeyModalsHandle } from './components'
+import { MachineClaimDialog } from './modules/machines'
 import { CCLaunchItemPage } from './modules/cc-launch'
 import { CXLaunchItemPage } from './modules/cx-launch'
 import { OCLaunchItemPage } from './modules/oc-launch'
@@ -66,6 +67,16 @@ function AppLayout(): React.ReactElement {
     return () => subs.forEach((unsub) => unsub())
   }, [loadSettings, refreshKeyExists])
 
+  const [claimChecked, setClaimChecked] = useState(false)
+  const [needClaim, setNeedClaim] = useState(false)
+
+  useEffect(() => {
+    window.electronAPI.machineStatus().then((s) => {
+      setNeedClaim(!s.claimed)
+      setClaimChecked(true)
+    })
+  }, [])
+
   // Derive enabled shells from settings
   const enabledShells = osShells.filter((s) => settings?.shellProfiles[s]?.enabled)
 
@@ -120,6 +131,11 @@ function AppLayout(): React.ReactElement {
         message.error({ content: <>{t('app.applyFailed')}<br />{extractIpcErrorMessage(err)}</>, duration: 8 })
       }
     }
+  }
+
+  if (!claimChecked) return <></>
+  if (needClaim) {
+    return <MachineClaimDialog onClaimed={() => window.location.reload()} />
   }
 
   return (
