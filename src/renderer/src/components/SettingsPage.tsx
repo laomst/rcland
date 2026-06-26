@@ -7,6 +7,7 @@ import { getAppPageLabels, type AppPage } from '@shared/types'
 import { useTranslation } from 'react-i18next'
 import { useCCLaunchStore } from '@renderer/stores/useCCLaunchStore'
 import { useSettingsStore } from '@renderer/stores/useSettingsStore'
+import { MachinesPage } from '@renderer/modules/machines'
 
 function getOsSupportedShells(): ShellType[] {
   const ua = navigator.userAgent.toLowerCase()
@@ -284,6 +285,12 @@ export function SettingsPage({ onBack }: SettingsPageProps): React.ReactElement 
               </Space.Compact>
             </div>
           </div>
+        </section>
+
+        {/* 机器管理 */}
+        <section className="settings-section">
+          <h3 className="settings-section-title">{t('machines.title')}</h3>
+          <MachinesPage />
         </section>
       </div>
 
