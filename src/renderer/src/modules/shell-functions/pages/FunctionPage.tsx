@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Typography } from 'antd'
-import { DndContext, closestCenter } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { createEmptyFunction } from '@shared/builtin-functions'
 import type { ShellFunction } from '@shared/shell-types'
 import { FunctionCard } from '../components/FunctionCard'
 import { FunctionFormModal } from '../components/FunctionFormModal'
-import { SortableWrapper } from '@renderer/components/SortableWrapper'
-import { GroupHeader } from '@renderer/components/GroupHeader'
-import { useSortableList } from '@renderer/hooks/useSortableList'
+import { SingleSortableList } from '@renderer/modules/shared/SingleSortableList'
 
 const { Title } = Typography
 
@@ -50,8 +46,7 @@ export default function FunctionPage(): React.ReactElement {
   const reorderFunctions = useShellConfigStore((s) => s.reorderFunctions)
   const addFunction = useShellConfigStore((s) => s.addFunction)
 
-  const [syncCollapsed, setSyncCollapsed] = useState(false)
-  const [localCollapsed, setLocalCollapsed] = useState(false)
+  const [filterMachineId, setFilterMachineId] = useState<string | null>(null)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [editingFuncId, setEditingFuncId] = useState<string | null>(null)
   const [initialFormValues, setInitialFormValues] = useState<{
@@ -74,14 +69,9 @@ export default function FunctionPage(): React.ReactElement {
     }
   }, [dataLoaded, loadShellConfig])
 
-  // 内置函数固定在顶部，用户函数按同步/本机分组
+  // 内置函数固定在顶部，用户函数使用单列表
   const builtInFunctions = functions.filter((f) => f.builtIn)
   const userFunctions = functions.filter((f) => !f.builtIn)
-
-  const { sensors, handleDragEnd, syncItems: syncedFunctions, localItems: localFunctions } = useSortableList(
-    userFunctions,
-    reorderFunctions
-  )
 
   const handleAdd = () => {
     const newFunc = createEmptyFunction()
@@ -101,56 +91,28 @@ export default function FunctionPage(): React.ReactElement {
     <div style={{ padding: 16 }}>
       <Title level={4} style={{ marginBottom: 16 }}>{t('shellFunctions.title')}</Title>
 
-      {/* 内置函数区域（固定，不可拖拽） */}
+      {/* 内置函数区域（固定，不可拖拽，不参与机器过滤） */}
       {builtInFunctions.map((func, idx) => (
         <FunctionCard key={func.id} func={func} index={idx + 1} />
       ))}
 
-      {/* 用户函数区域 */}
-      <GroupHeader
-        title={t('common.syncedConfig')}
-        count={syncedFunctions.length}
-        collapsed={syncCollapsed}
-        onToggle={() => setSyncCollapsed(!syncCollapsed)}
-        onAdd={() => handleAdd()}
-        style={builtInFunctions.length > 0 ? { marginTop: 16 } : undefined}
-      />
-      {!syncCollapsed && syncedFunctions.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={syncedFunctions.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-            {syncedFunctions.map((func, idx) => (
-              <SortableWrapper key={func.id} id={func.id}>
-                {(dragHandleProps) => (
-                  <FunctionCard
-                    func={func}
-                    index={builtInFunctions.length + idx + 1}
-                    dragHandleProps={dragHandleProps as any}
-                  />
-                )}
-              </SortableWrapper>
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
-
-      <GroupHeader title={t('common.localConfig')} count={localFunctions.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd()} style={{ marginTop: 16 }} />
-      {!localCollapsed && localFunctions.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={localFunctions.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-            {localFunctions.map((func, idx) => (
-              <SortableWrapper key={func.id} id={func.id}>
-                {(dragHandleProps) => (
-                  <FunctionCard
-                    func={func}
-                    index={builtInFunctions.length + syncedFunctions.length + idx + 1}
-                    dragHandleProps={dragHandleProps as any}
-                  />
-                )}
-              </SortableWrapper>
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
+      {/* 用户函数区域（单列 + 机器过滤） */}
+      <div style={builtInFunctions.length > 0 ? { marginTop: 16 } : undefined}>
+        <SingleSortableList
+          items={userFunctions}
+          onReorder={reorderFunctions}
+          onAdd={() => handleAdd()}
+          filterMachineId={filterMachineId}
+          onFilterChange={setFilterMachineId}
+          renderItem={(func, index, dragHandleProps) => (
+            <FunctionCard
+              func={func}
+              index={builtInFunctions.length + index}
+              dragHandleProps={dragHandleProps as any}
+            />
+          )}
+        />
+      </div>
 
       {/* Add/Edit Modal */}
       <FunctionFormModal

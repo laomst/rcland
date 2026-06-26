@@ -6,7 +6,7 @@ import { createEmptyVariable } from '@shared/builtin-functions'
 import { ALL_SHELL_TYPES } from '@shared/shell'
 import { EnvVarCard } from '../components/EnvVarCard'
 import { EnvVarFormModal, type EnvVarFormValues } from '../components/EnvVarFormModal'
-import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
+import { SingleSortableList } from '@renderer/modules/shared/SingleSortableList'
 
 const { Title } = Typography
 
@@ -18,8 +18,7 @@ export function EnvVarPage(): React.ReactElement {
   const addVariable = useShellConfigStore((s) => s.addVariable)
   const reorderVariables = useShellConfigStore((s) => s.reorderVariables)
 
-  const [syncCollapsed, setSyncCollapsed] = useState(false)
-  const [localCollapsed, setLocalCollapsed] = useState(false)
+  const [filterMachineId, setFilterMachineId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [editingVarId, setEditingVarId] = useState<string | null>(null)
   const [initialFormValues, setInitialFormValues] = useState<EnvVarFormValues>({
@@ -65,17 +64,12 @@ export function EnvVarPage(): React.ReactElement {
     <div>
       <Title level={4} style={{ marginBottom: 16 }}>{t('shellEnv.title')}</Title>
 
-      <GroupedSortableList
-        titleSynced={t('common.syncedConfig')}
-        titleLocal={t('common.localConfig')}
+      <SingleSortableList
         items={variables}
-        syncCollapsed={syncCollapsed}
-        localCollapsed={localCollapsed}
-        onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
-        onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
-        onAddSync={() => handleAdd()}
-        onAddLocal={() => handleAdd()}
         onReorder={reorderVariables}
+        onAdd={() => handleAdd()}
+        filterMachineId={filterMachineId}
+        onFilterChange={setFilterMachineId}
         renderItem={(variable, index, dragHandleProps) => (
           <EnvVarCard variable={variable} index={index} dragHandleProps={dragHandleProps} />
         )}

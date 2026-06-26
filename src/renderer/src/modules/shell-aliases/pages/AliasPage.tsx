@@ -6,7 +6,7 @@ import { AliasCard } from '@renderer/modules/shell-aliases/components/AliasCard'
 import { AliasFormModal, type AliasFormValues } from '@renderer/modules/shell-aliases/components/AliasFormModal'
 import { createEmptyAlias } from '@shared/builtin-functions'
 import { ALL_SHELL_TYPES } from '@shared/shell'
-import { GroupedSortableList } from '@renderer/modules/shared/GroupedSortableList'
+import { SingleSortableList } from '@renderer/modules/shared/SingleSortableList'
 
 const { Title } = Typography
 
@@ -18,8 +18,7 @@ export default function AliasPage(): React.ReactElement {
   const loadShellConfig = useShellConfigStore((s) => s.loadShellConfig)
   const dataLoaded = useShellConfigStore((s) => s.dataLoaded)
 
-  const [syncCollapsed, setSyncCollapsed] = useState(false)
-  const [localCollapsed, setLocalCollapsed] = useState(false)
+  const [filterMachineId, setFilterMachineId] = useState<string | null>(null)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [editingAliasId, setEditingAliasId] = useState<string | null>(null)
   const [initialFormValues, setInitialFormValues] = useState<AliasFormValues>({
@@ -44,17 +43,12 @@ export default function AliasPage(): React.ReactElement {
     <div style={{ padding: 24 }}>
       <Title level={4} style={{ marginBottom: 16 }}>{t('shellAliases.title')}</Title>
 
-      <GroupedSortableList
-        titleSynced={t('common.syncedConfig')}
-        titleLocal={t('common.localConfig')}
+      <SingleSortableList
         items={aliases}
-        syncCollapsed={syncCollapsed}
-        localCollapsed={localCollapsed}
-        onToggleSync={() => setSyncCollapsed(!syncCollapsed)}
-        onToggleLocal={() => setLocalCollapsed(!localCollapsed)}
-        onAddSync={() => handleAdd()}
-        onAddLocal={() => handleAdd()}
         onReorder={reorderAliases}
+        onAdd={() => handleAdd()}
+        filterMachineId={filterMachineId}
+        onFilterChange={setFilterMachineId}
         renderItem={(alias, index, dragHandleProps) => (
           <AliasCard alias={alias} index={index} dragHandleProps={dragHandleProps} />
         )}
