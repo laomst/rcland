@@ -93,8 +93,7 @@ export function AliasCard({
             alias: alias.alias,
             command: alias.command,
             description: alias.description ?? '',
-            shells: alias.shells ?? [],
-            localOnly: alias.localOnly ?? false
+            shells: alias.shells ?? []
           }}
           okText={t('common.save')}
           onCancel={onClose}
@@ -103,8 +102,7 @@ export function AliasCard({
               alias: values.alias,
               command: values.command,
               description: values.description,
-              shells: values.shells,
-              localOnly: values.localOnly
+              shells: values.shells
             })
             onClose()
           }}

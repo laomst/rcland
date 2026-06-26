@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Space, Switch, Typography, Tooltip, App, Tag, Select } from 'antd'
+import { Button, Space, Switch, Typography, Tooltip, App, Tag } from 'antd'
 import { EditOutlined, DeleteOutlined, LockOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ShellFunction } from '@shared/shell-types'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
@@ -92,20 +92,6 @@ export function FunctionCard({
                   }}
                 />
               </Tooltip>
-              <Select
-                size="small"
-                variant="borderless"
-                value={func.localOnly ? 'local' : 'sync'}
-                onChange={(val) => {
-                  const newLocalOnly = val === 'local'
-                  updateFunction(func.id, { localOnly: newLocalOnly })
-                }}
-                style={{ width: 70 }}
-                options={[
-                  { value: 'sync', label: t('common.synced') },
-                  { value: 'local', label: t('common.local') }
-                ]}
-              />
             </>
           )}
           <Tooltip title={func.builtIn ? t('shellFunctions.builtInNoDisable') : undefined}>
@@ -151,8 +137,7 @@ export function FunctionCard({
           name: func.name,
           category: func.category,
           description: func.description || '',
-          body: { ...func.body },
-          localOnly: func.localOnly ?? false
+          body: { ...func.body }
         }}
         okText={t('common.save')}
         readOnly={func.builtIn}
@@ -163,8 +148,7 @@ export function FunctionCard({
             name: values.name,
             category: values.category,
             description: values.description,
-            body: values.body,
-            localOnly: values.localOnly
+            body: values.body
           })
           setEditOpen(false)
         }}

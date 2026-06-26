@@ -124,17 +124,6 @@ export function LaunchItemCard({
               })
             }} />
           </Tooltip>
-          <Select
-            size="small"
-            variant="borderless"
-            value={launchItem.localOnly ? 'local' : 'sync'}
-            onChange={(val) => updateLaunchItem(launchItem.id, { localOnly: val === 'local' })}
-            style={{ width: 70 }}
-            options={[
-              { value: 'sync', label: t('common.synced') },
-              { value: 'local', label: t('common.local') }
-            ]}
-          />
           <Switch
             size="small"
             checked={launchItem.enabled}
@@ -211,7 +200,6 @@ export function LaunchItemCard({
           passthrough: launchItem.passthrough ?? false,
           passthroughCommand: launchItem.passthroughCommand ?? '',
           useSystemProxy: launchItem.useSystemProxy ?? false,
-          localOnly: launchItem.localOnly ?? false,
           mcpMode: launchItem.mcpMode,
           mcpServerIds: launchItem.mcpServerIds
         }}
@@ -228,7 +216,6 @@ export function LaunchItemCard({
             passthrough: values.passthrough,
             passthroughCommand: values.passthrough ? (values.passthroughCommand?.trim() || undefined) : undefined,
             useSystemProxy: values.useSystemProxy,
-            localOnly: values.localOnly,
             mcpMode: values.mcpMode,
             mcpServerIds: values.mcpServerIds
           })
