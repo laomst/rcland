@@ -4,8 +4,7 @@ import type {
   PathVariable,
   PathEntry,
   ShellFunction,
-  ShellAlias,
-  LocalShellConfigData
+  ShellAlias
 } from './shell-types'
 
 // ============================================================
@@ -37,10 +36,6 @@ export function createEmptyShellConfig(): ShellConfigData {
     prompt: { type: 'simple' },
     output: { profiles: {} }
   }
-}
-
-export function createEmptyLocalShellConfig(): LocalShellConfigData {
-  return { version: 1, variables: [], pathVariables: [], pathEntries: [], functions: [], aliases: [] }
 }
 
 export function createEmptyVariable(): ShellVariable {

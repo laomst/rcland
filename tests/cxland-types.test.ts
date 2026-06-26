@@ -2,7 +2,6 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   createEmptyCXLandData,
-  createEmptyLocalCXLandData,
   normalizeCXLandData,
   getCXEndpointUrl,
   getCXKey,
@@ -104,13 +103,6 @@ test('getCXEndpointUrl returns empty string when provider has no endpoints', () 
     keys: []
   }
   assert.equal(getCXEndpointUrl(provider), '')
-})
-
-test('createEmptyLocalCXLandData returns v1 with empty arrays', () => {
-  const data = createEmptyLocalCXLandData()
-  assert.equal(data.version, 1)
-  assert.deepEqual(data.providers, [])
-  assert.deepEqual(data.launchItems, [])
 })
 
 test('getCXKey returns key when found', () => {
