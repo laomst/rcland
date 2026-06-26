@@ -3,7 +3,7 @@
 
 /** 剥除残留的 localOnly 字段 */
 export function stripLegacyLocalOnly<T>(item: T): T {
-  if (item && typeof item === 'object' && 'localOnly' in item) {
+  if (item && typeof item === 'object') {
     const { localOnly: _localOnly, ...rest } = item as Record<string, unknown>
     return rest as T
   }
