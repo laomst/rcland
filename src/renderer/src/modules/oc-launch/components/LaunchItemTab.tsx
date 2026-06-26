@@ -1,37 +1,22 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable'
+import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useOCLandStore } from '@renderer/stores/useOCLandStore'
 import { LaunchItemCard } from './LaunchItemCard'
 import { LaunchItemFormModal } from './LaunchItemFormModal'
-import { GroupHeader } from '@renderer/components/GroupHeader'
+import { SingleSortableList } from '@renderer/modules/shared/SingleSortableList'
 import type { OCLaunchItem, OCProvider } from '@shared/types'
 
 interface SortableLaunchItemCardProps {
   launchItem: OCLaunchItem
   providers: OCProvider[]
   index: number
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }
 
-function SortableLaunchItemCard({ launchItem, providers, index }: SortableLaunchItemCardProps) {
+function SortableLaunchItemCard({ launchItem, providers, index, dragHandleProps }: SortableLaunchItemCardProps) {
   const {
-    attributes,
-    listeners,
     setNodeRef,
     transform,
     transition,
@@ -50,7 +35,7 @@ function SortableLaunchItemCard({ launchItem, providers, index }: SortableLaunch
         providers={providers}
         index={index}
         isDragging={isDragging}
-        dragHandleProps={{ ...attributes, ...listeners }}
+        dragHandleProps={dragHandleProps}
       />
     </div>
   )
@@ -62,28 +47,14 @@ export function LaunchItemTab(): React.ReactElement {
   const providers = useOCLandStore((s) => s.providers)
   const addLaunchItem = useOCLandStore((s) => s.addLaunchItem)
   const reorderLaunchItems = useOCLandStore((s) => s.reorderLaunchItems)
-  const [syncCollapsed, setSyncCollapsed] = useState(false)
-  const [localCollapsed, setLocalCollapsed] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
-  const [addLocalOnly, setAddLocalOnly] = useState(false)
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5
-      }
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
-  )
+  const [filterMachineId, setFilterMachineId] = useState<string | null>(null)
 
   const firstProvider = providers[0]
   const firstEndpointId = firstProvider?.endpoints?.[0]?.id ?? ''
   const firstKeyId = firstProvider?.keys?.[0]?.id ?? ''
 
-  const handleAdd = (localOnly: boolean) => {
-    setAddLocalOnly(localOnly)
+  const handleAdd = () => {
     setAddOpen(true)
   }
 
@@ -97,7 +68,7 @@ export function LaunchItemTab(): React.ReactElement {
     passthrough?: boolean
     passthroughCommand?: string
     useSystemProxy?: boolean
-    localOnly?: boolean
+    applicableMachines?: string[]
     mcpMode?: 'inherit' | 'custom'
     mcpServerIds?: string[]
   }) => {
@@ -113,49 +84,30 @@ export function LaunchItemTab(): React.ReactElement {
       passthrough: values.passthrough,
       passthroughCommand: values.passthrough ? (values.passthroughCommand?.trim() || undefined) : undefined,
       useSystemProxy: values.passthrough ? values.useSystemProxy : undefined,
-      localOnly: values.localOnly,
+      applicableMachines: values.applicableMachines,
       mcpMode: values.mcpMode,
       mcpServerIds: values.mcpServerIds
     })
     setAddOpen(false)
   }
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (over && active.id !== over.id) {
-      reorderLaunchItems(active.id as string, over.id as string)
-    }
-  }
-
-  // Split into synced and local groups
-  const syncedLaunchItems = launchItems.filter((c) => !c.localOnly)
-  const localLaunchItems = launchItems.filter((c) => c.localOnly)
-
   return (
     <div>
-      {/* Synced launch items */}
-      <GroupHeader title={t('common.syncedConfig')} count={syncedLaunchItems.length} collapsed={syncCollapsed} onToggle={() => setSyncCollapsed(!syncCollapsed)} onAdd={() => handleAdd(false)} />
-      {!syncCollapsed && syncedLaunchItems.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={syncedLaunchItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            {syncedLaunchItems.map((c, idx) => (
-              <SortableLaunchItemCard key={c.id} launchItem={c} providers={providers} index={idx + 1} />
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
-
-      {/* Local launch items */}
-      <GroupHeader title={t('common.localConfig')} count={localLaunchItems.length} collapsed={localCollapsed} onToggle={() => setLocalCollapsed(!localCollapsed)} onAdd={() => handleAdd(true)} style={{ marginTop: 16 }} />
-      {!localCollapsed && localLaunchItems.length > 0 && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={localLaunchItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            {localLaunchItems.map((c, idx) => (
-              <SortableLaunchItemCard key={c.id} launchItem={c} providers={providers} index={syncedLaunchItems.length + idx + 1} />
-            ))}
-          </SortableContext>
-        </DndContext>
-      )}
+      <SingleSortableList
+        items={launchItems}
+        onReorder={reorderLaunchItems}
+        onAdd={handleAdd}
+        filterMachineId={filterMachineId}
+        onFilterChange={setFilterMachineId}
+        renderItem={(item, index, dh) => (
+          <SortableLaunchItemCard
+            launchItem={item}
+            providers={providers}
+            index={index}
+            dragHandleProps={dh}
+          />
+        )}
+      />
 
       <LaunchItemFormModal
         open={addOpen}
@@ -171,7 +123,7 @@ export function LaunchItemTab(): React.ReactElement {
           passthrough: false,
           passthroughCommand: '',
           useSystemProxy: false,
-          localOnly: addLocalOnly
+          applicableMachines: undefined
         }}
         okText={t('common.add')}
         onCancel={() => setAddOpen(false)}

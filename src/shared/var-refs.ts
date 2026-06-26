@@ -100,35 +100,6 @@ export function findReferencingEntries(
   return results
 }
 
-/**
- * Check if changing a variable to localOnly would break any synced variable.
- * Returns an array of synced variable keys that reference the target.
- */
-export function findSyncedReferencers(
-  targetKey: string,
-  variables: ShellVariable[]
-): string[] {
-  return variables
-    .filter((v) => !v.localOnly && v.enabled && v.key !== targetKey)
-    .filter((v) => v.value.includes(`{{${targetKey}}}`))
-    .map((v) => v.key)
-}
-
-/**
- * Check if a synced variable's value references any local-only variable.
- * Returns an array of local-only variable keys that are referenced.
- */
-export function findLocalRefs(
-  value: string,
-  variables: ShellVariable[]
-): string[] {
-  const refNames = extractVarRefs(value)
-  return refNames.filter((name) => {
-    const v = variables.find((vv) => vv.key === name)
-    return v?.localOnly
-  })
-}
-
 /** 拓扑排序路径变量，被引用的排在前面 */
 export function topoSortPathVariables(pathVariables: PathVariable[]): PathVariable[] {
   const enabled = pathVariables.filter((v) => v.enabled && v.key)
