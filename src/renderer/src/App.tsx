@@ -17,6 +17,7 @@ import { useCXLandStore } from '@renderer/stores/useCXLandStore'
 import { useOCLandStore } from '@renderer/stores/useOCLandStore'
 import { useShellConfigStore } from '@renderer/stores/useShellConfigStore'
 import { useMcpServersStore } from '@renderer/stores/useMcpServersStore'
+import { useMachinesStore } from '@renderer/stores/useMachinesStore'
 import { extractIpcErrorMessage, isDecryptFailedError, isKeyNotFoundError } from './utils/ipc-error'
 import { useTranslation } from 'react-i18next'
 import './i18n'
@@ -72,6 +73,9 @@ function AppLayout(): React.ReactElement {
 
   useEffect(() => {
     window.electronAPI.machineStatus().then((s) => {
+      if (s.claimed) {
+        useMachinesStore.getState().loadMachines()
+      }
       setNeedClaim(!s.claimed)
       setClaimChecked(true)
     })
