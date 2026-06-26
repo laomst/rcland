@@ -8,6 +8,6 @@ export class OCLandBashGenerator implements SectionGenerator<OCLandSectionData> 
   readonly shellType: ShellType = 'bash'
 
   generate(data: OCLandSectionData, ctx: GenerateContext): string {
-    return buildBashLikeOCContent(data.ocConfig, data.decryptedTokens, ctx.proxyFunctionNames)
+    return buildBashLikeOCContent(data.ocConfig, data.decryptedTokens, ctx.proxyFunctionNames, ctx.machineId)
   }
 }

@@ -3,6 +3,7 @@ import { getOCEndpointUrl } from '@shared/types'
 import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
 import { quotePowerShellLiteral, assertSafeShellName } from '../../shell-syntax'
 import { ocKeyEnvVarName, assertSafeOCConfigId } from '../../oc-config'
+import { isMachineExclusive } from '@shared/machine-filter'
 
 /**
  * Build PowerShell content for all enabled OCLaunchItems and optional selector.
@@ -10,7 +11,8 @@ import { ocKeyEnvVarName, assertSafeOCConfigId } from '../../oc-config'
  */
 export function buildPowerShellOCContent(
   data: OCLandData,
-  decryptedTokens: Map<string, string>
+  decryptedTokens: Map<string, string>,
+  machineId: string = ''
 ): string {
   const lines: string[] = []
   const providerMap = new Map(data.providers.map((p) => [p.id, p]))
@@ -32,12 +34,12 @@ export function buildPowerShellOCContent(
   const ls = data.selector.localSelector
   if (ls?.enabled) {
     const localFn = assertSafeShellName(ls.funcName || 'ocl', 'local-selector')
-    const localEntries = enabled.filter((c) => c.localOnly)
+    const localEntries = enabled.filter((c) => isMachineExclusive(c, machineId))
     if (localEntries.length > 0) {
       writeSelectorFunction(lines, localFn, ls.promptTitle || data.selector.promptTitle, localEntries)
     } else {
       lines.push('')
-      lines.push(`function ${localFn} { Write-Error ${quotePowerShellLiteral('错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」')} }`)
+      lines.push(`function ${localFn} { Write-Error ${quotePowerShellLiteral('错误: 没有任何本机专属启动器,请在 RCLand 中将启动项的适用机器设为仅本机')} }`)
     }
   }
 

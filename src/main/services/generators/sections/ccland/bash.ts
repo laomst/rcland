@@ -5,6 +5,7 @@ import { resolveMcpServers } from '@shared/mcp-resolve'
 import type { ShellType } from '@shared/shell'
 import type { CCLandSectionData } from './zsh'
 import { assertSafeEnvName, assertSafeShellName, quoteBashLikeLiteral } from '../../shell-syntax'
+import { isMachineExclusive } from '@shared/machine-filter'
 
 export class CCLandBashGenerator implements SectionGenerator<CCLandSectionData> {
   readonly sectionName = 'ccland'
@@ -54,7 +55,7 @@ export class CCLandBashGenerator implements SectionGenerator<CCLandSectionData> 
     if (ls?.enabled) {
       const localFuncName = assertSafeShellName(ls.funcName || 'ccl', 'local-selector')
       const localEntries = enabledConfigs
-        .filter((c) => c.localOnly)
+        .filter((c) => isMachineExclusive(c, ctx.machineId))
         .map((c) => ({
           funcName: assertSafeShellName(c.funcName, c.name || c.id),
           label: c.name || c.funcName
@@ -63,7 +64,7 @@ export class CCLandBashGenerator implements SectionGenerator<CCLandSectionData> 
         this.writeSelectorFunction(lines, localFuncName, ls.promptTitle || ccConfig.selector.promptTitle, localEntries)
       } else {
         lines.push('')
-        lines.push(`${localFuncName}() { echo ${quoteBashLikeLiteral(`错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」`)} >&2; return 1; }`)
+        lines.push(`${localFuncName}() { echo ${quoteBashLikeLiteral(`错误: 没有任何本机专属启动器,请在 RCLand 中将启动项的适用机器设为仅本机`)} >&2; return 1; }`)
       }
       if (ls.aliasEnabled !== false) {
         lines.push('')

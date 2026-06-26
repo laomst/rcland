@@ -6,12 +6,13 @@ import type { ShellType } from '@shared/shell'
 import type { CCLandSectionData } from './zsh'
 import { assertSafeEnvName, assertSafeShellName, quotePowerShellLiteral } from '../../shell-syntax'
 import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
+import { isMachineExclusive } from '@shared/machine-filter'
 
 export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSectionData> {
   readonly sectionName = 'ccland'
   readonly shellType: ShellType = 'powershell'
 
-  generate(data: CCLandSectionData, _ctx: GenerateContext): string {
+  generate(data: CCLandSectionData, ctx: GenerateContext): string {
     const { ccConfig, decryptedTokens, mcpServersData } = data
     const lines: string[] = []
 
@@ -55,7 +56,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
     if (ls?.enabled) {
       const localFuncName = assertSafeShellName(ls.funcName || 'ccl', 'local-selector')
       const localEntries = enabledConfigs
-        .filter((c) => c.localOnly)
+        .filter((c) => isMachineExclusive(c, ctx.machineId))
         .map((c) => ({
           funcName: assertSafeShellName(c.funcName, c.name || c.id),
           label: c.name || c.funcName
@@ -64,7 +65,7 @@ export class CCLandPowerShellGenerator implements SectionGenerator<CCLandSection
         this.writeSelectorFunction(lines, localFuncName, ls.promptTitle || ccConfig.selector.promptTitle, localEntries)
       } else {
         lines.push('')
-        lines.push(`function ${localFuncName} { Write-Error ${quotePowerShellLiteral('错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」')} }`)
+        lines.push(`function ${localFuncName} { Write-Error ${quotePowerShellLiteral('错误: 没有任何本机专属启动器,请在 RCLand 中将启动项的适用机器设为仅本机')} }`)
       }
       if (ls.aliasEnabled !== false) {
         lines.push('')

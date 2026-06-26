@@ -3,6 +3,7 @@ import { getCXEndpointUrl } from '@shared/types'
 import { resolveMcpServers } from '@shared/mcp-resolve'
 import { quoteBashLikeLiteral, assertSafeShellName } from '../../shell-syntax'
 import { sanitizeCodexProviderId, buildBashCodexConfigArg, buildBashCXMcpArgs } from './codex-args'
+import { isMachineExclusive } from '@shared/machine-filter'
 
 /**
  * Build bash/zsh shell content for all enabled CXLaunchItems and optional selector.
@@ -17,7 +18,8 @@ export function buildBashLikeCXContent(
   data: CXLandData,
   decryptedTokens: Map<string, string>,
   mcpServersData: McpServersData,
-  proxyFns: ProxyFunctionNames = DEFAULT_PROXY_FUNCTION_NAMES
+  proxyFns: ProxyFunctionNames = DEFAULT_PROXY_FUNCTION_NAMES,
+  machineId: string = ''
 ): string {
   const lines: string[] = []
 
@@ -54,12 +56,12 @@ export function buildBashLikeCXContent(
   const ls = data.selector.localSelector
   if (ls?.enabled) {
     const localFuncName = assertSafeShellName(ls.funcName || 'cxl', 'local-selector')
-    const localEntries = enabledConfigs.filter((c) => c.localOnly)
+    const localEntries = enabledConfigs.filter((c) => isMachineExclusive(c, machineId))
     if (localEntries.length > 0) {
       writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries)
     } else {
       lines.push('')
-      lines.push(`${localFuncName}() { echo ${quoteBashLikeLiteral(`错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」`)} >&2; return 1; }`)
+      lines.push(`${localFuncName}() { echo ${quoteBashLikeLiteral(`错误: 没有任何本机专属启动器,请在 RCLand 中将启动项的适用机器设为仅本机`)} >&2; return 1; }`)
     }
     if (ls.aliasEnabled !== false) {
       lines.push('')

@@ -4,6 +4,7 @@ import {
 } from '@shared/types'
 import { quoteBashLikeLiteral, assertSafeShellName } from '../../shell-syntax'
 import { ocKeyEnvVarName, assertSafeOCConfigId } from '../../oc-config'
+import { isMachineExclusive } from '@shared/machine-filter'
 
 /**
  * Build bash/zsh shell content for all enabled OCLaunchItems and optional selector.
@@ -15,7 +16,8 @@ import { ocKeyEnvVarName, assertSafeOCConfigId } from '../../oc-config'
 export function buildBashLikeOCContent(
   data: OCLandData,
   decryptedTokens: Map<string, string>,
-  proxyFns: ProxyFunctionNames = DEFAULT_PROXY_FUNCTION_NAMES
+  proxyFns: ProxyFunctionNames = DEFAULT_PROXY_FUNCTION_NAMES,
+  machineId: string = ''
 ): string {
   const lines: string[] = []
   const providerMap = new Map(data.providers.map((p) => [p.id, p]))
@@ -43,12 +45,12 @@ export function buildBashLikeOCContent(
   const ls = data.selector.localSelector
   if (ls?.enabled) {
     const localFn = assertSafeShellName(ls.funcName || 'ocl', 'local-selector')
-    const localEntries = enabled.filter((c) => c.localOnly)
+    const localEntries = enabled.filter((c) => isMachineExclusive(c, machineId))
     if (localEntries.length > 0) {
       writeSelector(lines, localFn, ls.promptTitle || data.selector.promptTitle, localEntries)
     } else {
       lines.push('')
-      lines.push(`${localFn}() { echo ${quoteBashLikeLiteral('错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」')} >&2; return 1; }`)
+      lines.push(`${localFn}() { echo ${quoteBashLikeLiteral('错误: 没有任何本机专属启动器,请在 RCLand 中将启动项的适用机器设为仅本机')} >&2; return 1; }`)
     }
   }
 

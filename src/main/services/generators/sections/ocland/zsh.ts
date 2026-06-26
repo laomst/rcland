@@ -14,6 +14,6 @@ export class OCLandZshGenerator implements SectionGenerator<OCLandSectionData> {
   readonly shellType: ShellType = 'zsh'
 
   generate(data: OCLandSectionData, ctx: GenerateContext): string {
-    return buildBashLikeOCContent(data.ocConfig, data.decryptedTokens, ctx.proxyFunctionNames)
+    return buildBashLikeOCContent(data.ocConfig, data.decryptedTokens, ctx.proxyFunctionNames, ctx.machineId)
   }
 }

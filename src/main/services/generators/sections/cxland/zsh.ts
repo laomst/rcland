@@ -14,6 +14,6 @@ export class CXLandZshGenerator implements SectionGenerator<CXLandSectionData> {
   readonly shellType: ShellType = 'zsh'
 
   generate(data: CXLandSectionData, ctx: GenerateContext): string {
-    return buildBashLikeCXContent(data.cxConfig, data.decryptedTokens, data.mcpServersData, ctx.proxyFunctionNames)
+    return buildBashLikeCXContent(data.cxConfig, data.decryptedTokens, data.mcpServersData, ctx.proxyFunctionNames, ctx.machineId)
   }
 }

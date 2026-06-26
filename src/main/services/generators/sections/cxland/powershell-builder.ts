@@ -4,6 +4,7 @@ import { resolveMcpServers } from '@shared/mcp-resolve'
 import { SYSTEM_PROXY_ENV_NAMES } from '@shared/system-proxy'
 import { quotePowerShellLiteral, assertSafeShellName } from '../../shell-syntax'
 import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg, buildPowerShellCXMcpArgs } from './codex-args'
+import { isMachineExclusive } from '@shared/machine-filter'
 
 /**
  * Build PowerShell shell content for all enabled CXLaunchItems and optional selector.
@@ -19,7 +20,8 @@ import { sanitizeCodexProviderId, buildPowerShellCodexConfigArg, buildPowerShell
 export function buildPowerShellCXContent(
   data: CXLandData,
   decryptedTokens: Map<string, string>,
-  mcpServersData: McpServersData
+  mcpServersData: McpServersData,
+  machineId: string = ''
 ): string {
   const lines: string[] = []
 
@@ -56,12 +58,12 @@ export function buildPowerShellCXContent(
   const ls = data.selector.localSelector
   if (ls?.enabled) {
     const localFuncName = assertSafeShellName(ls.funcName || 'cxl', 'local-selector')
-    const localEntries = enabledConfigs.filter((c) => c.localOnly)
+    const localEntries = enabledConfigs.filter((c) => isMachineExclusive(c, machineId))
     if (localEntries.length > 0) {
       writeSelectorFunction(lines, localFuncName, ls.promptTitle || data.selector.promptTitle, localEntries)
     } else {
       lines.push('')
-      lines.push(`function ${localFuncName} { Write-Error ${quotePowerShellLiteral('错误: 没有任何本机启动器,请在 RCLand 中将启动项标记为「仅本机」')} }`)
+      lines.push(`function ${localFuncName} { Write-Error ${quotePowerShellLiteral('错误: 没有任何本机专属启动器,请在 RCLand 中将启动项的适用机器设为仅本机')} }`)
     }
     if (ls.aliasEnabled !== false) {
       lines.push('')
