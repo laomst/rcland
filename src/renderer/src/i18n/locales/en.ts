@@ -25,6 +25,15 @@ const en = {
     applicableShells: 'Applicable Shells',
     encrypted: 'Encrypted',
     operationFailed: 'Operation failed: {{error}}',
+    applicableMachines: 'Machines',
+    allMachines: 'All machines',
+    limitedMachines: 'Specific machines',
+    currentMachine: 'Current',
+    deletedMachine: 'Deleted machine',
+    machineScopeAll: 'All machines',
+    machineScopeLimited: 'Specific machines',
+    filterByMachine: 'Filter by machine',
+    filterAll: 'All',
   },
 
   nav: {
@@ -294,7 +303,7 @@ const en = {
       aliasEnabledHint: 'Auto-generates a {funcName}d alias (e.g. ccd) with --dangerously-skip-permissions',
       localSelector: 'Local Selector',
       localEnabled: 'Enabled',
-      localEnabledHint: 'Only lists local-only launch items for selection',
+      localEnabledHint: 'Only lists machine-specific launch items for selection',
       localFuncName: 'Function Name',
       localPromptTitle: 'Prompt Title',
       localAliasEnabled: 'Shortcut Alias',
@@ -326,7 +335,7 @@ const en = {
       aliasEnabledHint: 'Auto-generates a {funcName}d alias (e.g. cxd) with --dangerously-bypass-approvals-and-sandbox',
       localSelector: 'Local Selector',
       localEnabled: 'Enabled',
-      localEnabledHint: 'Only lists local-only launch items for selection',
+      localEnabledHint: 'Only lists machine-specific launch items for selection',
       localFuncName: 'Function Name',
       localPromptTitle: 'Prompt Title',
       localAliasEnabled: 'Shortcut Alias',
@@ -415,7 +424,7 @@ const en = {
       aliasEnabledHint: 'Auto-generates a {funcName}d alias (e.g. ocd) with --dangerously-bypass-approvals-and-sandbox',
       localSelector: 'Local Selector',
       localEnabled: 'Enabled',
-      localEnabledHint: 'Only lists local-only launch items for selection',
+      localEnabledHint: 'Only lists machine-specific launch items for selection',
       localFuncName: 'Function Name',
       localPromptTitle: 'Prompt Title',
       localAliasEnabled: 'Shortcut Alias',
@@ -463,6 +472,18 @@ const en = {
   },
 
   claudeEnvDict,
+
+  machines: {
+    title: 'Machines',
+    rename: 'Rename',
+    deleteConfirm: 'Remove this machine from the list? Items referencing it will not be deleted.',
+    claimTitle: 'What is this machine?',
+    claimNew: 'A brand-new machine',
+    claimAdopt: 'Replacing an old machine',
+    claimAdoptEmpty: 'No other machines detected. If replacing a device, wait for sync then claim in Machines settings.',
+    lastSeen: 'Last seen',
+    current: 'Current',
+  },
 
   systemProxy: {
     title: 'System Proxy',

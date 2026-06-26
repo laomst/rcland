@@ -25,6 +25,15 @@ const zhCN = {
     applicableShells: '适用 Shell',
     encrypted: '已加密',
     operationFailed: '操作失败: {{error}}',
+    applicableMachines: '适用机器',
+    allMachines: '全部机器',
+    limitedMachines: '指定机器',
+    currentMachine: '当前',
+    deletedMachine: '已删除机器',
+    machineScopeAll: '全部机器',
+    machineScopeLimited: '指定机器',
+    filterByMachine: '按机器过滤',
+    filterAll: '全部',
   },
 
   nav: {
@@ -294,7 +303,7 @@ const zhCN = {
       aliasEnabledHint: '自动生成 {函数名}d 别名（如 ccd），等价于 带 --dangerously-skip-permissions 参数',
       localSelector: '本机选择器',
       localEnabled: '启用',
-      localEnabledHint: '仅列出本机启动项（localOnly）供选择',
+      localEnabledHint: '仅列出本机专属启动项供选择',
       localFuncName: '函数名',
       localPromptTitle: '选择提示标题',
       localAliasEnabled: '快捷别名',
@@ -328,7 +337,7 @@ const zhCN = {
       requireSessionNameHint: '启用后，选择器函数必须使用 -n 指定会话名称',
       localSelector: '本机选择器',
       localEnabled: '启用',
-      localEnabledHint: '仅列出本机启动项（localOnly）供选择',
+      localEnabledHint: '仅列出本机专属启动项供选择',
       localFuncName: '函数名',
       localPromptTitle: '选择提示标题',
       localRequireSessionName: '强制会话名称',
@@ -419,7 +428,7 @@ const zhCN = {
       aliasEnabledHint: '自动生成 {函数名}d 别名（如 ocd），等价于 带 --dangerously-bypass-approvals-and-sandbox 参数',
       localSelector: '本机选择器',
       localEnabled: '启用',
-      localEnabledHint: '仅列出本机启动项（localOnly）供选择',
+      localEnabledHint: '仅列出本机专属启动项供选择',
       localFuncName: '函数名',
       localPromptTitle: '选择提示标题',
       localAliasEnabled: '快捷别名',
@@ -467,6 +476,18 @@ const zhCN = {
   },
 
   claudeEnvDict,
+
+  machines: {
+    title: '机器管理',
+    rename: '改名',
+    deleteConfirm: '确定从列表移除此机器？引用它的配置项不会被删除。',
+    claimTitle: '这台机器是？',
+    claimNew: '全新机器',
+    claimAdopt: '接替某台旧机器',
+    claimAdoptEmpty: '未检测到其他机器，若是换机请等同步完成后在机器管理页认领',
+    lastSeen: '活跃于',
+    current: '当前',
+  },
 
   systemProxy: {
     title: '系统代理',
