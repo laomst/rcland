@@ -1,15 +1,16 @@
 import { app, dialog } from 'electron'
 import { join } from 'path'
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import type { AppSettings, CCLaunchData, CXLandData, Provider, LaunchItem, LocalCCLaunchData, CXProvider, CXLaunchItem, LocalCXLandData, OCLandData, OCProvider, OCLaunchItem, LocalOCLandData, McpServersData } from '@shared/types'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'fs'
+import type { AppSettings, CCLaunchData, CXLandData, Provider, LaunchItem, CXProvider, CXLaunchItem, LocalCXLandData, OCLandData, OCProvider, OCLaunchItem, LocalOCLandData, McpServersData } from '@shared/types'
 import { createEmptyCXLandData, normalizeCXLandData, createEmptyOCLandData, normalizeOCLandData, normalizeMcpServersData } from '@shared/types'
 import type { ShellType } from '@shared/shell'
 import { assertAppSettings, assertCCLaunchData, assertCXLandData, assertOCLandData } from '@shared/ipc-contracts'
 import { platform } from 'os'
-import { loadLocalCCConfig, saveLocalCCConfig } from './local-cc-config'
 import { loadLocalCXConfig, saveLocalCXConfig } from './local-cx-config'
 import { loadLocalOCConfig, saveLocalOCConfig } from './local-oc-config'
 import { markLocalItems, splitLocalItems } from './local-sync'
+import { readMachineId } from './machine-id'
+import { mergeLegacyLocalItems } from './legacy-migration'
 
 const SETTINGS_FILENAME = 'settings.json'
 const DATA_FILENAME = 'rcland.config.claudecode.json'
@@ -19,6 +20,29 @@ const MCP_DATA_FILENAME = 'rcland.mcp-servers.json'
 
 function getLocalDir(): string {
   return join(app.getPath('home'), '.rcland', 'local_config')
+}
+
+/** 读旧 .local.json（自包含，不依赖被删模块）。返回 { providers, launchItems } 或 null */
+function readLegacyLocal(filename: string): { providers: unknown[]; launchItems: unknown[] } | null {
+  const p = join(getLocalDir(), filename)
+  if (!existsSync(p)) return null
+  try {
+    const parsed = JSON.parse(readFileSync(p, 'utf-8'))
+    return {
+      providers: Array.isArray(parsed.providers) ? parsed.providers : [],
+      launchItems: Array.isArray(parsed.launchItems) ? parsed.launchItems : []
+    }
+  } catch {
+    return null
+  }
+}
+
+/** 归档旧 local 文件：重命名为 .migrated，避免二次迁移 */
+function archiveLegacyLocal(filename: string): void {
+  const p = join(getLocalDir(), filename)
+  if (existsSync(p)) {
+    try { renameSync(p, p + '.migrated') } catch { /* ignore */ }
+  }
 }
 
 function getSettingsPath(): string {
@@ -81,81 +105,75 @@ export function setConfigDir(dir: string): void {
   saveSettings(settings)
 }
 
+const LOCAL_CC_FILENAME = 'rcland.config.claudecode.local.json'
+
 export function loadData(): string | null {
   const settings = loadSettings()
   const p = join(settings.configDir, DATA_FILENAME)
 
-  // Load synced data
+  // 读主文件（接受 5/6/7，旧版本升到 7）
   let syncedData: CCLaunchData | null = null
   if (existsSync(p)) {
-    const raw = readFileSync(p, 'utf-8')
-    const parsed = JSON.parse(raw)
-
-    if (parsed.version === 5 || parsed.version === 6) {
-      parsed.version = 6
+    const parsed = JSON.parse(readFileSync(p, 'utf-8'))
+    if (parsed.version === 5 || parsed.version === 6 || parsed.version === 7) {
+      parsed.version = 7
       syncedData = parsed
     }
   }
 
-  // Load local data
-  const localData = loadLocalCCConfig()
+  // 语义迁移：独立检查旧 .local.json（多机时序陷阱——不看主文件版本号）
+  const legacy = readLegacyLocal(LOCAL_CC_FILENAME)
+  let migrated = false
+  if (legacy) {
+    const machineId = readMachineId()
+    if (machineId) {
+      const base = syncedData ?? { version: 7 as const, providers: [], launchItems: [], selector: { funcName: 'cc', promptTitle: '选择启动器' } }
+      syncedData = {
+        version: 7,
+        providers: mergeLegacyLocalItems(base.providers, legacy.providers as never[], machineId) as Provider[],
+        launchItems: mergeLegacyLocalItems(base.launchItems, legacy.launchItems as never[], machineId) as LaunchItem[],
+        selector: base.selector
+      }
+      migrated = true
+    }
+  }
 
-  // Merge: local items get localOnly=true
-  const localProviders = markLocalItems(localData.providers)
-  const localLaunchItems = markLocalItems(localData.launchItems)
-
-  // Backward compatibility: accept both 'configs' (old) and 'launchItems' (new) from disk
-  const syncedLaunchItems = syncedData?.launchItems ?? []
-
-  // Combine synced + local
+  // selector 清洗（沿用旧逻辑）
   const rawSelector = syncedData?.selector ?? { funcName: 'cc', promptTitle: '选择启动器' }
-  // Clean up legacy fields
   const { aliasName: _, enabled: __, ...cleanSelector } = rawSelector as unknown as Record<string, unknown>
   const selector = { funcName: (cleanSelector.funcName as string) || 'cc', promptTitle: (cleanSelector.promptTitle as string) || '选择启动器', ...cleanSelector }
 
   const merged: CCLaunchData = {
-    version: 6,
-    providers: [...(syncedData?.providers ?? []), ...localProviders],
-    launchItems: [...syncedLaunchItems, ...localLaunchItems],
+    version: 7,
+    providers: syncedData?.providers ?? [],
+    launchItems: syncedData?.launchItems ?? [],
     selector
   }
 
-  // Return null if no data at all
+  // 迁移后立即写回主文件并归档 local
+  if (migrated) {
+    ensureConfigDir(settings.configDir)
+    writeFileSync(p, JSON.stringify(merged, null, 2), 'utf-8')
+    archiveLegacyLocal(LOCAL_CC_FILENAME)
+  }
+
   if (merged.providers.length === 0 && merged.launchItems.length === 0 && !syncedData) {
     return null
   }
-
   return JSON.stringify(merged)
 }
 
 export function saveData(json: string): void {
   const settings = loadSettings()
   ensureConfigDir(settings.configDir)
-
   const data: CCLaunchData = JSON.parse(json)
-
-  // Split providers
-  const { synced: syncedProviders, local: localProviders } = splitLocalItems(data.providers)
-
-  // Split launch items
-  const { synced: syncedLaunchItems, local: localLaunchItems } = splitLocalItems(data.launchItems)
-
-  // Save synced data (without localOnly field)
   const syncedData: CCLaunchData = {
-    version: 6,
-    providers: syncedProviders as Provider[],
-    launchItems: syncedLaunchItems as LaunchItem[],
+    version: 7,
+    providers: data.providers,
+    launchItems: data.launchItems,
     selector: data.selector
   }
   writeFileSync(join(settings.configDir, DATA_FILENAME), JSON.stringify(syncedData, null, 2), 'utf-8')
-
-  // Save local data (with localOnly field stripped, we'll re-add on load)
-  const localData: LocalCCLaunchData = {
-    version: 1,
-    providers: localProviders.map(p => { const { localOnly: _, ...rest } = p; return rest }) as Provider[],
-    launchItems: localLaunchItems.map(c => { const { localOnly: _, ...rest } = c; return rest }) as LaunchItem[]
-  }
-  saveLocalCCConfig(localData)
 }
 
 export function loadCCData(): CCLaunchData | null {

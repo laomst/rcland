@@ -68,7 +68,7 @@ function getResolvedProfilePath(shellType: ShellType): string {
 
 function defaultCCData(): CCLaunchData {
   return {
-    version: 6,
+    version: 7,
     providers: [],
     launchItems: [],
     selector: { funcName: 'cc', promptTitle: '' }
