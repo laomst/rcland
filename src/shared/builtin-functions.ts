@@ -28,7 +28,7 @@ function generateUUID(): string {
 
 export function createEmptyShellConfig(): ShellConfigData {
   return {
-    version: 1,
+    version: 2,
     variables: [],
     pathVariables: [],
     pathEntries: [],

@@ -39,7 +39,7 @@ export function assertOCLandData(value: unknown): asserts value is OCLandData {
 
 export function assertShellConfigData(value: unknown): asserts value is ShellConfigData {
   assertObject(value, 'ShellConfigData')
-  if (value.version !== 1) throw new Error('version must be 1')
+  if (value.version !== 2) throw new Error('version must be 2')
   assertArray(value.variables, 'variables')
   assertArray(value.pathVariables, 'pathVariables')
   assertArray(value.pathEntries, 'pathEntries')

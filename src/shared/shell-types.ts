@@ -5,7 +5,7 @@ import type { ShellType } from './shell'
 // ============================================================
 
 export interface ShellConfigData {
-  version: 1
+  version: 2
   variables: ShellVariable[]
   pathVariables: PathVariable[]
   pathEntries: PathEntry[]
@@ -24,8 +24,8 @@ export interface ShellVariable {
   description?: string
   enabled: boolean
   shells?: ShellType[]
-  /** 仅本机配置，不同步到其他设备 */
-  localOnly?: boolean
+  /** 适用机器白名单（空/未设置 = 全部机器适用） */
+  applicableMachines?: string[]
 }
 
 /** Path variable (resolved at generation time, not exported as shell variable) */
@@ -35,8 +35,8 @@ export interface PathVariable {
   value: string
   description?: string
   enabled: boolean
-  /** 仅本机配置，不同步到其他设备 */
-  localOnly?: boolean
+  /** 适用机器白名单（空/未设置 = 全部机器适用） */
+  applicableMachines?: string[]
 }
 
 /** PATH entry */
@@ -46,8 +46,8 @@ export interface PathEntry {
   description?: string
   enabled: boolean
   shells?: ShellType[]
-  /** 仅本机配置，不同步到其他设备 */
-  localOnly?: boolean
+  /** 适用机器白名单（空/未设置 = 全部机器适用） */
+  applicableMachines?: string[]
 }
 
 /** Shell function with per-shell bodies */
@@ -72,8 +72,8 @@ export interface ShellFunction {
   enabled: boolean
   /** 内置函数标记，不可删除/编辑 */
   builtIn?: boolean
-  /** 仅本机配置，不同步到其他设备 */
-  localOnly?: boolean
+  /** 适用机器白名单（空/未设置 = 全部机器适用） */
+  applicableMachines?: string[]
 }
 
 /** Command alias */
@@ -84,8 +84,8 @@ export interface ShellAlias {
   description?: string
   enabled: boolean
   shells?: ShellType[]
-  /** 仅本机配置，不同步到其他设备 */
-  localOnly?: boolean
+  /** 适用机器白名单（空/未设置 = 全部机器适用） */
+  applicableMachines?: string[]
 }
 
 /** Prompt configuration */
@@ -109,20 +109,6 @@ export interface OutputConfig {
       autoSource: boolean
     }
   }
-}
-
-// ============================================================
-// Local-Only Shell Config (存储在 Electron userData 目录)
-// ============================================================
-
-/** 本机配置数据，与同步配置分开存储 */
-export interface LocalShellConfigData {
-  version: 1
-  variables: ShellVariable[]
-  pathVariables: PathVariable[]
-  pathEntries: PathEntry[]
-  functions: ShellFunction[]
-  aliases: ShellAlias[]
 }
 
 // ============================================================
