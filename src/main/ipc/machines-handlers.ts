@@ -15,7 +15,15 @@ export function registerMachinesHandlers(): void {
   // 启动状态：是否已认领 + 机器列表
   ipcMain.handle('machine:status', () => {
     const machineId = readMachineId()
-    return { claimed: machineId !== null, machineId, machines: loadMachines().machines }
+    if (machineId === null) {
+      return { claimed: false, machineId: null, machines: loadMachines().machines }
+    }
+    // 已认领：刷新本机记录（保留 name）
+    const updated = upsertMachine(loadMachines(), {
+      id: machineId, os: currentOs(), hostname: hostname(), now: Date.now()
+    })
+    saveMachines(updated)
+    return { claimed: true, machineId, machines: updated.machines }
   })
 
   // 列表
