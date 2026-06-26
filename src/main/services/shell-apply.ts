@@ -12,6 +12,7 @@ import { generateFullConfig } from './generators/orchestrator'
 import { buildOCConfigFiles, writeOCConfigFiles } from './generators/oc-config'
 import { buildCCMcpConfigFiles, writeCCMcpConfigFiles } from './generators/cc-mcp-config'
 import { resolveHomePath } from './path-utils'
+import { readMachineId } from './machine-id'
 
 export interface GenerateConfigInput {
   shellType: ShellType
@@ -61,7 +62,8 @@ export function generateConfigWithKey(input: GenerateConfigInput): string {
     input.shellType,
     input.keyPassphrase,
     input.proxyFunctionNames,
-    decryptedShellConfig.pathVariables
+    decryptedShellConfig.pathVariables,
+    readMachineId() ?? ''
   )
   return generateFullConfig(input.shellType, decryptedShellConfig, input.ccData, input.cxData, input.ocData, decryptedTokens, mcpServersData, ctx)
 }

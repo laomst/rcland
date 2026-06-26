@@ -9,6 +9,8 @@ export interface GenerateContext {
   timestamp: string
   proxyFunctionNames: { proxyOn: string; proxyOff: string; proxyStatus: string }
   pathVariables: PathVariable[]
+  /** 本机 machineId，用于按 applicableMachines 过滤 */
+  machineId: string
 }
 
 /** Interface for a module's section generator */

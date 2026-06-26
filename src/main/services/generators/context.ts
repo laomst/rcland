@@ -34,7 +34,8 @@ export function createGenerateContext(
   shellType: ShellType,
   keyPassphrase: string,
   proxyFunctionNames: ProxyFunctionNames = DEFAULT_PROXY_FUNCTION_NAMES,
-  pathVariables: PathVariable[] = []
+  pathVariables: PathVariable[] = [],
+  machineId: string = ''
 ): GenerateContext {
   const escapeFn = shellType === 'powershell' ? escapeForPowerShell : escapeForBashLike
 
@@ -51,6 +52,7 @@ export function createGenerateContext(
     },
     timestamp: new Date().toLocaleString('zh-CN'),
     proxyFunctionNames,
-    pathVariables
+    pathVariables,
+    machineId
   }
 }
