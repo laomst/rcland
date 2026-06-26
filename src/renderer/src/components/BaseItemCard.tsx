@@ -1,18 +1,19 @@
 import { useState, type ReactNode } from 'react'
-import { Button, Switch, Tooltip, App, Select } from 'antd'
- import { EditOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons'
+import { Button, Switch, Tooltip, App } from 'antd'
+import { EditOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons'
 import { ItemRow } from './ItemRow'
+import { MachineScopeTag } from './MachineScopeTag'
+import { appliesToMachine } from '@shared/machine-filter'
+import { useMachinesStore } from '@renderer/stores/useMachinesStore'
 import { useTranslation } from 'react-i18next'
 
-interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly?: boolean }> {
+interface BaseItemCardProps<T extends { id: string; enabled?: boolean; applicableMachines?: string[] }> {
   item: T
   index?: number
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
   deleteConfirmContent: string
   hideSyncToggle?: boolean
-  /** Return an error message to prevent localOnly change, or undefined to allow */
-  validateLocalOnlyChange?: (newLocalOnly: boolean) => string | undefined
   onUpdate: (id: string, patch: Partial<T>) => void
   onRemove: (id: string) => void
   onDuplicate?: (item: T) => void
@@ -21,14 +22,13 @@ interface BaseItemCardProps<T extends { id: string; enabled?: boolean; localOnly
   renderEditModal: (open: boolean, onClose: () => void) => ReactNode
 }
 
-export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnly?: boolean }>({
+export function BaseItemCard<T extends { id: string; enabled?: boolean; applicableMachines?: string[] }>({
   item,
   index,
   isDragging,
   dragHandleProps,
   deleteConfirmContent,
   hideSyncToggle,
-  validateLocalOnlyChange,
   onUpdate,
   onRemove,
   onDuplicate,
@@ -37,8 +37,10 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
   renderEditModal
 }: BaseItemCardProps<T>): React.ReactElement {
   const { t } = useTranslation()
-  const { modal, message } = App.useApp()
+  const { modal } = App.useApp()
   const [editOpen, setEditOpen] = useState(false)
+  const currentId = useMachinesStore((s) => s.currentMachineId)
+  const dimmed = !!currentId && !appliesToMachine(item, currentId)
 
   const handleDelete = (): void => {
     modal.confirm({
@@ -51,59 +53,37 @@ export function BaseItemCard<T extends { id: string; enabled?: boolean; localOnl
     })
   }
 
-  const handleLocalOnlyChange = (val: string): void => {
-    const newLocalOnly = val === 'local'
-    if (newLocalOnly && validateLocalOnlyChange) {
-      const error = validateLocalOnlyChange(true)
-      if (error) {
-        message.warning(error)
-        return
-      }
-    }
-    onUpdate(item.id, { localOnly: newLocalOnly } as Partial<T>)
-  }
-
   return (
     <>
-      <ItemRow
-        index={index}
-        isDragging={isDragging}
-        enabled={item.enabled}
-        dragHandleProps={dragHandleProps}
-        actions={<>
-          {onDuplicate && (
-            <Tooltip title={t('common.copy')}>
-              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => onDuplicate(item)} />
+      <div style={dimmed ? { opacity: 0.5 } : undefined}>
+        <ItemRow
+          index={index}
+          isDragging={isDragging}
+          enabled={item.enabled}
+          dragHandleProps={dragHandleProps}
+          actions={<>
+            {onDuplicate && (
+              <Tooltip title={t('common.copy')}>
+                <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => onDuplicate(item)} />
+              </Tooltip>
+            )}
+            <Tooltip title={t('common.edit')}>
+              <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
             </Tooltip>
-          )}
-          <Tooltip title={t('common.edit')}>
-            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)} />
-          </Tooltip>
-          <Tooltip title={t('common.delete')}>
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={handleDelete} />
-          </Tooltip>
-          {!hideSyncToggle && (
-            <Select
+            <Tooltip title={t('common.delete')}>
+              <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={handleDelete} />
+            </Tooltip>
+            {!hideSyncToggle && <MachineScopeTag applicableMachines={item.applicableMachines} />}
+            <Switch
               size="small"
-              variant="borderless"
-              value={item.localOnly ? 'local' : 'sync'}
-              onChange={handleLocalOnlyChange}
-              style={{ width: 70 }}
-              options={[
-                { value: 'sync', label: t('common.synced') },
-                { value: 'local', label: t('common.local') }
-              ]}
+              checked={item.enabled}
+              onChange={(checked) => onUpdate(item.id, { enabled: checked } as Partial<T>)}
             />
-          )}
-          <Switch
-            size="small"
-            checked={item.enabled}
-            onChange={(checked) => onUpdate(item.id, { enabled: checked } as Partial<T>)}
-          />
-        </>}
-      >
-        {renderContent(item)}
-      </ItemRow>
+          </>}
+        >
+          {renderContent(item)}
+        </ItemRow>
+      </div>
 
       {renderEditModal(editOpen, () => setEditOpen(false))}
     </>
